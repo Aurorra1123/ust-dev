@@ -28,6 +28,9 @@
 - 固化“先回归，再开发”规则
 - 新增 `docs/verification/README.md` 作为验证证据落位规范
 - 固化会话结束前更新状态、记录证据并保持工作区干净的退出条件
+- 修复 `api` 容器产物输出路径问题，将生产构建切换为 `tsc -p tsconfig.json`
+- 验证通过整套 Compose 启动与基础 HTTP 联调
+- 新增验证证据 `docs/verification/2026-04-17/foundation-stack-connectivity.md`
 
 ### 当前状态
 
@@ -38,15 +41,16 @@
 - 域名分流规则已明确为前端裸域与 `www`，后端 `api` 子域
 - 已形成当前推荐技术方案 V2 与配套架构图
 - 当前服务器已激活 `pnpm` 并具备单机开发所需的基础依赖
-- 已具备基础 Nginx 与 Compose 配置，且 Docker 镜像构建链已打通
-- 尚未实际启动整套容器与打通浏览器访问链路
+- 已具备基础 Nginx 与 Compose 配置，且整套容器已完成首次联调
+- `campusbook.top`、`www.campusbook.top`、`api.campusbook.top` 的 HTTP 路由已验证通过
+- 当前仍未启用 HTTPS，数据库与缓存也尚未接入真实业务逻辑
 
 ### 下一步建议
 
-1. 运行 Docker Compose，验证 PostgreSQL、Redis、Nginx、API、Web 基础连通性
+1. 为 API 增加真实数据库连接、配置模块与 Prisma Service
 2. 开始实现认证、资源建模与预约主流程
-3. 为首轮联调结果写入 `docs/verification/` 证据
-4. 为 API 增加真实数据库连接、配置模块与 Prisma 服务
+3. 为基础联调补充自动化健康检查或 smoke test
+4. 后续按同一域名结构补齐 HTTPS
 5. 逐步将参考资料映射为更细化的正式产品与技术文档
 
 ### 注意事项

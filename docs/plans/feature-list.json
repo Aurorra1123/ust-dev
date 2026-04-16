@@ -106,5 +106,17 @@
       "存在会话结束前保持工作区干净的明确退出条件"
     ],
     "passes": true
+  },
+  {
+    "id": "APP-002",
+    "category": "foundation",
+    "priority": "P0",
+    "description": "验证单机开发栈与域名分流基础连通性",
+    "acceptance": [
+      "docker compose 能拉起 PostgreSQL、Redis、API、Web、Nginx",
+      "api.campusbook.top 能命中 API 健康检查接口",
+      "campusbook.top 与 www.campusbook.top 能命中前端站点"
+    ],
+    "passes": true
   }
 ]

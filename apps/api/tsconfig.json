@@ -2,7 +2,9 @@
   "extends": "@campusbook/tsconfig/nest.json",
   "compilerOptions": {
     "baseUrl": "./",
-    "rootDir": "src"
+    "rootDir": "src",
+    "outDir": "dist",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.api.tsbuildinfo"
   },
   "include": ["src/**/*.ts", "prisma/**/*.prisma"],
   "exclude": ["dist", "node_modules"]
