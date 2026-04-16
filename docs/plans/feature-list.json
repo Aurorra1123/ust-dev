@@ -82,5 +82,17 @@
       "存在可视化架构图与开发环境核查记录"
     ],
     "passes": true
+  },
+  {
+    "id": "APP-001",
+    "category": "foundation",
+    "priority": "P0",
+    "description": "初始化 monorepo、前后端骨架与单机开发编排",
+    "acceptance": [
+      "存在 apps/web 与 apps/api 基础目录和启动脚本",
+      "存在 packages/shared-types 等共享包",
+      "存在 Docker Compose、Nginx 分流配置和最小 CI"
+    ],
+    "passes": true
   }
 ]

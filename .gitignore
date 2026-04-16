@@ -6,6 +6,7 @@ Thumbs.db
 .pytest_cache/
 .mypy_cache/
 node_modules/
+.pnpm-store/
 dist/
 build/
 .env

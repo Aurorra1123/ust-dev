@@ -18,24 +18,31 @@
 - 新增 `docs/architecture/`，归档技术方案 V1 并产出修订版 V2
 - 新增架构图文档与开发环境核查文档
 - 记录单机 TypeScript 平台基线 ADR `0004`
+- 初始化 monorepo 根配置、`pnpm workspace` 与共享包骨架
+- 新增 `apps/web` React + Vite 前端基础工程
+- 新增 `apps/api` NestJS 后端基础工程与 Prisma 初始 schema
+- 新增 `infra/docker-compose.yml`、Nginx 域名分流配置与最小 GitHub Actions CI
+- 生成 `pnpm-lock.yaml` 并完成首轮依赖安装
+- 验证通过 `pnpm lint`、`pnpm build`
+- 验证通过 `docker compose -f infra/docker-compose.yml build web api`
 
 ### 当前状态
 
 - 仓库已经具备基础协作骨架
-- 现有参考资料尚未映射到正式的信息架构
+- 已存在可继续开发的前后端与基础设施代码骨架
 - 已形成 agent 执行规则与部署基线的长期文档入口
 - 域名分流规则已明确为前端裸域与 `www`，后端 `api` 子域
 - 已形成当前推荐技术方案 V2 与配套架构图
-- 当前服务器满足文档与容器优先开发的基础要求，但尚未安装 `pnpm`
-- 尚待后续补充应用骨架、Nginx 配置模板与 Docker Compose
+- 当前服务器已激活 `pnpm` 并具备单机开发所需的基础依赖
+- 已具备基础 Nginx 与 Compose 配置，且 Docker 镜像构建链已打通
+- 尚未实际启动整套容器与打通浏览器访问链路
 
 ### 下一步建议
 
-1. 提交当前骨架作为初始基线
-2. 建立首轮执行计划，定义 docs 系统第一阶段目标
-3. 逐份梳理 `docs/reference/`，将内容转成正式文档结构
-4. 基于 `docs/standards/deployment-baseline.md` 编写实际部署文档与 Nginx 配置模板
-5. 按 `docs/architecture/technical-solution-v2.md` 初始化 monorepo 与运行骨架
+1. 运行 Docker Compose，验证 PostgreSQL、Redis、Nginx、API、Web 基础连通性
+2. 开始实现认证、资源建模与预约主流程
+3. 为 API 增加真实数据库连接、配置模块与 Prisma 服务
+4. 逐步将参考资料映射为更细化的正式产品与技术文档
 
 ### 注意事项
 
