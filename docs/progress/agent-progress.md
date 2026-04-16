@@ -31,6 +31,7 @@
 - 修复 `api` 容器产物输出路径问题，将生产构建切换为 `tsc -p tsconfig.json`
 - 验证通过整套 Compose 启动与基础 HTTP 联调
 - 新增验证证据 `docs/verification/2026-04-17/foundation-stack-connectivity.md`
+- 将 `docs/plans/feature-list.json` 重写为面向当前应用开发主线的新任务清单
 
 ### 当前状态
 
@@ -44,6 +45,7 @@
 - 已具备基础 Nginx 与 Compose 配置，且整套容器已完成首次联调
 - `campusbook.top`、`www.campusbook.top`、`api.campusbook.top` 的 HTTP 路由已验证通过
 - 当前仍未启用 HTTPS，数据库与缓存也尚未接入真实业务逻辑
+- 当前 `feature-list` 已切换为以应用交付为主的 `APP/OPS/DOCS` 任务结构
 
 ### 下一步建议
 

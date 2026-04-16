@@ -1,89 +1,5 @@
 [
   {
-    "id": "DOCS-001",
-    "category": "foundation",
-    "priority": "P0",
-    "description": "建立 docs 系统的目录结构和导航文档",
-    "acceptance": [
-      "存在 docs 目录导航文档",
-      "执行层和参考层职责分离",
-      "新成员可以通过 README 快速理解目录用途"
-    ],
-    "passes": true
-  },
-  {
-    "id": "DOCS-002",
-    "category": "foundation",
-    "priority": "P0",
-    "description": "建立 agent 交接与进度记录机制",
-    "acceptance": [
-      "存在持续追加的进度文档",
-      "每次会话都能记录完成项、未完成项和下一步",
-      "新会话可通过文档快速恢复上下文"
-    ],
-    "passes": true
-  },
-  {
-    "id": "DOCS-003",
-    "category": "foundation",
-    "priority": "P0",
-    "description": "建立 git 工作流与提交规范",
-    "acceptance": [
-      "存在 git 工作规范文档",
-      "规定小步提交和提交信息格式",
-      "明确进度文档与提交之间的对应关系"
-    ],
-    "passes": true
-  },
-  {
-    "id": "DOCS-004",
-    "category": "architecture",
-    "priority": "P1",
-    "description": "将现有 reference 文档映射为正式的信息架构",
-    "acceptance": [
-      "定义哪些文档属于输入材料，哪些属于正式说明",
-      "为每份参考文档建立对应的维护策略",
-      "形成面向后续开发的知识入口"
-    ],
-    "passes": false
-  },
-  {
-    "id": "DOCS-005",
-    "category": "delivery",
-    "priority": "P1",
-    "description": "为 docs 系统制定首轮执行计划和里程碑",
-    "acceptance": [
-      "存在阶段性执行计划文档",
-      "任务按优先级排序",
-      "下一轮开发目标明确"
-    ],
-    "passes": false
-  },
-  {
-    "id": "DOCS-006",
-    "category": "operations",
-    "priority": "P1",
-    "description": "固化 agent harness 规则与部署域名基线",
-    "acceptance": [
-      "存在长期维护的 agent 执行规则文档",
-      "存在长期维护的部署环境与域名分流基线文档",
-      "相关决策以 ADR 形式记录"
-    ],
-    "passes": true
-  },
-  {
-    "id": "DOCS-007",
-    "category": "architecture",
-    "priority": "P1",
-    "description": "固化技术方案 V1/V2、架构图与开发环境核查",
-    "acceptance": [
-      "存在正式归档的 V1 技术方案文档",
-      "存在经过修订的 V2 技术方案文档",
-      "存在可视化架构图与开发环境核查记录"
-    ],
-    "passes": true
-  },
-  {
     "id": "APP-001",
     "category": "foundation",
     "priority": "P0",
@@ -92,18 +8,6 @@
       "存在 apps/web 与 apps/api 基础目录和启动脚本",
       "存在 packages/shared-types 等共享包",
       "存在 Docker Compose、Nginx 分流配置和最小 CI"
-    ],
-    "passes": true
-  },
-  {
-    "id": "DOCS-008",
-    "category": "operations",
-    "priority": "P1",
-    "description": "固化回归优先、验证证据与干净结束规则",
-    "acceptance": [
-      "存在开始新任务前先抽样回归的硬规则",
-      "存在 docs/verification 目录与验证证据规范",
-      "存在会话结束前保持工作区干净的明确退出条件"
     ],
     "passes": true
   },
@@ -118,5 +22,149 @@
       "campusbook.top 与 www.campusbook.top 能命中前端站点"
     ],
     "passes": true
+  },
+  {
+    "id": "APP-003",
+    "category": "backend",
+    "priority": "P0",
+    "description": "接入 PrismaService、ConfigModule 与真实数据库连通性",
+    "acceptance": [
+      "API 内存在可复用的 PrismaService",
+      "应用启动时能正确读取数据库与 Redis 配置",
+      "健康检查能反映数据库连通状态而不只是配置存在"
+    ],
+    "passes": false
+  },
+  {
+    "id": "APP-004",
+    "category": "auth",
+    "priority": "P0",
+    "description": "实现鉴权基础闭环：登录、刷新令牌、退出",
+    "acceptance": [
+      "存在登录接口并能签发 access token",
+      "refresh token 通过 HttpOnly Cookie 流转",
+      "存在 refresh 与 logout 接口并有最小验证证据"
+    ],
+    "passes": false
+  },
+  {
+    "id": "APP-005",
+    "category": "data-model",
+    "priority": "P0",
+    "description": "建立用户、资源、资源单元、活动、订单的基础数据模型",
+    "acceptance": [
+      "Prisma schema 覆盖用户、资源、资源单元、活动、订单核心表",
+      "存在首轮 migration 或等价建库方式",
+      "共享类型与后端模型边界基本一致"
+    ],
+    "passes": false
+  },
+  {
+    "id": "APP-006",
+    "category": "reservation",
+    "priority": "P0",
+    "description": "实现学术空间预约主流程与 5 分钟缓冲冲突控制",
+    "acceptance": [
+      "用户可提交学术空间预约请求",
+      "后端会扩展前后各 5 分钟缓冲并参与冲突判断",
+      "存在数据库层防重叠约束或等价兜底机制"
+    ],
+    "passes": false
+  },
+  {
+    "id": "APP-007",
+    "category": "reservation",
+    "priority": "P1",
+    "description": "实现体育设施槽位预约与组合预约",
+    "acceptance": [
+      "体育设施按 1 小时离散槽位建模",
+      "支持单资源预约与组合预约",
+      "任一槽位冲突时整单失败并有验证证据"
+    ],
+    "passes": false
+  },
+  {
+    "id": "APP-008",
+    "category": "order",
+    "priority": "P0",
+    "description": "实现统一订单状态机、状态日志与超时取消骨架",
+    "acceptance": [
+      "订单状态覆盖待支付/确认、已确认、已取消、已爽约",
+      "存在状态日志记录每次状态迁移",
+      "超时取消具备任务入口或可执行骨架"
+    ],
+    "passes": false
+  },
+  {
+    "id": "APP-009",
+    "category": "activity",
+    "priority": "P1",
+    "description": "实现活动发布与抢票基础链路",
+    "acceptance": [
+      "存在活动管理与活动详情的基础接口",
+      "抢票请求先经过 Redis 热点校验",
+      "存在 BullMQ 异步建单入口和幂等 jobId 方案"
+    ],
+    "passes": false
+  },
+  {
+    "id": "APP-010",
+    "category": "rules",
+    "priority": "P1",
+    "description": "实现规则引擎初版：规则配置表 + 执行器",
+    "acceptance": [
+      "支持用户身份差异、信用分额度、预约时长限制中的至少两类规则",
+      "规则不直接硬编码在主流程 if-else 中",
+      "存在最小单元测试或等价验证"
+    ],
+    "passes": false
+  },
+  {
+    "id": "APP-011",
+    "category": "frontend",
+    "priority": "P1",
+    "description": "完善前端核心页面与最小管理端页面",
+    "acceptance": [
+      "用户端存在登录、学术空间、体育设施、活动列表核心页面",
+      "管理端存在资源或活动维护的最小页面",
+      "前端页面能接通真实 API 而非只展示静态说明"
+    ],
+    "passes": false
+  },
+  {
+    "id": "OPS-001",
+    "category": "quality",
+    "priority": "P1",
+    "description": "补充自动化 smoke test、基础验证证据与回归清单",
+    "acceptance": [
+      "存在可重复执行的基础健康检查或 smoke test",
+      "docs/verification 中存在对应验证证据",
+      "至少 1-2 个核心已通过流程被纳入回归样本"
+    ],
+    "passes": false
+  },
+  {
+    "id": "OPS-002",
+    "category": "delivery",
+    "priority": "P1",
+    "description": "补齐 HTTPS、生产部署流程与正式演示基线",
+    "acceptance": [
+      "Nginx 支持 443 与证书配置",
+      "部署文档或工作流能支撑远端更新",
+      "正式环境符合 campusbook.top / www / api 的既定域名结构"
+    ],
+    "passes": false
+  },
+  {
+    "id": "DOCS-001",
+    "category": "docs",
+    "priority": "P2",
+    "description": "将 reference 文档继续映射为正式产品与技术说明",
+    "acceptance": [
+      "reference 文档有明确归属与维护策略",
+      "关键业务规则在正式文档中有稳定入口",
+      "新会话无需直接阅读全部 reference 即可恢复上下文"
+    ],
+    "passes": false
   }
 ]
