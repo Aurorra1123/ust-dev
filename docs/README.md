@@ -1,0 +1,28 @@
+# Docs System
+
+本目录分为两层：
+
+- `reference/`：原始或整理后的参考材料
+- `plans/`、`progress/`、`standards/`、`adr/`：agent 和人工协作时的执行层
+
+## 目录说明
+
+- `reference/`：业务背景、需求重建稿、图示、原始 PDF
+- `plans/`：任务拆解、里程碑、待办状态
+- `progress/`：会话级进度记录和交接信息
+- `standards/`：工程规则、git 工作流、文档规范
+- `adr/`：架构决策记录
+- `exec-plan/`：面向当前阶段的执行计划文档
+
+## 推荐工作流
+
+1. 先阅读 `progress/agent-progress.md` 和 `plans/feature-list.json`
+2. 确认当前最高优先级且未完成的任务
+3. 小步修改
+4. 自检
+5. 更新进度文档
+6. 提交 git commit
+
+## 当前目标
+
+当前仓库的首要目标是把现有参考资料整理成一个可持续维护、可交接、可由 agent 辅助推进的 docs 系统。

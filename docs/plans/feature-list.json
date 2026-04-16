@@ -1,0 +1,62 @@
+[
+  {
+    "id": "DOCS-001",
+    "category": "foundation",
+    "priority": "P0",
+    "description": "建立 docs 系统的目录结构和导航文档",
+    "acceptance": [
+      "存在 docs 目录导航文档",
+      "执行层和参考层职责分离",
+      "新成员可以通过 README 快速理解目录用途"
+    ],
+    "passes": true
+  },
+  {
+    "id": "DOCS-002",
+    "category": "foundation",
+    "priority": "P0",
+    "description": "建立 agent 交接与进度记录机制",
+    "acceptance": [
+      "存在持续追加的进度文档",
+      "每次会话都能记录完成项、未完成项和下一步",
+      "新会话可通过文档快速恢复上下文"
+    ],
+    "passes": true
+  },
+  {
+    "id": "DOCS-003",
+    "category": "foundation",
+    "priority": "P0",
+    "description": "建立 git 工作流与提交规范",
+    "acceptance": [
+      "存在 git 工作规范文档",
+      "规定小步提交和提交信息格式",
+      "明确进度文档与提交之间的对应关系"
+    ],
+    "passes": true
+  },
+  {
+    "id": "DOCS-004",
+    "category": "architecture",
+    "priority": "P1",
+    "description": "将现有 reference 文档映射为正式的信息架构",
+    "acceptance": [
+      "定义哪些文档属于输入材料，哪些属于正式说明",
+      "为每份参考文档建立对应的维护策略",
+      "形成面向后续开发的知识入口"
+    ],
+    "passes": false
+  },
+  {
+    "id": "DOCS-005",
+    "category": "delivery",
+    "priority": "P1",
+    "description": "为 docs 系统制定首轮执行计划和里程碑",
+    "acceptance": [
+      "存在阶段性执行计划文档",
+      "任务按优先级排序",
+      "下一轮开发目标明确"
+    ],
+    "passes": false
+  }
+]
