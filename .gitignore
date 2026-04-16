@@ -15,5 +15,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.log
+*.tsbuildinfo
 .coverage
 coverage/
