@@ -58,5 +58,17 @@
       "下一轮开发目标明确"
     ],
     "passes": false
+  },
+  {
+    "id": "DOCS-006",
+    "category": "operations",
+    "priority": "P1",
+    "description": "固化 agent harness 规则与部署域名基线",
+    "acceptance": [
+      "存在长期维护的 agent 执行规则文档",
+      "存在长期维护的部署环境与域名分流基线文档",
+      "相关决策以 ADR 形式记录"
+    ],
+    "passes": true
   }
 ]

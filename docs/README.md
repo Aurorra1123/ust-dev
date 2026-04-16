@@ -10,9 +10,17 @@
 - `reference/`：业务背景、需求重建稿、图示、原始 PDF
 - `plans/`：任务拆解、里程碑、待办状态
 - `progress/`：会话级进度记录和交接信息
-- `standards/`：工程规则、git 工作流、文档规范
+- `standards/`：工程规则、git 工作流、agent 执行规则、部署基线
 - `adr/`：架构决策记录
 - `exec-plan/`：面向当前阶段的执行计划文档
+
+## 关键入口
+
+- `standards/engineering-rules.md`：通用工程规则
+- `standards/git-workflow.md`：git 提交与会话流程
+- `standards/agent-harness-rules.md`：长周期 agent 执行规则
+- `standards/deployment-baseline.md`：部署环境、域名与 Nginx 分流基线
+- `adr/0001-repo-as-agent-memory.md`：仓库作为 agent 主记忆体
 
 ## 推荐工作流
 

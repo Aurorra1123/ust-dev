@@ -17,6 +17,8 @@
 - 正式规范、计划、进度、决策不放在 `reference/`
 - 同一份信息只保留一个主维护位置，其他地方只做链接
 - 重要设计选择写入 `adr/`
+- agent 长周期执行规则维护在 `standards/agent-harness-rules.md`
+- 部署长期基线维护在 `standards/deployment-baseline.md`
 
 ## Agent 协作规则
 

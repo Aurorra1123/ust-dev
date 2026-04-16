@@ -10,18 +10,26 @@
 - 建立 docs 执行层目录：`plans/`、`progress/`、`standards/`、`adr/`
 - 新增目录导航、任务清单、git 工作流、工程规则、ADR 模板、初始化脚本
 - 保留现有 `docs/reference/` 资料作为输入层
+- 新增 agent 长周期执行规则文档 `docs/standards/agent-harness-rules.md`
+- 新增部署基线文档 `docs/standards/deployment-baseline.md`
+- 记录 harness-first 工作流 ADR 与域名分流 ADR
+- 固化 `campusbook.top` / `www.campusbook.top` / `api.campusbook.top` 的部署域名结构
+- 修正仓库根 README 中过期的绝对路径链接
 
 ### 当前状态
 
 - 仓库已经具备基础协作骨架
 - 现有参考资料尚未映射到正式的信息架构
-- 尚未产生首个规范化提交
+- 已形成 agent 执行规则与部署基线的长期文档入口
+- 域名分流规则已明确为前端裸域与 `www`，后端 `api` 子域
+- 尚待后续按该基线补充具体 Nginx 配置与部署脚本
 
 ### 下一步建议
 
 1. 提交当前骨架作为初始基线
 2. 建立首轮执行计划，定义 docs 系统第一阶段目标
 3. 逐份梳理 `docs/reference/`，将内容转成正式文档结构
+4. 基于 `docs/standards/deployment-baseline.md` 编写实际部署文档与 Nginx 配置模板
 
 ### 注意事项
 
