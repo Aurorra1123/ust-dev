@@ -70,5 +70,17 @@
       "相关决策以 ADR 形式记录"
     ],
     "passes": true
+  },
+  {
+    "id": "DOCS-007",
+    "category": "architecture",
+    "priority": "P1",
+    "description": "固化技术方案 V1/V2、架构图与开发环境核查",
+    "acceptance": [
+      "存在正式归档的 V1 技术方案文档",
+      "存在经过修订的 V2 技术方案文档",
+      "存在可视化架构图与开发环境核查记录"
+    ],
+    "passes": true
   }
 ]

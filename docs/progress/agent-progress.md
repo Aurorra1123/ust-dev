@@ -15,6 +15,9 @@
 - 记录 harness-first 工作流 ADR 与域名分流 ADR
 - 固化 `campusbook.top` / `www.campusbook.top` / `api.campusbook.top` 的部署域名结构
 - 修正仓库根 README 中过期的绝对路径链接
+- 新增 `docs/architecture/`，归档技术方案 V1 并产出修订版 V2
+- 新增架构图文档与开发环境核查文档
+- 记录单机 TypeScript 平台基线 ADR `0004`
 
 ### 当前状态
 
@@ -22,7 +25,9 @@
 - 现有参考资料尚未映射到正式的信息架构
 - 已形成 agent 执行规则与部署基线的长期文档入口
 - 域名分流规则已明确为前端裸域与 `www`，后端 `api` 子域
-- 尚待后续按该基线补充具体 Nginx 配置与部署脚本
+- 已形成当前推荐技术方案 V2 与配套架构图
+- 当前服务器满足文档与容器优先开发的基础要求，但尚未安装 `pnpm`
+- 尚待后续补充应用骨架、Nginx 配置模板与 Docker Compose
 
 ### 下一步建议
 
@@ -30,6 +35,7 @@
 2. 建立首轮执行计划，定义 docs 系统第一阶段目标
 3. 逐份梳理 `docs/reference/`，将内容转成正式文档结构
 4. 基于 `docs/standards/deployment-baseline.md` 编写实际部署文档与 Nginx 配置模板
+5. 按 `docs/architecture/technical-solution-v2.md` 初始化 monorepo 与运行骨架
 
 ### 注意事项
 

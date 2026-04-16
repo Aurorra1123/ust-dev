@@ -3,7 +3,7 @@
 本目录分为两层：
 
 - `reference/`：原始或整理后的参考材料
-- `plans/`、`progress/`、`standards/`、`adr/`：agent 和人工协作时的执行层
+- `plans/`、`progress/`、`standards/`、`adr/`、`architecture/`：agent 和人工协作时的执行层
 
 ## 目录说明
 
@@ -12,6 +12,7 @@
 - `progress/`：会话级进度记录和交接信息
 - `standards/`：工程规则、git 工作流、agent 执行规则、部署基线
 - `adr/`：架构决策记录
+- `architecture/`：正式技术方案、架构图、环境核查
 - `exec-plan/`：面向当前阶段的执行计划文档
 
 ## 关键入口
@@ -21,6 +22,10 @@
 - `standards/agent-harness-rules.md`：长周期 agent 执行规则
 - `standards/deployment-baseline.md`：部署环境、域名与 Nginx 分流基线
 - `adr/0001-repo-as-agent-memory.md`：仓库作为 agent 主记忆体
+- `adr/0004-single-node-typescript-platform-baseline.md`：当前技术基线决策
+- `architecture/technical-solution-v2.md`：当前推荐技术方案
+- `architecture/architecture-diagrams.md`：架构图与流程图
+- `architecture/development-environment-audit-2026-04-16.md`：当前服务器开发环境核查
 
 ## 推荐工作流
 
