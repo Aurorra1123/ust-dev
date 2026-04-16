@@ -23,3 +23,16 @@ echo "Feature list:"
 if [ -f "docs/plans/feature-list.json" ]; then
   sed -n '1,220p' docs/plans/feature-list.json
 fi
+
+echo
+echo "Regression reminder:"
+echo "- 先抽样回归 1-2 个已标记通过的核心功能。"
+echo "- 如果回归失败，先撤回通过状态并修复，再开发新功能。"
+
+echo
+echo "Verification evidence:"
+if [ -d "docs/verification" ]; then
+  find docs/verification -maxdepth 2 -type f | sort | tail -n 20
+else
+  echo "docs/verification not initialized."
+fi

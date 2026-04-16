@@ -94,5 +94,17 @@
       "存在 Docker Compose、Nginx 分流配置和最小 CI"
     ],
     "passes": true
+  },
+  {
+    "id": "DOCS-008",
+    "category": "operations",
+    "priority": "P1",
+    "description": "固化回归优先、验证证据与干净结束规则",
+    "acceptance": [
+      "存在开始新任务前先抽样回归的硬规则",
+      "存在 docs/verification 目录与验证证据规范",
+      "存在会话结束前保持工作区干净的明确退出条件"
+    ],
+    "passes": true
   }
 ]
