@@ -17,6 +17,7 @@ export class OrdersService {
       where: { id: orderId },
       include: {
         academicReservation: true,
+        sportsReservationSlots: true,
         items: true,
         statusLogs: {
           orderBy: {
@@ -115,7 +116,8 @@ export class OrdersService {
     const order = await this.prismaService.order.findUnique({
       where: { id: orderId },
       include: {
-        academicReservation: true
+        academicReservation: true,
+        sportsReservationSlots: true
       }
     });
 
@@ -169,10 +171,22 @@ export class OrdersService {
           });
         }
 
+        if (order.sportsReservationSlots.length > 0) {
+          await tx.sportsReservationSlot.updateMany({
+            where: {
+              orderId: order.id
+            },
+            data: {
+              status: params.nextStatus
+            }
+          });
+        }
+
         const latest = await tx.order.findUnique({
           where: { id: order.id },
           include: {
             academicReservation: true,
+            sportsReservationSlots: true,
             statusLogs: {
               orderBy: {
                 createdAt: "asc"

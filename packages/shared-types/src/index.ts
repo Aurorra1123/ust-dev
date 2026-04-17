@@ -121,6 +121,25 @@ export interface AcademicReservationResponse {
   status: OrderStatus;
 }
 
+export interface SportsReservationRequest {
+  resourceUnitId?: string;
+  resourceGroupId?: string;
+  slotStarts: string[];
+  userEmail?: string;
+}
+
+export interface SportsReservationResponse {
+  orderId: string;
+  orderNo: string;
+  userId: string;
+  resourceId: string;
+  resourceUnitIds: string[];
+  slotStarts: string[];
+  slotEnds: string[];
+  slotCount: number;
+  status: OrderStatus;
+}
+
 export interface RouteCard {
   title: string;
   description: string;
