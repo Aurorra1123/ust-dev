@@ -19,6 +19,7 @@
 - 新增演示账号环境变量 `DEMO_USER_EMAIL`、`DEMO_USER_PASSWORD`、`DEMO_USER_ROLE`
 - 验证通过登录、刷新令牌、退出与退出后 refresh 失效
 - 新增验证证据 `docs/verification/2026-04-17/app-004-auth-cookie-flow.md`
+- 为后续 `autonomous` 开发补充仓库级安全规则，禁止危险删除并限制默认操作边界
 
 ### 当前状态
 
