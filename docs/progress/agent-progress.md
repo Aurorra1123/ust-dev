@@ -14,18 +14,24 @@
   - 镜像构建期显式安装 `openssl`
 - 验证通过 `api.campusbook.top/health` 返回 `postgres=up`、`redis=up`
 - 新增验证证据 `docs/verification/2026-04-17/app-003-prisma-health.md`
+- 完成 `APP-004`：新增 `login`、`refresh`、`logout` 认证接口
+- 接入 `@nestjs/jwt` 与 `cookie-parser`，access token 走响应体，refresh token 走 `HttpOnly` Cookie
+- 新增演示账号环境变量 `DEMO_USER_EMAIL`、`DEMO_USER_PASSWORD`、`DEMO_USER_ROLE`
+- 验证通过登录、刷新令牌、退出与退出后 refresh 失效
+- 新增验证证据 `docs/verification/2026-04-17/app-004-auth-cookie-flow.md`
 
 ### 当前状态
 
-- `APP-001`、`APP-002`、`APP-003` 已通过
-- API 已具备真实依赖健康检查能力，可继续承接鉴权与数据模型开发
+- `APP-001`、`APP-002`、`APP-003`、`APP-004` 已通过
+- API 已具备真实依赖健康检查能力和最小认证闭环
+- 当前认证实现仍是演示账号模式，后续需在 `APP-005` 中接入正式用户模型
 - 当前 Compose 栈仍保持运行，可用于下一阶段最小范围联调
 
 ### 下一步建议
 
 1. 按规则先抽样回归一个已通过核心流程
-2. 开始 `APP-004`，实现登录、刷新令牌与退出的鉴权闭环
-3. 随后推进 `APP-005`，补齐用户、资源、活动、订单基础数据模型
+2. 开始 `APP-005`，补齐用户、资源、资源单元、活动、订单基础数据模型
+3. 在数据模型稳定后，将当前演示账号认证逐步替换为数据库用户认证
 
 ### 注意事项
 

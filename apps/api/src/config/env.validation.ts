@@ -23,6 +23,25 @@ class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
+  JWT_ACCESS_SECRET!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  JWT_REFRESH_SECRET!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DEMO_USER_EMAIL!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DEMO_USER_PASSWORD!: string;
+
+  @IsIn(["student", "admin"])
+  DEMO_USER_ROLE!: "student" | "admin";
+
+  @IsString()
+  @IsNotEmpty()
   ALLOWED_ORIGINS!: string;
 
   @IsNumber()

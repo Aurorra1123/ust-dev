@@ -45,7 +45,7 @@
       "refresh token 通过 HttpOnly Cookie 流转",
       "存在 refresh 与 logout 接口并有最小验证证据"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "APP-005",

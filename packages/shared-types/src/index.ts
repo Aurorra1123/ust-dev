@@ -20,6 +20,17 @@ export interface HealthStatus {
   };
 }
 
+export interface AuthUser {
+  email: string;
+  role: UserRole;
+}
+
+export interface AuthSessionResponse {
+  accessToken: string;
+  expiresIn: number;
+  user: AuthUser;
+}
+
 export interface RouteCard {
   title: string;
   description: string;
