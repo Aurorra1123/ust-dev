@@ -100,6 +100,27 @@ export interface AppOrder {
   totalAmountCents: number;
 }
 
+export interface AcademicReservationRequest {
+  resourceUnitId: string;
+  startTime: string;
+  endTime: string;
+  userEmail?: string;
+}
+
+export interface AcademicReservationResponse {
+  reservationId: string;
+  orderId: string;
+  orderNo: string;
+  userId: string;
+  resourceId: string;
+  resourceUnitId: string;
+  startTime: string;
+  endTime: string;
+  bufferBeforeMin: number;
+  bufferAfterMin: number;
+  status: OrderStatus;
+}
+
 export interface RouteCard {
   title: string;
   description: string;
