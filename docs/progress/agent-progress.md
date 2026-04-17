@@ -2,6 +2,37 @@
 
 本文件用于跨会话交接，任何一次较完整的工作结束前都应更新。
 
+## 2026-04-17
+
+### 已完成
+
+- 完成 `APP-003`：为 API 接入全局 `ConfigModule` 与环境变量校验
+- 新增 `InfrastructureModule`、`PrismaService`、`RedisService`
+- 将 `GET /health` 从静态占位改为真实检测 PostgreSQL 与 Redis 状态
+- 修复 Prisma 在容器运行时的 OpenSSL 兼容问题：
+  - `infra/docker/api.Dockerfile` 改为 `node:20-bookworm-slim`
+  - 镜像构建期显式安装 `openssl`
+- 验证通过 `api.campusbook.top/health` 返回 `postgres=up`、`redis=up`
+- 新增验证证据 `docs/verification/2026-04-17/app-003-prisma-health.md`
+
+### 当前状态
+
+- `APP-001`、`APP-002`、`APP-003` 已通过
+- API 已具备真实依赖健康检查能力，可继续承接鉴权与数据模型开发
+- 当前 Compose 栈仍保持运行，可用于下一阶段最小范围联调
+
+### 下一步建议
+
+1. 按规则先抽样回归一个已通过核心流程
+2. 开始 `APP-004`，实现登录、刷新令牌与退出的鉴权闭环
+3. 随后推进 `APP-005`，补齐用户、资源、活动、订单基础数据模型
+
+### 注意事项
+
+- Prisma 运行时依赖镜像内的 `openssl`；后续调整 API 基础镜像时需一并保留
+- 对本地 `127.0.0.1:80` 的 Nginx 验证仍需使用提权命令
+- 完成新的阶段性功能后，继续按“留证据 -> 更新状态 -> git 提交”的顺序收口
+
 ## 2026-04-16
 
 ### 已完成

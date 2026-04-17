@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
+import { validateEnvironment } from "./config/env.validation";
+import { InfrastructureModule } from "./infrastructure/infrastructure.module";
 import { ActivitiesModule } from "./modules/activities/activities.module";
 import { AppController } from "./modules/app/app.controller";
 import { AuthModule } from "./modules/auth/auth.module";
@@ -14,8 +16,10 @@ import { UsersModule } from "./modules/users/users.module";
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
+      validate: validateEnvironment
     }),
+    InfrastructureModule,
     HealthModule,
     AuthModule,
     UsersModule,

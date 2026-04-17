@@ -8,11 +8,15 @@ export type OrderStatus =
 
 export interface HealthStatus {
   service: string;
-  status: "ok";
+  status: "ok" | "degraded";
   timestamp: string;
   dependencies: {
-    postgres: "configured" | "unknown";
-    redis: "configured" | "unknown";
+    postgres: "up" | "down";
+    redis: "up" | "down";
+  };
+  checks?: {
+    postgres?: string;
+    redis?: string;
   };
 }
 
