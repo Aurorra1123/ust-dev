@@ -57,7 +57,7 @@
       "存在首轮 migration 或等价建库方式",
       "共享类型与后端模型边界基本一致"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "APP-006",

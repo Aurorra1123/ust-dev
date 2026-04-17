@@ -12,6 +12,43 @@ enum UserRole {
   ADMIN
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ResourceType {
+  ACADEMIC_SPACE
+  SPORTS_FACILITY
+}
+
+enum ResourceStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ResourceAvailabilityMode {
+  CONTINUOUS
+  DISCRETE_SLOT
+}
+
+enum ActivityStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  CANCELLED
+}
+
+enum ActivityTicketStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum OrderBizType {
+  RESOURCE_RESERVATION
+  ACTIVITY_REGISTRATION
+}
+
 enum OrderStatus {
   PENDING_CONFIRMATION
   CONFIRMED
@@ -19,21 +56,248 @@ enum OrderStatus {
   NO_SHOW
 }
 
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum RuleStatus {
+  ACTIVE
+  INACTIVE
+}
+
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  role      UserRole  @default(STUDENT)
-  orders    Order[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id               String            @id @default(cuid())
+  name             String
+  email            String            @unique
+  passwordHash     String?
+  role             UserRole          @default(STUDENT)
+  status           UserStatus        @default(ACTIVE)
+  creditScore      Int               @default(100)
+  orders           Order[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  userCreditLogs   UserCreditLog[]
+  userRuleProfiles UserRuleProfile[]
+}
+
+model Resource {
+  id           String                @id @default(cuid())
+  type         ResourceType
+  code         String                @unique
+  name         String
+  description  String?
+  location     String?
+  status       ResourceStatus        @default(ACTIVE)
+  units        ResourceUnit[]
+  groups       ResourceGroup[]
+  ruleBindings ResourceRuleBinding[]
+  orderItems   OrderItem[]
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+}
+
+model ResourceUnit {
+  id               String                   @id @default(cuid())
+  resourceId       String
+  code             String                   @unique
+  name             String
+  unitType         String
+  availabilityMode ResourceAvailabilityMode
+  capacity         Int?
+  sortOrder        Int                      @default(0)
+  resource         Resource                 @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  groupItems       ResourceGroupItem[]
+  orderItems       OrderItem[]
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@index([resourceId, sortOrder])
+}
+
+model ResourceGroup {
+  id          String              @id @default(cuid())
+  resourceId  String
+  name        String
+  description String?
+  resource    Resource            @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  items       ResourceGroupItem[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([resourceId, name])
+  @@index([resourceId])
+}
+
+model ResourceGroupItem {
+  id             String        @id @default(cuid())
+  groupId        String
+  resourceUnitId String
+  sortOrder      Int           @default(0)
+  group          ResourceGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  resourceUnit   ResourceUnit  @relation(fields: [resourceUnitId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, resourceUnitId])
+  @@index([resourceUnitId])
+}
+
+model Activity {
+  id             String           @id @default(cuid())
+  title          String
+  description    String?
+  location       String?
+  totalQuota     Int
+  saleStartTime  DateTime
+  saleEndTime    DateTime
+  eventStartTime DateTime?
+  eventEndTime   DateTime?
+  status         ActivityStatus   @default(DRAFT)
+  tickets        ActivityTicket[]
+  orders         Order[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([status, saleStartTime])
+}
+
+model ActivityTicket {
+  id         String               @id @default(cuid())
+  activityId String
+  name       String
+  stock      Int
+  reserved   Int                  @default(0)
+  priceCents Int                  @default(0)
+  status     ActivityTicketStatus @default(ACTIVE)
+  activity   Activity             @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@unique([activityId, name])
+  @@index([activityId, status])
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  status    OrderStatus @default(PENDING_CONFIRMATION)
-  version   Int         @default(1)
-  userId    String?
-  user      User?       @relation(fields: [userId], references: [id])
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id               String           @id @default(cuid())
+  orderNo          String           @unique @default(cuid())
+  userId           String
+  activityId       String?
+  bizType          OrderBizType
+  status           OrderStatus      @default(PENDING_CONFIRMATION)
+  version          Int              @default(1)
+  expireAt         DateTime?
+  totalAmountCents Int              @default(0)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  activity         Activity?        @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  items            OrderItem[]
+  paymentRecords   PaymentRecord[]
+  statusLogs       OrderStatusLog[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([activityId])
+  @@index([status, expireAt])
+}
+
+model OrderItem {
+  id               String          @id @default(cuid())
+  orderId          String
+  resourceId       String?
+  resourceUnitId   String?
+  activityTicketId String?
+  quantity         Int             @default(1)
+  slotCount        Int             @default(0)
+  startTime        DateTime?
+  endTime          DateTime?
+  bufferBeforeMin  Int             @default(0)
+  bufferAfterMin   Int             @default(0)
+  unitPriceCents   Int             @default(0)
+  order            Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  resource         Resource?       @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  resourceUnit     ResourceUnit?   @relation(fields: [resourceUnitId], references: [id], onDelete: SetNull)
+  activityTicket   ActivityTicket? @relation(fields: [activityTicketId], references: [id], onDelete: SetNull)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([orderId])
+  @@index([resourceUnitId, startTime])
+  @@index([activityTicketId])
+}
+
+model PaymentRecord {
+  id            String        @id @default(cuid())
+  orderId       String
+  payStatus     PaymentStatus @default(PENDING)
+  transactionNo String?       @unique
+  amountCents   Int           @default(0)
+  paidAt        DateTime?
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([orderId, payStatus])
+}
+
+model OrderStatusLog {
+  id         String       @id @default(cuid())
+  orderId    String
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  reason     String?
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+model Rule {
+  id               String                @id @default(cuid())
+  ruleType         String
+  name             String
+  expression       Json?
+  status           RuleStatus            @default(ACTIVE)
+  resourceBindings ResourceRuleBinding[]
+  userProfiles     UserRuleProfile[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+}
+
+model ResourceRuleBinding {
+  id         String   @id @default(cuid())
+  resourceId String
+  ruleId     String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  rule       Rule     @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([resourceId, ruleId])
+  @@index([ruleId])
+}
+
+model UserRuleProfile {
+  id           String   @id @default(cuid())
+  userId       String
+  ruleId       String
+  profileValue Json?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rule         Rule     @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, ruleId])
+  @@index([ruleId])
+}
+
+model UserCreditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  scoreDelta Int
+  reason     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

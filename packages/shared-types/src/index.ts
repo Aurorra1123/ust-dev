@@ -1,10 +1,24 @@
 export type UserRole = "student" | "admin";
+export type UserStatus = "active" | "inactive";
+
+export type ResourceType = "academic_space" | "sports_facility";
+export type ResourceStatus = "active" | "inactive";
+export type ResourceAvailabilityMode = "continuous" | "discrete_slot";
+
+export type ActivityStatus = "draft" | "published" | "closed" | "cancelled";
+export type ActivityTicketStatus = "active" | "inactive";
+
+export type OrderBizType =
+  | "resource_reservation"
+  | "activity_registration";
 
 export type OrderStatus =
   | "pending_confirmation"
   | "confirmed"
   | "cancelled"
   | "no_show";
+
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
 export interface HealthStatus {
   service: string;
@@ -29,6 +43,61 @@ export interface AuthSessionResponse {
   accessToken: string;
   expiresIn: number;
   user: AuthUser;
+}
+
+export interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  creditScore: number;
+}
+
+export interface AppResource {
+  id: string;
+  type: ResourceType;
+  code: string;
+  name: string;
+  description?: string | null;
+  location?: string | null;
+  status: ResourceStatus;
+}
+
+export interface AppResourceUnit {
+  id: string;
+  resourceId: string;
+  code: string;
+  name: string;
+  unitType: string;
+  availabilityMode: ResourceAvailabilityMode;
+  capacity?: number | null;
+  sortOrder: number;
+}
+
+export interface AppActivity {
+  id: string;
+  title: string;
+  description?: string | null;
+  location?: string | null;
+  totalQuota: number;
+  saleStartTime: string;
+  saleEndTime: string;
+  eventStartTime?: string | null;
+  eventEndTime?: string | null;
+  status: ActivityStatus;
+}
+
+export interface AppOrder {
+  id: string;
+  orderNo: string;
+  userId: string;
+  activityId?: string | null;
+  bizType: OrderBizType;
+  status: OrderStatus;
+  version: number;
+  expireAt?: string | null;
+  totalAmountCents: number;
 }
 
 export interface RouteCard {
