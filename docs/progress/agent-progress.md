@@ -37,6 +37,9 @@
 - 验证通过单资源预约、组合预约、任一单元冲突时整单失败
 - 验证通过订单取消后体育槽位状态同步为 `CANCELLED`，槽位可重新释放
 - 新增验证证据 `docs/verification/2026-04-17/app-007-sports-reservation.md`
+- 新增 `scripts/watchdog.sh`，用于监控 tmux pane 静默状态并按上限自动发送 `continue`
+- watchdog 支持 `-n` 参数控制最多自动继续轮数，并支持轮询间隔、静默阈值、阻断正则与日志路径配置
+- 通过临时 tmux pane 验证 watchdog 在静默后发送 1 次消息并按上限正常退出
 
 ### 当前状态
 
