@@ -55,3 +55,26 @@
 
 - 部署文档中的域名、端口、服务归属必须与本文件一致
 - 如果后续变更域名结构、反向代理边界或发布拓扑，必须新增 ADR 记录
+
+## 单机资源保护
+
+当前服务器仅有 `2 vCPU / 2 GiB RAM`，后续开发、联调和部署必须默认按低余量机器处理。
+
+- 不并行执行高负载命令：
+  - `pnpm build`
+  - `pnpm lint`
+  - `pnpm typecheck`
+  - `docker compose build`
+- 高负载校验默认顺序执行，避免同时触发 `tsc`、`vite`、`eslint`、`prisma generate`
+- 优先执行局部验证：
+  - 改后端时优先 `pnpm --filter api ...`
+  - 改前端时优先 `pnpm --filter web ...`
+  - 改容器配置时优先重建受影响服务，而不是全量重建整栈
+- `docker compose up -d api`、`build api` 这类局部动作优先于整套 `up --build`
+- 未到里程碑验收前，不重复做全栈重建和整站联调
+- 新增 `worker`、压测、E2E 浏览器任务前，先确认内存余量，必要时先停掉非关键容器
+- 对外只保留必要常驻服务，避免在宿主机长期并行运行多个 dev server、watcher、构建进程
+- 若出现持续卡顿，先检查：
+  - `uptime`
+  - `ps -eo pid,ppid,pcpu,pmem,etime,cmd`
+  - `docker compose -f infra/docker-compose.yml ps`

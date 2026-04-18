@@ -5,13 +5,13 @@
 - 项目正式文档与决策记录
 - `CampusBook` 校园预约与活动平台的应用代码
 
-当前推荐技术方案见 [technical-solution-v2.md](/data/ustdev/ust-dev/docs/architecture/technical-solution-v2.md)。
+当前推荐技术方案见 [technical-solution-v2.md](docs/architecture/technical-solution-v2.md)。
 
 ## 快速开始
 
-1. 阅读 [docs/README.md](/data/ustdev/ust-dev/docs/README.md)
-2. 查看 [docs/progress/agent-progress.md](/data/ustdev/ust-dev/docs/progress/agent-progress.md)
-3. 查看 [docs/plans/feature-list.json](/data/ustdev/ust-dev/docs/plans/feature-list.json)
+1. 阅读 [docs/README.md](docs/README.md)
+2. 查看 [docs/progress/agent-progress.md](docs/progress/agent-progress.md)
+3. 查看 [docs/plans/feature-list.json](docs/plans/feature-list.json)
 4. 运行 `bash scripts/init.sh`
 5. 复制 `.env.example` 为 `.env`
 6. 运行 `corepack enable`

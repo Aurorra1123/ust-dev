@@ -48,6 +48,18 @@
     "passes": true
   },
   {
+    "id": "SEC-001",
+    "category": "security",
+    "priority": "P0",
+    "description": "绑定可信身份上下文并收口预约、订单与内部任务的权限边界",
+    "acceptance": [
+      "预约与报名写接口不再信任 userEmail、userId 等请求体身份字段",
+      "普通用户、管理员、内部 job 动作存在明确接口边界",
+      "至少存在用户态与管理员或内部态的最小验证证据"
+    ],
+    "passes": false
+  },
+  {
     "id": "APP-005",
     "category": "data-model",
     "priority": "P0",
@@ -58,6 +70,18 @@
       "共享类型与后端模型边界基本一致"
     ],
     "passes": true
+  },
+  {
+    "id": "DATA-001",
+    "category": "data-entry",
+    "priority": "P0",
+    "description": "补齐 demo seed、资源列表/详情 API 与最小管理入口",
+    "acceptance": [
+      "存在可重复执行的 demo seed，前端联调不依赖手工 SQL 插库",
+      "存在资源列表与详情接口，能为学术空间和体育设施页面提供真实数据",
+      "存在最小管理入口，可维护资源或活动基础数据"
+    ],
+    "passes": false
   },
   {
     "id": "APP-006",
@@ -87,7 +111,7 @@
     "id": "APP-008",
     "category": "order",
     "priority": "P0",
-    "description": "实现统一订单状态机、状态日志与超时取消骨架",
+    "description": "实现统一订单状态机 A 段：状态日志、CAS 与显式超时取消入口",
     "acceptance": [
       "订单状态覆盖待支付/确认、已确认、已取消、已爽约",
       "存在状态日志记录每次状态迁移",
@@ -96,14 +120,27 @@
     "passes": true
   },
   {
+    "id": "APP-008B",
+    "category": "order",
+    "priority": "P0",
+    "description": "补齐订单状态机 B 段：BullMQ delayed job、独立 worker 与幽灵支付保护",
+    "acceptance": [
+      "存在独立 worker 或等价后台任务进程处理延迟取消",
+      "超时取消不再依赖手动 HTTP 触发",
+      "存在至少一条幽灵支付或延迟取消的集成验证证据"
+    ],
+    "passes": false
+  },
+  {
     "id": "APP-009",
     "category": "activity",
     "priority": "P1",
     "description": "实现活动发布与抢票基础链路",
     "acceptance": [
-      "存在活动管理与活动详情的基础接口",
-      "抢票请求先经过 Redis 热点校验",
-      "存在 BullMQ 异步建单入口和幂等 jobId 方案"
+      "存在活动管理、活动详情与票种基础接口",
+      "抢票请求先经过 Redis Lua 热点校验与预扣库存",
+      "存在 BullMQ 异步建单入口、幂等 jobId 与同用户唯一性约束",
+      "数据库存在最终库存硬兜底，并定义失败补偿或死信回查"
     ],
     "passes": false
   },
@@ -125,9 +162,9 @@
     "priority": "P1",
     "description": "完善前端核心页面与最小管理端页面",
     "acceptance": [
-      "用户端存在登录、学术空间、体育设施、活动列表核心页面",
-      "管理端存在资源或活动维护的最小页面",
-      "前端页面能接通真实 API 而非只展示静态说明"
+      "用户端存在登录、学术空间、体育设施、活动列表与我的订单核心页面",
+      "管理端存在资源与活动维护的最小页面",
+      "前端页面能接通真实 API、真实 seed 数据，并按用户与管理员区分能力"
     ],
     "passes": false
   },
@@ -137,9 +174,9 @@
     "priority": "P1",
     "description": "补充自动化 smoke test、基础验证证据与回归清单",
     "acceptance": [
+      "CI 至少执行 prisma:generate、lint、typecheck、build，并预留 test 阶段",
       "存在可重复执行的基础健康检查或 smoke test",
-      "docs/verification 中存在对应验证证据",
-      "至少 1-2 个核心已通过流程被纳入回归样本"
+      "至少 1-2 个核心已通过流程被纳入回归样本，并在 docs/verification 中留证"
     ],
     "passes": false
   },

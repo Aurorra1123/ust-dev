@@ -40,6 +40,18 @@
 - 新增 `scripts/watchdog.sh`，用于监控 tmux pane 静默状态并按上限自动发送 `continue`
 - watchdog 支持 `-n` 参数控制最多自动继续轮数，并支持轮询间隔、静默阈值、阻断正则与日志路径配置
 - 通过临时 tmux pane 验证 watchdog 在静默后发送 1 次消息并按上限正常退出
+- 结合最新 review 调整后续主线顺序：
+  - `SEC-001`：先绑定可信身份上下文并收口订单/任务权限
+  - `DATA-001`：补 demo seed、资源列表/详情 API 与最小管理入口
+  - `APP-008B`：补 worker、BullMQ delayed job 与幽灵支付保护
+  - 再推进 `APP-009`、`APP-010`、`APP-011`
+- 复查 GitHub Actions 最近失败 run，确认失败点位于 `Build`
+- 通过 check annotations 确认直接原因是 CI 新环境未生成 Prisma Client：
+  - `@prisma/client` 在 fresh install 下没有读取 `apps/api/prisma/schema.prisma`
+  - 导致 `PrismaClient`、`OrderStatus`、`$transaction`、`order` 等类型在构建期缺失
+- 已在 `.github/workflows/ci.yml` 中显式补上 `pnpm prisma:generate` 与 `pnpm typecheck`
+- 本地已验证 `pnpm prisma:generate`、`pnpm lint`、`pnpm typecheck`、`pnpm build` 通过
+- 已将单机 `2 vCPU / 2 GiB RAM` 的资源保护约束写入 `docs/standards/deployment-baseline.md`
 
 ### 当前状态
 
@@ -49,13 +61,16 @@
 - 订单状态机已经具备状态日志与可执行超时取消入口
 - 体育设施已具备离散槽位预约、组合预约与数据库层冲突兜底
 - 当前认证实现仍是演示账号模式，后续需接入正式用户模型
+- 当前预约与订单接口仍未完全绑定可信身份上下文
+- 当前延迟取消仍停留在显式任务入口，尚未落到独立 worker
 - 当前 Compose 栈仍保持运行，可用于下一阶段最小范围联调
 
 ### 下一步建议
 
 1. 按规则先抽样回归一个已通过核心流程
-2. 开始 `APP-009`，实现活动发布与抢票基础链路
-3. 随后推进 `APP-010`，补齐规则引擎初版
+2. 先执行 `SEC-001`，移除写接口中的 `userEmail` 身份来源并收口公开状态迁移入口
+3. 再执行 `DATA-001` 与 `APP-008B`
+4. 然后推进 `APP-009`、`APP-010`、`APP-011`
 
 ### 注意事项
 
