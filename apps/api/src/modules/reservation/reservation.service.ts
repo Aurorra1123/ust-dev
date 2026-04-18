@@ -2,16 +2,14 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException
+  NotFoundException,
+  UnauthorizedException
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import {
   OrderBizType,
   OrderStatus,
-  Prisma,
   ResourceAvailabilityMode,
   ResourceType,
-  UserRole,
   UserStatus
 } from "@prisma/client";
 import type {
@@ -22,6 +20,7 @@ import type {
 } from "@campusbook/shared-types";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
+import type { AuthenticatedUser } from "../auth/auth.types";
 
 const ACADEMIC_BUFFER_MINUTES = 5;
 const ORDER_EXPIRE_MINUTES = 15;
@@ -29,14 +28,13 @@ const SPORTS_SLOT_MINUTES = 60;
 
 @Injectable()
 export class ReservationService {
-  constructor(
-    private readonly prismaService: PrismaService,
-    private readonly configService: ConfigService
-  ) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async createAcademicReservation(
-    payload: AcademicReservationRequest
+    payload: AcademicReservationRequest,
+    currentUser: AuthenticatedUser
   ): Promise<AcademicReservationResponse> {
+    const user = await this.getActiveReservationUser(currentUser.id);
     const startTime = new Date(payload.startTime);
     const endTime = new Date(payload.endTime);
 
@@ -63,27 +61,24 @@ export class ReservationService {
       throw new BadRequestException("resource-unit-is-not-academic-space");
     }
 
-    const requestedEmail =
-      payload.userEmail?.trim().toLowerCase() ??
-      this.configService.getOrThrow<string>("DEMO_USER_EMAIL");
-
-    const existingConflict = await this.prismaService.academicReservation.findFirst({
-      where: {
-        resourceUnitId: resourceUnit.id,
-        status: {
-          in: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]
+    const existingConflict =
+      await this.prismaService.academicReservation.findFirst({
+        where: {
+          resourceUnitId: resourceUnit.id,
+          status: {
+            in: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]
+          },
+          startTime: {
+            lt: addMinutes(endTime, ACADEMIC_BUFFER_MINUTES)
+          },
+          endTime: {
+            gt: addMinutes(startTime, -ACADEMIC_BUFFER_MINUTES)
+          }
         },
-        startTime: {
-          lt: addMinutes(endTime, ACADEMIC_BUFFER_MINUTES)
-        },
-        endTime: {
-          gt: addMinutes(startTime, -ACADEMIC_BUFFER_MINUTES)
+        select: {
+          id: true
         }
-      },
-      select: {
-        id: true
-      }
-    });
+      });
 
     if (existingConflict) {
       throw new ConflictException("academic-reservation-conflict");
@@ -91,21 +86,6 @@ export class ReservationService {
 
     try {
       return await this.prismaService.$transaction(async (tx) => {
-        const user = await tx.user.upsert({
-          where: { email: requestedEmail },
-          update: {},
-          create: {
-            email: requestedEmail,
-            name: inferNameFromEmail(requestedEmail),
-            role: requestedEmail === this.configService.getOrThrow<string>("DEMO_USER_EMAIL")
-              ? mapUserRole(
-                  this.configService.getOrThrow<string>("DEMO_USER_ROLE")
-                )
-              : UserRole.STUDENT,
-            status: UserStatus.ACTIVE
-          }
-        });
-
         const order = await tx.order.create({
           data: {
             userId: user.id,
@@ -175,17 +155,20 @@ export class ReservationService {
   }
 
   async createSportsReservation(
-    payload: SportsReservationRequest
+    payload: SportsReservationRequest,
+    currentUser: AuthenticatedUser
   ): Promise<SportsReservationResponse> {
+    const user = await this.getActiveReservationUser(currentUser.id);
     const hasUnit = Boolean(payload.resourceUnitId);
     const hasGroup = Boolean(payload.resourceGroupId);
 
     if (hasUnit === hasGroup) {
-      throw new BadRequestException("provide-exactly-one-of-resourceUnitId-or-resourceGroupId");
+      throw new BadRequestException(
+        "provide-exactly-one-of-resourceUnitId-or-resourceGroupId"
+      );
     }
 
     const normalizedSlots = normalizeSportsSlots(payload.slotStarts);
-    const requestedEmail = normalizeRequestedEmail(payload.userEmail, this.configService);
 
     const reservationTarget = hasUnit
       ? await this.prismaService.resourceUnit.findUnique({
@@ -233,7 +216,9 @@ export class ReservationService {
       throw new BadRequestException("resource-group-is-empty");
     }
 
-    const parentResource = hasUnit ? reservationTarget!.resource : reservationGroup!.resource;
+    const parentResource = hasUnit
+      ? reservationTarget!.resource
+      : reservationGroup!.resource;
 
     if (parentResource.type !== ResourceType.SPORTS_FACILITY) {
       throw new BadRequestException("reservation-target-is-not-sports-facility");
@@ -249,24 +234,23 @@ export class ReservationService {
       }
     }
 
-    const existingConflict = await this.prismaService.sportsReservationSlot.findFirst({
-      where: {
-        resourceUnitId: {
-          in: resourceUnits.map((unit) => unit.id)
+    const existingConflict =
+      await this.prismaService.sportsReservationSlot.findFirst({
+        where: {
+          resourceUnitId: {
+            in: resourceUnits.map((unit) => unit.id)
+          },
+          slotStart: {
+            in: normalizedSlots.map((slot) => slot.start)
+          },
+          status: {
+            in: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]
+          }
         },
-        slotStart: {
-          in: normalizedSlots.map((slot) => slot.start)
-        },
-        status: {
-          in: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]
+        select: {
+          id: true
         }
-      },
-      select: {
-        id: true,
-        resourceUnitId: true,
-        slotStart: true
-      }
-    });
+      });
 
     if (existingConflict) {
       throw new ConflictException("sports-reservation-conflict");
@@ -274,8 +258,6 @@ export class ReservationService {
 
     try {
       return await this.prismaService.$transaction(async (tx) => {
-        const user = await upsertReservationUser(tx, requestedEmail, this.configService);
-
         const order = await tx.order.create({
           data: {
             userId: user.id,
@@ -350,46 +332,22 @@ export class ReservationService {
       throw error;
     }
   }
+
+  private async getActiveReservationUser(userId: string) {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException("invalid-session-user");
+    }
+
+    return user;
+  }
 }
 
 function addMinutes(value: Date, minutes: number) {
   return new Date(value.getTime() + minutes * 60 * 1000);
-}
-
-function inferNameFromEmail(email: string) {
-  return email.split("@")[0] || "student";
-}
-
-function mapUserRole(role: string) {
-  return role === "admin" ? UserRole.ADMIN : UserRole.STUDENT;
-}
-
-function normalizeRequestedEmail(
-  email: string | undefined,
-  configService: ConfigService
-) {
-  return email?.trim().toLowerCase() ??
-    configService.getOrThrow<string>("DEMO_USER_EMAIL");
-}
-
-async function upsertReservationUser(
-  tx: Prisma.TransactionClient,
-  email: string,
-  configService: ConfigService
-) {
-  return tx.user.upsert({
-    where: { email },
-    update: {},
-    create: {
-      email,
-      name: inferNameFromEmail(email),
-      role:
-        email === configService.getOrThrow<string>("DEMO_USER_EMAIL")
-          ? mapUserRole(configService.getOrThrow<string>("DEMO_USER_ROLE"))
-          : UserRole.STUDENT,
-      status: UserStatus.ACTIVE
-    }
-  });
 }
 
 function normalizeSportsSlots(slotStarts: string[]) {

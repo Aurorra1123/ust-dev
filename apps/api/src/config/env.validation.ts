@@ -42,6 +42,18 @@ class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
+  DEMO_ADMIN_EMAIL!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DEMO_ADMIN_PASSWORD!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  INTERNAL_JOB_TOKEN!: string;
+
+  @IsString()
+  @IsNotEmpty()
   ALLOWED_ORIGINS!: string;
 
   @IsNumber()

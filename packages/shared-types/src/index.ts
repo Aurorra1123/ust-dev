@@ -35,6 +35,7 @@ export interface HealthStatus {
 }
 
 export interface AuthUser {
+  id: string;
   email: string;
   role: UserRole;
 }
@@ -104,7 +105,6 @@ export interface AcademicReservationRequest {
   resourceUnitId: string;
   startTime: string;
   endTime: string;
-  userEmail?: string;
 }
 
 export interface AcademicReservationResponse {
@@ -125,7 +125,6 @@ export interface SportsReservationRequest {
   resourceUnitId?: string;
   resourceGroupId?: string;
   slotStarts: string[];
-  userEmail?: string;
 }
 
 export interface SportsReservationResponse {

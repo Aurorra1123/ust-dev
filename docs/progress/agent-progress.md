@@ -2,6 +2,39 @@
 
 本文件用于跨会话交接，任何一次较完整的工作结束前都应更新。
 
+## 2026-04-18
+
+### 已完成
+
+- 完成 `SEC-001`：为 API 增加可信身份上下文和最小权限边界
+- 新增 `AccessTokenGuard`、`CurrentUser`、`RolesGuard`、`InternalJobGuard`
+- `AuthService` 改为先将演示用户和管理员用户落库，再签发带 `user.id` 的 access token / refresh token
+- 新增管理员演示账号环境变量 `DEMO_ADMIN_EMAIL`、`DEMO_ADMIN_PASSWORD`
+- 新增内部任务令牌环境变量 `INTERNAL_JOB_TOKEN`
+- 学术空间与体育设施预约接口已移除 `userEmail` 请求体身份来源，并统一改为信任 token 上下文
+- 订单读取与取消动作已绑定用户本人或管理员权限
+- 订单确认与爽约已收口为管理员动作
+- `POST /orders/jobs/expire-pending` 已改为内部任务令牌保护
+- 新增验证证据 `docs/verification/2026-04-18/sec-001-auth-boundaries.md`
+
+### 当前状态
+
+- `SEC-001` 已通过，`feature-list` 已同步更新
+- API 已具备用户、管理员、内部任务三类最小权限边界
+- 当前活动报名接口尚未实现；后续 `APP-009` 需直接复用本轮建立的鉴权边界模式
+- 当前 Compose 栈保持运行，且 `api` 容器已按最新代码重建
+
+### 下一步建议
+
+1. 执行 `DATA-001`，补齐 demo seed、资源列表/详情 API 与最小管理入口
+2. 再执行 `APP-008B`，把超时取消从显式 HTTP 入口推进到 worker
+3. 随后再进入 `APP-009`、`APP-010`、`APP-011`
+
+### 注意事项
+
+- 演示环境中的 `DEMO_ADMIN_*` 与 `INTERNAL_JOB_TOKEN` 仅用于当前开发基线，正式部署前必须替换
+- 后续新增需要写入状态的接口时，不要重新引入请求体身份字段，统一从鉴权上下文取用户身份
+
 ## 2026-04-17
 
 ### 已完成

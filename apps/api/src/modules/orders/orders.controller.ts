@@ -1,5 +1,11 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 
+import { AccessTokenGuard } from "../auth/access-token.guard";
+import { CurrentUser } from "../auth/current-user.decorator";
+import { InternalJobGuard } from "../auth/internal-job.guard";
+import { Roles } from "../auth/roles.decorator";
+import { RolesGuard } from "../auth/roles.guard";
+import type { AuthenticatedUser } from "../auth/auth.types";
 import { TransitionOrderDto } from "./dto/transition-order.dto";
 import { OrdersService } from "./orders.service";
 
@@ -8,11 +14,17 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get(":id")
-  getOrder(@Param("id") orderId: string) {
-    return this.ordersService.getOrder(orderId);
+  @UseGuards(AccessTokenGuard)
+  getOrder(
+    @Param("id") orderId: string,
+    @CurrentUser() currentUser: AuthenticatedUser
+  ) {
+    return this.ordersService.getOrder(orderId, currentUser);
   }
 
   @Post(":id/confirm")
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles("admin")
   confirmOrder(
     @Param("id") orderId: string,
     @Body() dto: TransitionOrderDto
@@ -21,14 +33,22 @@ export class OrdersController {
   }
 
   @Post(":id/cancel")
+  @UseGuards(AccessTokenGuard)
   cancelOrder(
     @Param("id") orderId: string,
-    @Body() dto: TransitionOrderDto
+    @Body() dto: TransitionOrderDto,
+    @CurrentUser() currentUser: AuthenticatedUser
   ) {
-    return this.ordersService.cancelOrder(orderId, dto.reason ?? "user-cancelled");
+    return this.ordersService.cancelOrder(
+      orderId,
+      currentUser,
+      dto.reason ?? "user-cancelled"
+    );
   }
 
   @Post(":id/no-show")
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles("admin")
   markNoShow(
     @Param("id") orderId: string,
     @Body() dto: TransitionOrderDto
@@ -37,6 +57,7 @@ export class OrdersController {
   }
 
   @Post("jobs/expire-pending")
+  @UseGuards(InternalJobGuard)
   expirePendingOrders() {
     return this.ordersService.expirePendingOrders();
   }

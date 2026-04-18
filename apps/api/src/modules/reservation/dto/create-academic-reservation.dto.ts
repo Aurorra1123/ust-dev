@@ -1,4 +1,4 @@
-import { IsDateString, IsEmail, IsOptional, IsString } from "class-validator";
+import { IsDateString, IsString } from "class-validator";
 
 export class CreateAcademicReservationDto {
   @IsString()
@@ -9,8 +9,4 @@ export class CreateAcademicReservationDto {
 
   @IsDateString()
   endTime!: string;
-
-  @IsOptional()
-  @IsEmail()
-  userEmail?: string;
 }
