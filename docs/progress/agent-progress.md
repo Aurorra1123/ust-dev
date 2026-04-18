@@ -52,6 +52,10 @@
 - 已在 `.github/workflows/ci.yml` 中显式补上 `pnpm prisma:generate` 与 `pnpm typecheck`
 - 本地已验证 `pnpm prisma:generate`、`pnpm lint`、`pnpm typecheck`、`pnpm build` 通过
 - 已将单机 `2 vCPU / 2 GiB RAM` 的资源保护约束写入 `docs/standards/deployment-baseline.md`
+- 继续追踪 GitHub Actions 的 `typecheck` 失败，确认 `apps/web` 在 CI 中找不到 `@campusbook/shared-types`
+- 直接原因是 `packages/shared-types/package.json` 将类型入口指向 `dist/index.d.ts`，而 CI 在 `typecheck` 阶段尚未构建该包
+- 已将 `@campusbook/shared-types` 的 `types` 与 `exports.types` 切换到 `src/index.ts`
+- 本地已验证 `pnpm --filter web typecheck` 与根级 `pnpm typecheck` 通过
 
 ### 当前状态
 
