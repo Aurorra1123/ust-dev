@@ -10,6 +10,7 @@ import { OrderStatus } from "@prisma/client";
 import type { AuthUser } from "@campusbook/shared-types";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
+import { ActivityInventoryCacheService } from "../activities/activity-inventory-cache.service";
 import { OrderExpirationQueueService } from "./order-expiration-queue.service";
 
 @Injectable()
@@ -18,7 +19,8 @@ export class OrdersService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly orderExpirationQueueService: OrderExpirationQueueService
+    private readonly orderExpirationQueueService: OrderExpirationQueueService,
+    private readonly activityInventoryCacheService: ActivityInventoryCacheService
   ) {}
 
   async getOrder(orderId: string, actor: AuthUser) {
@@ -26,6 +28,7 @@ export class OrdersService {
       where: { id: orderId },
       include: {
         academicReservation: true,
+        activityRegistration: true,
         sportsReservationSlots: true,
         items: true,
         statusLogs: {
@@ -153,6 +156,7 @@ export class OrdersService {
       where: { id: orderId },
       include: {
         academicReservation: true,
+        activityRegistration: true,
         sportsReservationSlots: true
       }
     });
@@ -225,10 +229,36 @@ export class OrdersService {
         });
       }
 
+      if (order.activityRegistration) {
+        if (params.nextStatus === OrderStatus.CANCELLED) {
+          const updatedRows = await tx.$executeRaw`
+            UPDATE "ActivityTicket"
+            SET "reserved" = "reserved" - 1,
+                "updatedAt" = CURRENT_TIMESTAMP
+            WHERE "id" = ${order.activityRegistration.activityTicketId}
+              AND "reserved" > 0
+          `;
+
+          if (Number(updatedRows) !== 1) {
+            throw new ConflictException("activity-ticket-release-conflict");
+          }
+        }
+
+        await tx.activityRegistration.update({
+          where: {
+            orderId: order.id
+          },
+          data: {
+            status: params.nextStatus
+          }
+        });
+      }
+
       const latestOrder = await tx.order.findUnique({
         where: { id: order.id },
         include: {
           academicReservation: true,
+          activityRegistration: true,
           sportsReservationSlots: true,
           statusLogs: {
             orderBy: {
@@ -251,6 +281,25 @@ export class OrdersService {
       } catch (error) {
         this.logger.warn(
           `Failed to remove expiration job for order ${order.id}: ${
+            error instanceof Error ? error.message : "unknown-error"
+          }`
+        );
+      }
+    }
+
+    if (
+      params.nextStatus === OrderStatus.CANCELLED &&
+      order.activityRegistration
+    ) {
+      try {
+        await this.activityInventoryCacheService.releaseConfirmedReservation(
+          order.activityRegistration.activityId,
+          order.activityRegistration.activityTicketId,
+          order.userId
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Failed to refresh activity cache for order ${order.id}: ${
             error instanceof Error ? error.message : "unknown-error"
           }`
         );

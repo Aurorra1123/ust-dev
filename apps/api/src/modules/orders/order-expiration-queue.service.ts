@@ -4,6 +4,7 @@ import { OrderStatus } from "@prisma/client";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
+import { createBullmqConnection } from "../../infrastructure/redis/bullmq";
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import {
   ORDER_EXPIRATION_JOB_NAME,
@@ -105,11 +106,4 @@ export class OrderExpirationQueueService implements OnModuleDestroy {
 
 export function buildOrderExpirationJobId(orderId: string) {
   return `order-expire-${orderId}`;
-}
-
-export function createBullmqConnection(redisUrl: string) {
-  return new Redis(redisUrl, {
-    maxRetriesPerRequest: null,
-    enableOfflineQueue: false
-  });
 }

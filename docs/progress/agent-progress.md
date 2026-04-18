@@ -6,6 +6,18 @@
 
 ### 已完成
 
+- 完成 `APP-009`：补齐活动抢票的 Redis 预扣、BullMQ 异步建单、数据库库存兜底与同用户唯一性约束
+- 新增 `ActivityRegistration` 模型与 migration `20260418101500_activity_registration_flow`
+- 为 `ActivityRegistration(activityId, userId)` 增加仅针对有效状态的唯一索引，防止同用户重复报名
+- 为 `ActivityTicket` 增加 `reserved <= stock` 检查约束，并在 worker 中使用条件更新做最终库存硬兜底
+- 新增活动抢票接口：
+  - `POST /activities/:id/grab`
+  - `GET /activities/:id/registration-status`
+- 新增 `ActivityRegistrationQueueService`、`ActivityRegistrationWorkerService` 与 `ActivityInventoryCacheService`
+- 抢票请求已先走 Redis Lua 预扣，再进入 BullMQ 队列异步建单
+- `OrdersService` 已支持活动报名订单取消时同步回写 `ActivityRegistration.status` 与票种库存
+- 修复活动 worker 在首次访问 Redis 时可能触发的 lazy-connect 边界问题
+- 新增验证证据 `docs/verification/2026-04-18/app-009-activity-grab.md`
 - 完成 `APP-008B`：将超时取消从显式 HTTP 入口推进到 BullMQ delayed job 与独立 worker
 - 新增 `OrderExpirationQueueService`，为待确认订单写入延迟取消任务并支持重建扫描
 - 新增 `worker.ts` / `WorkerModule` / `OrderExpirationWorkerService`
@@ -45,6 +57,10 @@
 
 ### 当前状态
 
+- `APP-009` 已通过，活动抢票已经具备异步受理与最终库存兜底
+- API 已具备活动报名状态查询接口，可为后续前端活动页接入真实状态
+- 本轮为了控制单机负载，活动链路验证使用的是本机临时 `3001` 端口 API 与本机 worker，未重建 compose 镜像
+- 当前 compose 常驻栈仍可继续作为 PostgreSQL / Redis / Nginx / Web 基线使用；若要让容器内 API/worker 直接使用 `APP-009` 最新代码，需要在后续合适时机单独重建
 - `APP-008B` 已通过，超时取消已不再依赖手动 HTTP 触发
 - 仓库已经具备独立 worker 进程基线，后续活动抢票可以直接复用同一模式
 - `DATA-001` 已通过，前端联调不再依赖手工 SQL 插库
@@ -52,14 +68,12 @@
 - 当前公共活动列表由 `published` 状态驱动，管理员修改活动状态后可立即影响公共可见性
 - `SEC-001` 已通过，`feature-list` 已同步更新
 - API 已具备用户、管理员、内部任务三类最小权限边界
-- 当前活动报名接口尚未实现；后续 `APP-009` 需直接复用本轮建立的鉴权边界模式
-- 当前 Compose 栈保持运行，且 `api` 容器已按最新代码重建
 
 ### 下一步建议
 
-1. 执行 `APP-009`，补活动抢票的 Redis 预扣、队列建单和库存兜底
-2. 再推进 `APP-010`，把规则引擎接入现有用户与订单模型
-3. 随后推进 `APP-011`
+1. 执行 `APP-010`，把规则引擎接入现有用户、订单和活动报名模型
+2. 再推进 `APP-011`，将活动页、我的订单与管理端活动维护页接通真实 API
+3. 之后补 `OPS-001`，把活动抢票链路纳入 smoke test 与回归样本
 
 ### 注意事项
 
@@ -67,6 +81,7 @@
 - 当前 seed 脚本默认使用本机 `127.0.0.1:5432` 的 PostgreSQL 作为兜底连接；若后续端口或数据库名变化，需要同步更新
 - 演示环境中的 `DEMO_ADMIN_*` 与 `INTERNAL_JOB_TOKEN` 仅用于当前开发基线，正式部署前必须替换
 - 后续新增需要写入状态的接口时，不要重新引入请求体身份字段，统一从鉴权上下文取用户身份
+- 活动 worker 依赖 Redis 真实可写连接；后续新增基于 `RedisService.raw` 的业务逻辑时，优先使用 `RedisService.connect()` 保证首次调用不会踩到 lazy-connect 边界
 
 ## 2026-04-17
 

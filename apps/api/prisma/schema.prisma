@@ -77,6 +77,7 @@ model User {
   status                 UserStatus              @default(ACTIVE)
   creditScore            Int                     @default(100)
   academicReservations   AcademicReservation[]
+  activityRegistrations  ActivityRegistration[]
   orders                 Order[]
   sportsReservationSlots SportsReservationSlot[]
   createdAt              DateTime                @default(now())
@@ -160,6 +161,7 @@ model Activity {
   eventStartTime DateTime?
   eventEndTime   DateTime?
   status         ActivityStatus   @default(DRAFT)
+  registrations  ActivityRegistration[]
   tickets        ActivityTicket[]
   orders         Order[]
   createdAt      DateTime         @default(now())
@@ -178,6 +180,7 @@ model ActivityTicket {
   status     ActivityTicketStatus @default(ACTIVE)
   activity   Activity             @relation(fields: [activityId], references: [id], onDelete: Cascade)
   orderItems OrderItem[]
+  registrations ActivityRegistration[]
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
 
@@ -196,6 +199,7 @@ model Order {
   expireAt               DateTime?
   totalAmountCents       Int                     @default(0)
   academicReservation    AcademicReservation?
+  activityRegistration   ActivityRegistration?
   sportsReservationSlots SportsReservationSlot[]
   user                   User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
   activity               Activity?               @relation(fields: [activityId], references: [id], onDelete: SetNull)
@@ -208,6 +212,25 @@ model Order {
   @@index([userId, createdAt])
   @@index([activityId])
   @@index([status, expireAt])
+}
+
+model ActivityRegistration {
+  id               String       @id @default(cuid())
+  orderId          String       @unique
+  activityId       String
+  activityTicketId String
+  userId           String
+  status           OrderStatus  @default(CONFIRMED)
+  order            Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  activity         Activity     @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityTicket   ActivityTicket @relation(fields: [activityTicketId], references: [id], onDelete: Restrict)
+  user             User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([activityId, createdAt])
+  @@index([activityTicketId])
+  @@index([userId, createdAt])
 }
 
 model AcademicReservation {

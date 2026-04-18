@@ -19,6 +19,14 @@ export class RedisService implements OnModuleDestroy {
     return this.client;
   }
 
+  async connect() {
+    if (this.client.status === "wait") {
+      await this.client.connect();
+    }
+
+    return this.client;
+  }
+
   async onModuleDestroy() {
     if (this.client.status !== "end") {
       await this.client.quit();
@@ -27,11 +35,7 @@ export class RedisService implements OnModuleDestroy {
 
   async checkHealth() {
     try {
-      if (this.client.status === "wait") {
-        await this.client.connect();
-      }
-
-      const reply = await this.client.ping();
+      const reply = await (await this.connect()).ping();
 
       return {
         status: reply === "PONG" ? ("up" as const) : ("down" as const),

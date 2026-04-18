@@ -3,6 +3,8 @@ import { ConfigModule } from "@nestjs/config";
 
 import { validateEnvironment } from "./config/env.validation";
 import { InfrastructureModule } from "./infrastructure/infrastructure.module";
+import { ActivitiesModule } from "./modules/activities/activities.module";
+import { ActivityRegistrationWorkerService } from "./modules/activities/activity-registration-worker.service";
 import { AuthModule } from "./modules/auth/auth.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { OrderExpirationWorkerService } from "./modules/orders/order-expiration-worker.service";
@@ -15,8 +17,9 @@ import { OrderExpirationWorkerService } from "./modules/orders/order-expiration-
     }),
     InfrastructureModule,
     AuthModule,
+    ActivitiesModule,
     OrdersModule
   ],
-  providers: [OrderExpirationWorkerService]
+  providers: [OrderExpirationWorkerService, ActivityRegistrationWorkerService]
 })
 export class WorkerModule {}

@@ -183,6 +183,28 @@ export interface ActivityDetailResponse extends AppActivity {
   tickets: AppActivityTicket[];
 }
 
+export interface ActivityGrabRequest {
+  ticketId: string;
+}
+
+export interface ActivityGrabResponse {
+  activityId: string;
+  ticketId: string;
+  jobId: string;
+  requestStatus: "queued";
+}
+
+export interface ActivityRegistrationStatusResponse {
+  activityId: string;
+  ticketId: string | null;
+  userId: string;
+  orderId: string | null;
+  orderNo: string | null;
+  jobId?: string | null;
+  status: OrderStatus | "queued" | "failed";
+  reason?: string | null;
+}
+
 export interface RouteCard {
   title: string;
   description: string;

@@ -3,8 +3,9 @@ import { ConfigService } from "@nestjs/config";
 import { Worker } from "bullmq";
 import Redis from "ioredis";
 
+import { createBullmqConnection } from "../../infrastructure/redis/bullmq";
 import { OrdersService } from "./orders.service";
-import { OrderExpirationQueueService, createBullmqConnection } from "./order-expiration-queue.service";
+import { OrderExpirationQueueService } from "./order-expiration-queue.service";
 import {
   ORDER_EXPIRATION_JOB_NAME,
   ORDER_EXPIRATION_QUEUE_NAME,
