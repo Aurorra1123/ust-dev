@@ -202,6 +202,6 @@
       "关键业务规则在正式文档中有稳定入口",
       "新会话无需直接阅读全部 reference 即可恢复上下文"
     ],
-    "passes": false
+    "passes": true
   }
 ]

@@ -16,3 +16,13 @@
 - 用户流程图：只讲用户路径
 - 订单状态机图：只讲订单状态迁移
 - ER图/数据库关系图：只讲数据实体关系
+
+## 当前维护约定
+
+- 本目录属于输入材料层，默认不作为当前实现状态的主维护入口
+- 日常开发优先阅读：
+  - `docs/architecture/product-baseline.md`
+  - `docs/standards/business-rules-baseline.md`
+  - `docs/architecture/domain-model-baseline.md`
+  - `docs/standards/reference-mapping.md`
+- 只有当原始题面理解、拆分方式或重建材料本身需要修正时，才回改本目录

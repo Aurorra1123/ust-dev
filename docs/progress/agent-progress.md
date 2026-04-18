@@ -6,6 +6,19 @@
 
 ### 已完成
 
+- 完成 `DOCS-001`：将 `docs/reference/` 继续映射为正式产品、规则与领域模型入口
+- 新增正式文档入口：
+  - `docs/architecture/product-baseline.md`
+  - `docs/architecture/domain-model-baseline.md`
+  - `docs/standards/business-rules-baseline.md`
+  - `docs/standards/reference-mapping.md`
+- `docs/reference/README_说明.md` 已补充输入材料层维护约定
+- `docs/README.md` 与 `docs/architecture/README.md` 已加入新的正式阅读入口
+- 补充证书续期自动化基线：
+  - 新增 `scripts/renew-https-certs.sh`
+  - 根命令新增 `pnpm tls:renew` 与 `pnpm tls:renew:dry-run`
+  - `docs/standards/https-deployment-playbook.md` 已补充续期说明
+- 新增验证证据 `docs/verification/2026-04-18/docs-001-reference-mapping-and-cert-renewal.md`
 - 完成正式 HTTPS 切换：
   - 使用 `certbot/certbot` 为 `campusbook.top`、`www.campusbook.top`、`api.campusbook.top` 签发正式证书
   - 证书目录写入 `infra/nginx/.runtime/certbot/conf`
@@ -184,6 +197,15 @@
 
 ### 当前状态
 
+- `feature-list.json` 中的正式任务已全部通过
+- 新会话恢复上下文的推荐入口已固定为：
+  - `docs/progress/agent-progress.md`
+  - `docs/plans/feature-list.json`
+  - `docs/architecture/product-baseline.md`
+  - `docs/standards/business-rules-baseline.md`
+  - `docs/architecture/domain-model-baseline.md`
+  - 必要时再回看 `docs/reference/`
+- 仓库已具备可重复执行的 HTTPS 证书续期脚本，但宿主机定时调度仍属于可选运维增强项
 - `OPS-002` 已通过，仓库已经具备 HTTPS-ready 的配置、证书挂载约定和切换手册
 - 当前线上已经切到正式 HTTPS：
   - `campusbook.top`

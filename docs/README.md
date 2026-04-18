@@ -18,14 +18,18 @@
 
 ## 关键入口
 
+- `standards/reference-mapping.md`：reference 输入材料与正式入口的映射关系
 - `standards/engineering-rules.md`：通用工程规则
 - `standards/git-workflow.md`：git 提交与会话流程
 - `standards/agent-harness-rules.md`：长周期 agent 执行规则
+- `standards/business-rules-baseline.md`：当前正式业务规则入口
 - `standards/deployment-baseline.md`：部署环境、域名与 Nginx 分流基线
 - `standards/https-deployment-playbook.md`：HTTPS 升级与证书部署手册
 - `verification/README.md`：验证证据存放规范
 - `adr/0001-repo-as-agent-memory.md`：仓库作为 agent 主记忆体
 - `adr/0004-single-node-typescript-platform-baseline.md`：当前技术基线决策
+- `architecture/product-baseline.md`：当前正式产品范围与用户路径
+- `architecture/domain-model-baseline.md`：当前正式领域模型入口
 - `architecture/technical-solution-v2.md`：当前推荐技术方案
 - `architecture/architecture-diagrams.md`：架构图与流程图
 - `architecture/development-environment-audit-2026-04-16.md`：当前服务器开发环境核查
@@ -42,4 +46,8 @@
 
 ## 当前目标
 
-当前仓库的首要目标是把现有参考资料整理成一个可持续维护、可交接、可由 agent 辅助推进的 docs 系统。
+当前仓库已完成首轮参考资料正式化、核心产品开发和 HTTPS 上线。后续文档工作的重点是：
+
+- 保持正式入口与代码实现同步
+- 维护验证证据和回归样本
+- 持续降低新会话对 `reference/` 原始材料的直接依赖

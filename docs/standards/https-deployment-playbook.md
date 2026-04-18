@@ -120,3 +120,35 @@ curl -I http://campusbook.top
 - API refresh token Cookie 在 `NODE_ENV=production` 下会自动启用 `secure`
 - `nginx` 当前通过 Docker DNS `127.0.0.11` 解析 `web` 和 `api`，可降低容器重建后继续命中旧 upstream 地址的概率
 - `infra/nginx/.runtime/` 为运行时目录，不进入 git，也不应手工编辑其中的证书内容
+
+## 证书续期
+
+仓库内提供了续期脚本：
+
+```bash
+pnpm tls:renew
+```
+
+仅做续期演练时：
+
+```bash
+pnpm tls:renew:dry-run
+```
+
+脚本位置：
+
+```text
+scripts/renew-https-certs.sh
+```
+
+脚本行为：
+
+1. 复用 `infra/nginx/.runtime/certbot/` 下的现有证书目录
+2. 使用 `certbot/certbot renew --webroot`
+3. 成功后对正在运行的 `nginx` 执行轻量 reload
+
+说明：
+
+- 本仓库当前只固化了“可重复执行的续期命令”
+- 若要真正自动化，需要在宿主机再补一层 `cron` 或 `systemd timer`
+- 推荐低峰期执行一次 `--dry-run`，确认后再挂到定时任务
