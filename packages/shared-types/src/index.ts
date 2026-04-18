@@ -7,6 +7,11 @@ export type ResourceAvailabilityMode = "continuous" | "discrete_slot";
 
 export type ActivityStatus = "draft" | "published" | "closed" | "cancelled";
 export type ActivityTicketStatus = "active" | "inactive";
+export type RuleStatus = "active" | "inactive";
+export type RuleType =
+  | "min_credit_score"
+  | "max_duration_minutes"
+  | "allowed_user_roles";
 
 export type OrderBizType =
   | "resource_reservation"
@@ -203,6 +208,21 @@ export interface ActivityRegistrationStatusResponse {
   jobId?: string | null;
   status: OrderStatus | "queued" | "failed";
   reason?: string | null;
+}
+
+export interface RuleExpression {
+  min?: number;
+  max?: number;
+  roles?: UserRole[];
+}
+
+export interface AppRule {
+  id: string;
+  name: string;
+  ruleType: RuleType;
+  status: RuleStatus;
+  expression: RuleExpression;
+  resourceIds: string[];
 }
 
 export interface RouteCard {

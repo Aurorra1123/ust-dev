@@ -5,6 +5,7 @@ import {
   ResourceAvailabilityMode,
   ResourceStatus,
   ResourceType,
+  RuleStatus,
   UserRole,
   UserStatus
 } from "@prisma/client";
@@ -26,14 +27,16 @@ async function main() {
     update: {
       name: "demo",
       role: UserRole.STUDENT,
-      status: UserStatus.ACTIVE
+      status: UserStatus.ACTIVE,
+      creditScore: 100
     },
     create: {
       id: "user_demo_student",
       email: "demo@campusbook.top",
       name: "demo",
       role: UserRole.STUDENT,
-      status: UserStatus.ACTIVE
+      status: UserStatus.ACTIVE,
+      creditScore: 100
     }
   });
 
@@ -42,14 +45,16 @@ async function main() {
     update: {
       name: "admin",
       role: UserRole.ADMIN,
-      status: UserStatus.ACTIVE
+      status: UserStatus.ACTIVE,
+      creditScore: 70
     },
     create: {
       id: "user_demo_admin",
       email: "admin@campusbook.top",
       name: "admin",
       role: UserRole.ADMIN,
-      status: UserStatus.ACTIVE
+      status: UserStatus.ACTIVE,
+      creditScore: 70
     }
   });
 
@@ -320,6 +325,99 @@ async function main() {
     }
   });
 
+  await prisma.rule.upsert({
+    where: { id: "rule_demo_academic_min_credit" },
+    update: {
+      name: "Academic Reservation Minimum Credit",
+      ruleType: "min_credit_score",
+      expression: { min: 80 },
+      status: RuleStatus.ACTIVE
+    },
+    create: {
+      id: "rule_demo_academic_min_credit",
+      name: "Academic Reservation Minimum Credit",
+      ruleType: "min_credit_score",
+      expression: { min: 80 },
+      status: RuleStatus.ACTIVE
+    }
+  });
+
+  await prisma.rule.upsert({
+    where: { id: "rule_demo_academic_max_duration" },
+    update: {
+      name: "Academic Reservation Maximum Duration",
+      ruleType: "max_duration_minutes",
+      expression: { max: 120 },
+      status: RuleStatus.ACTIVE
+    },
+    create: {
+      id: "rule_demo_academic_max_duration",
+      name: "Academic Reservation Maximum Duration",
+      ruleType: "max_duration_minutes",
+      expression: { max: 120 },
+      status: RuleStatus.ACTIVE
+    }
+  });
+
+  await prisma.rule.upsert({
+    where: { id: "rule_demo_sports_student_only" },
+    update: {
+      name: "Sports Reservation Student Only",
+      ruleType: "allowed_user_roles",
+      expression: { roles: ["student"] },
+      status: RuleStatus.ACTIVE
+    },
+    create: {
+      id: "rule_demo_sports_student_only",
+      name: "Sports Reservation Student Only",
+      ruleType: "allowed_user_roles",
+      expression: { roles: ["student"] },
+      status: RuleStatus.ACTIVE
+    }
+  });
+
+  await prisma.resourceRuleBinding.upsert({
+    where: {
+      resourceId_ruleId: {
+        resourceId: "res_academic_demo",
+        ruleId: "rule_demo_academic_min_credit"
+      }
+    },
+    update: {},
+    create: {
+      resourceId: "res_academic_demo",
+      ruleId: "rule_demo_academic_min_credit"
+    }
+  });
+
+  await prisma.resourceRuleBinding.upsert({
+    where: {
+      resourceId_ruleId: {
+        resourceId: "res_academic_demo",
+        ruleId: "rule_demo_academic_max_duration"
+      }
+    },
+    update: {},
+    create: {
+      resourceId: "res_academic_demo",
+      ruleId: "rule_demo_academic_max_duration"
+    }
+  });
+
+  await prisma.resourceRuleBinding.upsert({
+    where: {
+      resourceId_ruleId: {
+        resourceId: "res_sports_demo",
+        ruleId: "rule_demo_sports_student_only"
+      }
+    },
+    update: {},
+    create: {
+      resourceId: "res_sports_demo",
+      ruleId: "rule_demo_sports_student_only"
+    }
+  });
+
   console.log(
     JSON.stringify(
       {
@@ -332,7 +430,12 @@ async function main() {
           "activity_demo_open_day",
           "activity_demo_workshop_draft"
         ],
-        seededUsers: ["demo@campusbook.top", "admin@campusbook.top"]
+        seededUsers: ["demo@campusbook.top", "admin@campusbook.top"],
+        seededRules: [
+          "rule_demo_academic_min_credit",
+          "rule_demo_academic_max_duration",
+          "rule_demo_sports_student_only"
+        ]
       },
       null,
       2

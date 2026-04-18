@@ -154,7 +154,7 @@
       "规则不直接硬编码在主流程 if-else 中",
       "存在最小单元测试或等价验证"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "APP-011",

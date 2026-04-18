@@ -24,6 +24,7 @@ import type {
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import type { AuthenticatedUser } from "../auth/auth.types";
 import { OrderExpirationQueueService } from "../orders/order-expiration-queue.service";
+import { RulesService } from "../rules/rules.service";
 
 const ACADEMIC_BUFFER_MINUTES = 5;
 const DEFAULT_ORDER_EXPIRE_SECONDS = 15 * 60;
@@ -36,7 +37,8 @@ export class ReservationService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
-    private readonly orderExpirationQueueService: OrderExpirationQueueService
+    private readonly orderExpirationQueueService: OrderExpirationQueueService,
+    private readonly rulesService: RulesService
   ) {}
 
   async createAcademicReservation(
@@ -69,6 +71,14 @@ export class ReservationService {
     if (resourceUnit.resource.type !== ResourceType.ACADEMIC_SPACE) {
       throw new BadRequestException("resource-unit-is-not-academic-space");
     }
+
+    await this.rulesService.assertReservationRules({
+      resourceId: resourceUnit.resourceId,
+      userId: user.id,
+      requestedDurationMinutes: Math.ceil(
+        (endTime.getTime() - startTime.getTime()) / (60 * 1000)
+      )
+    });
 
     const existingConflict =
       await this.prismaService.academicReservation.findFirst({
@@ -249,6 +259,12 @@ export class ReservationService {
         throw new BadRequestException("resource-unit-is-not-slot-based");
       }
     }
+
+    await this.rulesService.assertReservationRules({
+      resourceId: parentResource.id,
+      userId: user.id,
+      requestedDurationMinutes: normalizedSlots.length * SPORTS_SLOT_MINUTES
+    });
 
     const existingConflict =
       await this.prismaService.sportsReservationSlot.findFirst({

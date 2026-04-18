@@ -6,6 +6,27 @@
 
 ### 已完成
 
+- 完成 `APP-010`：实现规则引擎初版，并接入学术空间与体育设施预约入口
+- 新增 `RulesService`、`rule-engine` 与最小管理员规则接口：
+  - `GET /admin/rules`
+  - `POST /admin/rules`
+  - `PATCH /admin/rules/:id`
+  - `POST /admin/rules/:id/bindings/resources/:resourceId`
+- 当前支持的规则类型：
+  - `min_credit_score`
+  - `max_duration_minutes`
+  - `allowed_user_roles`
+- `ReservationService` 已改为在创建学术空间和体育设施预约前，通过统一规则执行器校验
+- `seed:demo` 已新增 3 条 demo 规则与资源绑定：
+  - `rule_demo_academic_min_credit`
+  - `rule_demo_academic_max_duration`
+  - `rule_demo_sports_student_only`
+- 验证通过：
+  - 学生 60 分钟学术空间预约成功
+  - 学生 180 分钟学术空间预约返回 `rule-max-duration-exceeded`
+  - 管理员学术空间预约返回 `rule-min-credit-score-not-met`
+  - 管理员体育设施预约返回 `rule-user-role-not-allowed`
+- 新增验证证据 `docs/verification/2026-04-18/app-010-rules-engine.md`
 - 完成 `APP-009`：补齐活动抢票的 Redis 预扣、BullMQ 异步建单、数据库库存兜底与同用户唯一性约束
 - 新增 `ActivityRegistration` 模型与 migration `20260418101500_activity_registration_flow`
 - 为 `ActivityRegistration(activityId, userId)` 增加仅针对有效状态的唯一索引，防止同用户重复报名
@@ -57,6 +78,9 @@
 
 ### 当前状态
 
+- `APP-010` 已通过，规则引擎已经从模型占位进入可执行状态
+- 当前预约主流程已不再把信用分、时长和身份差异规则硬编码在接口里，而是统一走规则执行器
+- 规则配置表已具备最小管理员维护入口，可继续为 `APP-011` 的管理端页面提供真实 API
 - `APP-009` 已通过，活动抢票已经具备异步受理与最终库存兜底
 - API 已具备活动报名状态查询接口，可为后续前端活动页接入真实状态
 - 本轮为了控制单机负载，活动链路验证使用的是本机临时 `3001` 端口 API 与本机 worker，未重建 compose 镜像
@@ -71,9 +95,9 @@
 
 ### 下一步建议
 
-1. 执行 `APP-010`，把规则引擎接入现有用户、订单和活动报名模型
-2. 再推进 `APP-011`，将活动页、我的订单与管理端活动维护页接通真实 API
-3. 之后补 `OPS-001`，把活动抢票链路纳入 smoke test 与回归样本
+1. 执行 `APP-011`，将登录、活动页、我的订单与管理端规则/活动维护页接通真实 API
+2. 之后补 `OPS-001`，把活动抢票与规则校验链路纳入 smoke test 与回归样本
+3. 最后补 `OPS-002`，收口 HTTPS 与正式部署基线
 
 ### 注意事项
 
@@ -82,6 +106,7 @@
 - 演示环境中的 `DEMO_ADMIN_*` 与 `INTERNAL_JOB_TOKEN` 仅用于当前开发基线，正式部署前必须替换
 - 后续新增需要写入状态的接口时，不要重新引入请求体身份字段，统一从鉴权上下文取用户身份
 - 活动 worker 依赖 Redis 真实可写连接；后续新增基于 `RedisService.raw` 的业务逻辑时，优先使用 `RedisService.connect()` 保证首次调用不会踩到 lazy-connect 边界
+- 规则表达式当前采用结构化 JSON，而不是通用 DSL；后续扩展时优先保持显式结构，避免过早引入难以验证的表达式求值器
 
 ## 2026-04-17
 
