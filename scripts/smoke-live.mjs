@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const apiBaseUrl = process.env.SMOKE_API_BASE_URL ?? "http://api.campusbook.top";
-const webBaseUrl = process.env.SMOKE_WEB_BASE_URL ?? "http://campusbook.top";
-const wwwBaseUrl = process.env.SMOKE_WWW_BASE_URL ?? "http://www.campusbook.top";
+const apiBaseUrl = process.env.SMOKE_API_BASE_URL ?? "https://api.campusbook.top";
+const webBaseUrl = process.env.SMOKE_WEB_BASE_URL ?? "https://campusbook.top";
+const wwwBaseUrl = process.env.SMOKE_WWW_BASE_URL ?? "https://www.campusbook.top";
 
 const studentEmail = process.env.SMOKE_STUDENT_EMAIL ?? "demo@campusbook.top";
 const studentPassword = process.env.SMOKE_STUDENT_PASSWORD ?? "demo123456";

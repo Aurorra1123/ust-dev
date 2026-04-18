@@ -6,6 +6,23 @@
 
 ### 已完成
 
+- 完成正式 HTTPS 切换：
+  - 使用 `certbot/certbot` 为 `campusbook.top`、`www.campusbook.top`、`api.campusbook.top` 签发正式证书
+  - 证书目录写入 `infra/nginx/.runtime/certbot/conf`
+  - 证书当前到期时间：`2026-07-17`
+  - 启用 `infra/docker-compose.https.yml` 后，`nginx` 已同时监听 `80/443`
+- 为保证正式 HTTPS 行为正确，已顺序重建：
+  - `api`，让 refresh token Cookie 在 `NODE_ENV=production` 下带上 `Secure`
+  - `web`，让前端默认按页面协议推导 `api.campusbook.top`
+- `scripts/smoke-live.mjs` 默认目标已切到 HTTPS 域名
+- 真实 HTTPS 验证通过：
+  - `http://campusbook.top` 返回 `301` 到 `https://campusbook.top`
+  - `https://campusbook.top` 返回 `200`
+  - `https://www.campusbook.top` 返回 `200`
+  - `https://api.campusbook.top/health` 返回 `200`
+  - 登录响应中的 refresh token Cookie 带 `Secure`
+  - `pnpm smoke:live` 在 HTTPS 下通过
+- 新增验证证据 `docs/verification/2026-04-18/ops-002-live-https-cutover.md`
 - 完成 `OPS-002`：补齐 HTTPS-ready 配置、证书挂载约定与正式部署手册
 - 新增 `infra/docker-compose.https.yml`
   - 为 `nginx` 增加 `443:443`
@@ -168,8 +185,13 @@
 ### 当前状态
 
 - `OPS-002` 已通过，仓库已经具备 HTTPS-ready 的配置、证书挂载约定和切换手册
-- 当前线上仍运行 HTTP；正式 HTTPS 证书尚未在这次会话中签发和启用
-- 后续只需按手册申请证书并用 `docker-compose.https.yml` 重启 `nginx`，不需要重做域名分流结构
+- 当前线上已经切到正式 HTTPS：
+  - `campusbook.top`
+  - `www.campusbook.top`
+  - `api.campusbook.top`
+- `nginx` 当前同时监听 `80/443`，并对前端与 API 的 HTTP 入口执行 `301 -> HTTPS`
+- refresh token Cookie 已进入 `Secure` 模式
+- 当前剩余的 HTTPS 运维事项主要是证书续期自动化，而不是首次切换本身
 - `OPS-001` 已通过，仓库已具备可重复执行的 live smoke 脚本与最小回归样本
 - CI 当前链路为：
   - `prisma:generate`
@@ -212,7 +234,7 @@
 
 ### 下一步建议
 
-1. 选择低峰窗口，按 `https-deployment-playbook.md` 实际签发证书并启用 `443`
+1. 为 Let’s Encrypt 证书续期补自动化任务，并约定续期后的 `nginx` reload 流程
 2. 交付前补一轮前端真实浏览器回归与管理端操作样本
 3. 按 smoke 脚本为基础继续扩展更细的业务回归样本
 
@@ -226,6 +248,7 @@
 - 活动 worker 依赖 Redis 真实可写连接；后续新增基于 `RedisService.raw` 的业务逻辑时，优先使用 `RedisService.connect()` 保证首次调用不会踩到 lazy-connect 边界
 - 规则表达式当前采用结构化 JSON，而不是通用 DSL；后续扩展时优先保持显式结构，避免过早引入难以验证的表达式求值器
 - `infra/nginx/.runtime/` 属于运行时目录；正式证书、ACME challenge 文件和临时 HTTPS 产物都不进入 git
+- `scripts/smoke-live.mjs` 当前默认面向 HTTPS 线上环境；如需验证纯 HTTP 或本机环境，应通过 `SMOKE_*` 环境变量覆盖
 
 ### 工具补充
 
