@@ -6,13 +6,15 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api start:dev",
     "dev:worker": "pnpm --filter api start:worker:dev",
     "dev:stack": "docker compose -f infra/docker-compose.yml up --build",
     "prisma:generate": "pnpm --filter api prisma:generate",
-    "seed:demo": "pnpm --filter api seed:demo"
+    "seed:demo": "pnpm --filter api seed:demo",
+    "smoke:live": "node scripts/smoke-live.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

@@ -6,6 +6,25 @@
 
 ### 已完成
 
+- 完成 `OPS-001`：补齐轻量 smoke test、CI test 保留位与回归样本
+- 新增 `scripts/smoke-live.mjs`，默认校验：
+  - `campusbook.top`
+  - `www.campusbook.top`
+  - `api.campusbook.top/health`
+  - 学生登录后读取 `resources / activities / orders`
+  - 管理员登录后读取 `admin/resources / admin/activities / admin/rules`
+- 根命令新增：
+  - `pnpm test`
+  - `pnpm smoke:live`
+- GitHub Actions 新增 `Test` 阶段，当前执行 `pnpm test`
+- 真实 smoke 验证通过，计数结果：
+  - `academicResources=1`
+  - `activities=3`
+  - `orders=6`
+  - `adminResources=2`
+  - `adminActivities=4`
+  - `adminRules=3`
+- 新增验证证据 `docs/verification/2026-04-18/ops-001-smoke-regression.md`
 - 完成一次低频 compose 部署更新，将域名入口切到当前前后端版本
 - 顺序执行：
   - `docker compose stop web api worker`
@@ -124,6 +143,13 @@
 
 ### 当前状态
 
+- `OPS-001` 已通过，仓库已具备可重复执行的 live smoke 脚本与最小回归样本
+- CI 当前链路为：
+  - `prisma:generate`
+  - `lint`
+  - `typecheck`
+  - `test`
+  - `build`
 - `APP-011` 已通过，前端已从“说明性骨架”进入“可演示站点”阶段
 - 用户端已具备：
   - 登录
@@ -159,9 +185,9 @@
 
 ### 下一步建议
 
-1. 执行 `OPS-001`，把当前前后端主链路整理成可重复的 smoke test 与回归样本
-2. 执行 `OPS-002`，收口 HTTPS 与正式部署基线
-3. 交付前补一轮前端真实浏览器回归与管理端操作样本
+1. 执行 `OPS-002`，收口 HTTPS 与正式部署基线
+2. 交付前补一轮前端真实浏览器回归与管理端操作样本
+3. 按 smoke 脚本为基础继续扩展更细的业务回归样本
 
 ### 注意事项
 

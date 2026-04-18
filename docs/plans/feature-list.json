@@ -178,7 +178,7 @@
       "存在可重复执行的基础健康检查或 smoke test",
       "至少 1-2 个核心已通过流程被纳入回归样本，并在 docs/verification 中留证"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "OPS-002",

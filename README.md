@@ -32,8 +32,10 @@
 - `pnpm dev:worker`
 - `pnpm build`
 - `pnpm lint`
+- `pnpm test`
 - `pnpm dev:stack`
 - `pnpm seed:demo`
+- `pnpm smoke:live`
 
 ## 协作与约束
 
