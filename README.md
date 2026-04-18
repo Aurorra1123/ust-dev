@@ -32,6 +32,7 @@
 - `pnpm build`
 - `pnpm lint`
 - `pnpm dev:stack`
+- `pnpm seed:demo`
 
 ## 协作与约束
 

@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy"
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "seed:demo": "ts-node --project tsconfig.json --transpile-only src/scripts/seed-demo-data.ts"
   },
   "dependencies": {
     "@campusbook/shared-types": "workspace:*",
@@ -42,5 +43,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3"
+  },
+  "prisma": {
+    "seed": "pnpm seed:demo"
   }
 }

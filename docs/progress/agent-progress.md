@@ -6,6 +6,24 @@
 
 ### 已完成
 
+- 完成 `DATA-001`：补齐 demo seed、资源/活动公共读接口与最小管理员维护入口
+- 新增 `pnpm seed:demo`，可重复写入 demo 用户、资源、资源单元、组合资源与活动票种
+- 新增公共接口：
+  - `GET /resources`
+  - `GET /resources/:id`
+  - `GET /activities`
+  - `GET /activities/:id`
+- 新增管理员接口：
+  - `POST /admin/resources`
+  - `PATCH /admin/resources/:id`
+  - `POST /admin/resources/:id/units`
+  - `POST /admin/resources/:id/groups`
+  - `POST /admin/activities`
+  - `PATCH /admin/activities/:id`
+  - `POST /admin/activities/:id/tickets`
+- 验证通过 seed 连续执行两次成功，不依赖手工 SQL
+- 验证通过学生无法调用 admin 写接口，管理员可维护资源与活动基础数据
+- 新增验证证据 `docs/verification/2026-04-18/data-001-seed-and-read-api.md`
 - 完成 `SEC-001`：为 API 增加可信身份上下文和最小权限边界
 - 新增 `AccessTokenGuard`、`CurrentUser`、`RolesGuard`、`InternalJobGuard`
 - `AuthService` 改为先将演示用户和管理员用户落库，再签发带 `user.id` 的 access token / refresh token
@@ -19,6 +37,9 @@
 
 ### 当前状态
 
+- `DATA-001` 已通过，前端联调不再依赖手工 SQL 插库
+- API 已具备资源、活动的公共读接口和最小管理员维护入口
+- 当前公共活动列表由 `published` 状态驱动，管理员修改活动状态后可立即影响公共可见性
 - `SEC-001` 已通过，`feature-list` 已同步更新
 - API 已具备用户、管理员、内部任务三类最小权限边界
 - 当前活动报名接口尚未实现；后续 `APP-009` 需直接复用本轮建立的鉴权边界模式
@@ -26,12 +47,13 @@
 
 ### 下一步建议
 
-1. 执行 `DATA-001`，补齐 demo seed、资源列表/详情 API 与最小管理入口
-2. 再执行 `APP-008B`，把超时取消从显式 HTTP 入口推进到 worker
-3. 随后再进入 `APP-009`、`APP-010`、`APP-011`
+1. 执行 `APP-008B`，把超时取消从显式 HTTP 入口推进到 worker
+2. 再进入 `APP-009`，补活动抢票的 Redis 预扣、队列建单和库存兜底
+3. 随后推进 `APP-010` 与 `APP-011`
 
 ### 注意事项
 
+- 当前 seed 脚本默认使用本机 `127.0.0.1:5432` 的 PostgreSQL 作为兜底连接；若后续端口或数据库名变化，需要同步更新
 - 演示环境中的 `DEMO_ADMIN_*` 与 `INTERNAL_JOB_TOKEN` 仅用于当前开发基线，正式部署前必须替换
 - 后续新增需要写入状态的接口时，不要重新引入请求体身份字段，统一从鉴权上下文取用户身份
 

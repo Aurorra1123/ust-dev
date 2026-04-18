@@ -76,6 +76,20 @@ export interface AppResourceUnit {
   sortOrder: number;
 }
 
+export interface AppResourceGroupItem {
+  id: string;
+  resourceUnitId: string;
+  sortOrder: number;
+}
+
+export interface AppResourceGroup {
+  id: string;
+  resourceId: string;
+  name: string;
+  description?: string | null;
+  items: AppResourceGroupItem[];
+}
+
 export interface AppActivity {
   id: string;
   title: string;
@@ -87,6 +101,16 @@ export interface AppActivity {
   eventStartTime?: string | null;
   eventEndTime?: string | null;
   status: ActivityStatus;
+}
+
+export interface AppActivityTicket {
+  id: string;
+  activityId: string;
+  name: string;
+  stock: number;
+  reserved: number;
+  priceCents: number;
+  status: ActivityTicketStatus;
 }
 
 export interface AppOrder {
@@ -137,6 +161,26 @@ export interface SportsReservationResponse {
   slotEnds: string[];
   slotCount: number;
   status: OrderStatus;
+}
+
+export interface ResourceListItem extends AppResource {
+  unitCount: number;
+  groupCount: number;
+  units: AppResourceUnit[];
+}
+
+export interface ResourceDetailResponse extends AppResource {
+  units: AppResourceUnit[];
+  groups: AppResourceGroup[];
+}
+
+export interface ActivityListItem extends AppActivity {
+  ticketCount: number;
+  remainingQuota: number;
+}
+
+export interface ActivityDetailResponse extends AppActivity {
+  tickets: AppActivityTicket[];
 }
 
 export interface RouteCard {
