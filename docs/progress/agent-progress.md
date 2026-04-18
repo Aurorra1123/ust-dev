@@ -108,6 +108,14 @@
 - 活动 worker 依赖 Redis 真实可写连接；后续新增基于 `RedisService.raw` 的业务逻辑时，优先使用 `RedisService.connect()` 保证首次调用不会踩到 lazy-connect 边界
 - 规则表达式当前采用结构化 JSON，而不是通用 DSL；后续扩展时优先保持显式结构，避免过早引入难以验证的表达式求值器
 
+### 工具补充
+
+- 新增仓库内 skill `skills/harness-best-practice`
+- skill 提供仓库级 docs harness 初始化脚本 `scripts/bootstrap_docs_harness.py`、模板资产与使用说明
+- 默认生成 `docs/plans`、`docs/progress`、`docs/standards`、`docs/adr`、`docs/verification`、`docs/exec-plan`、`docs/reference` 及缺失时的最小 `AGENTS.md`
+- 已通过 `quick_validate`、脚本编译检查以及 `/tmp/harness-best-practice-smoke` 临时仓库 dry-run / 实际生成验证
+- 新增验证证据 `docs/verification/2026-04-18/skill-harness-best-practice.md`
+
 ## 2026-04-17
 
 ### 已完成
