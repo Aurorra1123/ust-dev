@@ -130,6 +130,72 @@ export interface AppOrder {
   totalAmountCents: number;
 }
 
+export interface OrderStatusLogEntry {
+  id: string;
+  fromStatus: OrderStatus | null;
+  toStatus: OrderStatus;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface OrderItemDetail {
+  id: string;
+  quantity: number;
+  slotCount: number;
+  startTime: string | null;
+  endTime: string | null;
+  bufferBeforeMin: number;
+  bufferAfterMin: number;
+  unitPriceCents: number;
+  resourceName: string | null;
+  resourceUnitName: string | null;
+  activityTicketName: string | null;
+}
+
+export interface AcademicReservationDetail {
+  id: string;
+  resourceId: string;
+  resourceName: string;
+  resourceUnitId: string;
+  resourceUnitName: string;
+  startTime: string;
+  endTime: string;
+  bufferBeforeMin: number;
+  bufferAfterMin: number;
+  status: OrderStatus;
+}
+
+export interface SportsReservationSlotDetail {
+  id: string;
+  resourceId: string;
+  resourceName: string;
+  resourceUnitId: string;
+  resourceUnitName: string;
+  slotStart: string;
+  slotEnd: string;
+  status: OrderStatus;
+}
+
+export interface ActivityRegistrationDetail {
+  id: string;
+  activityId: string;
+  activityTitle: string;
+  activityTicketId: string;
+  activityTicketName: string;
+  status: OrderStatus;
+}
+
+export interface OrderDetailResponse extends AppOrder {
+  userEmail: string;
+  createdAt: string;
+  updatedAt: string;
+  items: OrderItemDetail[];
+  statusLogs: OrderStatusLogEntry[];
+  academicReservation: AcademicReservationDetail | null;
+  sportsReservationSlots: SportsReservationSlotDetail[];
+  activityRegistration: ActivityRegistrationDetail | null;
+}
+
 export interface AcademicReservationRequest {
   resourceUnitId: string;
   startTime: string;

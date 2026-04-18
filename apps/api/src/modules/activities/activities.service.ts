@@ -25,6 +25,21 @@ import { UpdateActivityDto } from "./dto/update-activity.dto";
 export class ActivitiesService {
   constructor(private readonly prismaService: PrismaService) {}
 
+  async listAdminActivities(): Promise<ActivityDetailResponse[]> {
+    const activities = await this.prismaService.activity.findMany({
+      include: {
+        tickets: {
+          orderBy: {
+            name: "asc"
+          }
+        }
+      },
+      orderBy: [{ saleStartTime: "asc" }, { title: "asc" }]
+    });
+
+    return activities.map(toActivityDetail);
+  }
+
   async listActivities(): Promise<ActivityListItem[]> {
     const activities = await this.prismaService.activity.findMany({
       where: {

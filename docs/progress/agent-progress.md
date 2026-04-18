@@ -6,6 +6,39 @@
 
 ### 已完成
 
+- 完成 `APP-011`：将前端用户页与最小管理端页面接通真实 API
+- 前端新增真实会话状态管理、`refresh` 恢复逻辑与角色路由守卫
+- 新增页面：
+  - `LoginPage`
+  - `OrdersPage`
+- 原有页面已从静态说明页升级为真实数据页：
+  - `SpacesPage`
+  - `SportsPage`
+  - `ActivitiesPage`
+  - `AdminPage`
+- 前端 API 客户端已覆盖：
+  - `auth`
+  - `resources`
+  - `reservations`
+  - `activities`
+  - `orders`
+  - `admin/resources`
+  - `admin/activities`
+  - `admin/rules`
+- 为前端补充最小后端支撑接口：
+  - `GET /orders`
+  - `GET /admin/resources`
+  - `GET /admin/activities`
+- 验证通过：
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - `pnpm --filter web lint`
+  - `pnpm --filter api typecheck`
+  - `pnpm --filter api lint`
+- 验证通过本机 `3001` 源码 API smoke：
+  - 学生侧 `resources / activities / orders`
+  - 管理员侧 `admin/resources / admin/activities / admin/rules`
+- 新增验证证据 `docs/verification/2026-04-18/app-011-frontend-integration.md`
 - 完成 `APP-010`：实现规则引擎初版，并接入学术空间与体育设施预约入口
 - 新增 `RulesService`、`rule-engine` 与最小管理员规则接口：
   - `GET /admin/rules`
@@ -78,6 +111,22 @@
 
 ### 当前状态
 
+- `APP-011` 已通过，前端已从“说明性骨架”进入“可演示站点”阶段
+- 用户端已具备：
+  - 登录
+  - 学术空间预约页
+  - 体育设施预约页
+  - 活动浏览与抢票入口
+  - 我的订单
+- 管理端已具备：
+  - 资源创建
+  - 资源单元创建
+  - 活动创建
+  - 票种追加
+  - 活动状态切换
+  - 规则快照查看
+- 本轮为了避免单机过载，前端联调使用的是源码级校验 + 本机 `3001` 临时 API smoke，未重建 compose 镜像
+- 当前域名下的 compose 容器仍运行旧镜像；若要让 `campusbook.top` / `api.campusbook.top` 直接反映本轮变更，需要后续单独做一次低频部署更新
 - `APP-010` 已通过，规则引擎已经从模型占位进入可执行状态
 - 当前预约主流程已不再把信用分、时长和身份差异规则硬编码在接口里，而是统一走规则执行器
 - 规则配置表已具备最小管理员维护入口，可继续为 `APP-011` 的管理端页面提供真实 API
@@ -95,12 +144,13 @@
 
 ### 下一步建议
 
-1. 执行 `APP-011`，将登录、活动页、我的订单与管理端规则/活动维护页接通真实 API
-2. 之后补 `OPS-001`，把活动抢票与规则校验链路纳入 smoke test 与回归样本
-3. 最后补 `OPS-002`，收口 HTTPS 与正式部署基线
+1. 执行 `OPS-001`，把当前前后端主链路整理成可重复的 smoke test 与回归样本
+2. 选择低频窗口完成一次 compose 镜像更新，让域名入口切到 `APP-011` 最新版本
+3. 最后执行 `OPS-002`，收口 HTTPS 与正式部署基线
 
 ### 注意事项
 
+- 当前机器内存余量有限；继续验证前端或 API 新功能时，优先选择 `typecheck / lint / build` 与本机临时源码进程，不要频繁 `docker compose build`
 - 当前 Nginx 对容器 upstream 的解析在 `api` 容器重建后可能短暂命中旧 IP；后续交付前应补一版更稳的容器 DNS 解析配置
 - 当前 seed 脚本默认使用本机 `127.0.0.1:5432` 的 PostgreSQL 作为兜底连接；若后续端口或数据库名变化，需要同步更新
 - 演示环境中的 `DEMO_ADMIN_*` 与 `INTERNAL_JOB_TOKEN` 仅用于当前开发基线，正式部署前必须替换

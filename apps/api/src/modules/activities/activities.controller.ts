@@ -65,6 +65,11 @@ export class ActivitiesController {
 export class AdminActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
+  @Get()
+  listActivities(): Promise<ActivityDetailResponse[]> {
+    return this.activitiesService.listAdminActivities();
+  }
+
   @Post()
   createActivity(
     @Body() payload: CreateActivityDto

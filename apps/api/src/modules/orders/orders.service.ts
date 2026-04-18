@@ -6,12 +6,60 @@ import {
   Logger,
   NotFoundException
 } from "@nestjs/common";
-import { OrderStatus } from "@prisma/client";
-import type { AuthUser } from "@campusbook/shared-types";
+import {
+  OrderBizType as PrismaOrderBizType,
+  OrderStatus,
+  Prisma
+} from "@prisma/client";
+import type { AuthUser, OrderDetailResponse } from "@campusbook/shared-types";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import { ActivityInventoryCacheService } from "../activities/activity-inventory-cache.service";
 import { OrderExpirationQueueService } from "./order-expiration-queue.service";
+
+const orderDetailInclude = {
+  user: true,
+  academicReservation: {
+    include: {
+      resource: true,
+      resourceUnit: true
+    }
+  },
+  activityRegistration: {
+    include: {
+      activity: true,
+      activityTicket: true
+    }
+  },
+  sportsReservationSlots: {
+    include: {
+      resource: true,
+      resourceUnit: true
+    },
+    orderBy: {
+      slotStart: "asc"
+    }
+  },
+  items: {
+    include: {
+      resource: true,
+      resourceUnit: true,
+      activityTicket: true
+    },
+    orderBy: {
+      createdAt: "asc"
+    }
+  },
+  statusLogs: {
+    orderBy: {
+      createdAt: "asc"
+    }
+  }
+} satisfies Prisma.OrderInclude;
+
+type OrderWithRelations = Prisma.OrderGetPayload<{
+  include: typeof orderDetailInclude;
+}>;
 
 @Injectable()
 export class OrdersService {
@@ -23,20 +71,23 @@ export class OrdersService {
     private readonly activityInventoryCacheService: ActivityInventoryCacheService
   ) {}
 
-  async getOrder(orderId: string, actor: AuthUser) {
+  async listOrders(actor: AuthUser): Promise<OrderDetailResponse[]> {
+    const orders = await this.prismaService.order.findMany({
+      where: actor.role === "admin" ? undefined : { userId: actor.id },
+      include: orderDetailInclude,
+      orderBy: {
+        createdAt: "desc"
+      },
+      take: 30
+    });
+
+    return orders.map(toOrderDetail);
+  }
+
+  async getOrder(orderId: string, actor: AuthUser): Promise<OrderDetailResponse> {
     const order = await this.prismaService.order.findUnique({
       where: { id: orderId },
-      include: {
-        academicReservation: true,
-        activityRegistration: true,
-        sportsReservationSlots: true,
-        items: true,
-        statusLogs: {
-          orderBy: {
-            createdAt: "asc"
-          }
-        }
-      }
+      include: orderDetailInclude
     });
 
     if (!order) {
@@ -44,7 +95,7 @@ export class OrdersService {
     }
 
     this.assertOrderReadable(order.userId, actor);
-    return order;
+    return toOrderDetail(order);
   }
 
   confirmOrder(orderId: string, reason?: string) {
@@ -256,16 +307,7 @@ export class OrdersService {
 
       const latestOrder = await tx.order.findUnique({
         where: { id: order.id },
-        include: {
-          academicReservation: true,
-          activityRegistration: true,
-          sportsReservationSlots: true,
-          statusLogs: {
-            orderBy: {
-              createdAt: "asc"
-            }
-          }
-        }
+        include: orderDetailInclude
       });
 
       if (!latestOrder) {
@@ -306,7 +348,7 @@ export class OrdersService {
       }
     }
 
-    return latest;
+    return toOrderDetail(latest);
   }
 
   private assertOrderReadable(orderUserId: string, actor: AuthUser) {
@@ -316,4 +358,98 @@ export class OrdersService {
 
     throw new ForbiddenException("forbidden-order-access");
   }
+}
+
+function toOrderDetail(order: OrderWithRelations): OrderDetailResponse {
+  return {
+    id: order.id,
+    orderNo: order.orderNo,
+    userId: order.userId,
+    userEmail: order.user.email,
+    activityId: order.activityId,
+    bizType: mapPrismaBizType(order.bizType),
+    status: mapPrismaOrderStatus(order.status),
+    version: order.version,
+    expireAt: order.expireAt?.toISOString() ?? null,
+    totalAmountCents: order.totalAmountCents,
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
+    items: order.items.map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+      slotCount: item.slotCount,
+      startTime: item.startTime?.toISOString() ?? null,
+      endTime: item.endTime?.toISOString() ?? null,
+      bufferBeforeMin: item.bufferBeforeMin,
+      bufferAfterMin: item.bufferAfterMin,
+      unitPriceCents: item.unitPriceCents,
+      resourceName: item.resource?.name ?? null,
+      resourceUnitName: item.resourceUnit?.name ?? null,
+      activityTicketName: item.activityTicket?.name ?? null
+    })),
+    statusLogs: order.statusLogs.map((log) => ({
+      id: log.id,
+      fromStatus: log.fromStatus ? mapPrismaOrderStatus(log.fromStatus) : null,
+      toStatus: mapPrismaOrderStatus(log.toStatus),
+      reason: log.reason,
+      createdAt: log.createdAt.toISOString()
+    })),
+    academicReservation: order.academicReservation
+      ? {
+          id: order.academicReservation.id,
+          resourceId: order.academicReservation.resourceId,
+          resourceName: order.academicReservation.resource.name,
+          resourceUnitId: order.academicReservation.resourceUnitId,
+          resourceUnitName: order.academicReservation.resourceUnit.name,
+          startTime: order.academicReservation.startTime.toISOString(),
+          endTime: order.academicReservation.endTime.toISOString(),
+          bufferBeforeMin: order.academicReservation.bufferBeforeMin,
+          bufferAfterMin: order.academicReservation.bufferAfterMin,
+          status: mapPrismaOrderStatus(order.academicReservation.status)
+        }
+      : null,
+    sportsReservationSlots: order.sportsReservationSlots.map((slot) => ({
+      id: slot.id,
+      resourceId: slot.resourceId,
+      resourceName: slot.resource.name,
+      resourceUnitId: slot.resourceUnitId,
+      resourceUnitName: slot.resourceUnit.name,
+      slotStart: slot.slotStart.toISOString(),
+      slotEnd: slot.slotEnd.toISOString(),
+      status: mapPrismaOrderStatus(slot.status)
+    })),
+    activityRegistration: order.activityRegistration
+      ? {
+          id: order.activityRegistration.id,
+          activityId: order.activityRegistration.activityId,
+          activityTitle: order.activityRegistration.activity.title,
+          activityTicketId: order.activityRegistration.activityTicketId,
+          activityTicketName: order.activityRegistration.activityTicket.name,
+          status: mapPrismaOrderStatus(order.activityRegistration.status)
+        }
+      : null
+  };
+}
+
+function mapPrismaOrderStatus(
+  status: OrderStatus
+): OrderDetailResponse["status"] {
+  switch (status) {
+    case OrderStatus.PENDING_CONFIRMATION:
+      return "pending_confirmation";
+    case OrderStatus.CONFIRMED:
+      return "confirmed";
+    case OrderStatus.CANCELLED:
+      return "cancelled";
+    case OrderStatus.NO_SHOW:
+      return "no_show";
+  }
+}
+
+function mapPrismaBizType(
+  bizType: PrismaOrderBizType
+): OrderDetailResponse["bizType"] {
+  return bizType === PrismaOrderBizType.ACTIVITY_REGISTRATION
+    ? "activity_registration"
+    : "resource_reservation";
 }

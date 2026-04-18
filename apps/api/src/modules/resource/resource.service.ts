@@ -28,6 +28,33 @@ import { UpdateResourceDto } from "./dto/update-resource.dto";
 export class ResourceService {
   constructor(private readonly prismaService: PrismaService) {}
 
+  async listAdminResources(): Promise<ResourceDetailResponse[]> {
+    const resources = await this.prismaService.resource.findMany({
+      include: {
+        units: {
+          orderBy: {
+            sortOrder: "asc"
+          }
+        },
+        groups: {
+          include: {
+            items: {
+              orderBy: {
+                sortOrder: "asc"
+              }
+            }
+          },
+          orderBy: {
+            name: "asc"
+          }
+        }
+      },
+      orderBy: [{ type: "asc" }, { name: "asc" }]
+    });
+
+    return resources.map(toResourceDetail);
+  }
+
   async listResources(type?: ResourceType): Promise<ResourceListItem[]> {
     const resources = await this.prismaService.resource.findMany({
       where: {

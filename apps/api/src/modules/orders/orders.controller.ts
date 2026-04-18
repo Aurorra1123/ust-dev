@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
+import type { OrderDetailResponse } from "@campusbook/shared-types";
 
 import { AccessTokenGuard } from "../auth/access-token.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
@@ -12,6 +13,12 @@ import { OrdersService } from "./orders.service";
 @Controller("orders")
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
+
+  @Get()
+  @UseGuards(AccessTokenGuard)
+  listOrders(@CurrentUser() currentUser: AuthenticatedUser): Promise<OrderDetailResponse[]> {
+    return this.ordersService.listOrders(currentUser);
+  }
 
   @Get(":id")
   @UseGuards(AccessTokenGuard)

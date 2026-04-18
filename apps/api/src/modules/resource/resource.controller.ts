@@ -37,6 +37,11 @@ export class ResourceController {
 export class AdminResourceController {
   constructor(private readonly resourceService: ResourceService) {}
 
+  @Get()
+  listResources(): Promise<ResourceDetailResponse[]> {
+    return this.resourceService.listAdminResources();
+  }
+
   @Post()
   createResource(
     @Body() payload: CreateResourceDto

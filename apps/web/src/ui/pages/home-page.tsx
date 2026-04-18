@@ -29,8 +29,8 @@ const routeCards: RouteCard[] = [
 ];
 
 export function HomePage() {
-  const role = useSessionStore((state) => state.role);
-  const setRole = useSessionStore((state) => state.setRole);
+  const status = useSessionStore((state) => state.status);
+  const user = useSessionStore((state) => state.user);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["health"],
     queryFn: fetchHealthStatus
@@ -41,31 +41,20 @@ export function HomePage() {
       <PageHero
         eyebrow="Stage 01"
         title="当前已进入可持续开发的工程骨架阶段"
-        description="前端已经接入 React Router、TanStack Query 与 Zustand。后续会在此基础上补充业务流、鉴权、订单状态机和后台界面。"
+        description="前端已经接通真实 API、登录态恢复、预约、抢票、订单查看与最小管理入口。当前站点已经可以作为比赛演示的交互前台继续完善。"
         aside={
           <>
-            <p className="font-medium text-ink">会话角色</p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                className={`rounded-full px-3 py-1 ${
-                  role === "student"
-                    ? "bg-ember text-white"
-                    : "bg-white text-ink"
-                }`}
-                onClick={() => setRole("student")}
-              >
-                普通用户
-              </button>
-              <button
-                type="button"
-                className={`rounded-full px-3 py-1 ${
-                  role === "admin" ? "bg-ember text-white" : "bg-white text-ink"
-                }`}
-                onClick={() => setRole("admin")}
-              >
-                管理员
-              </button>
+            <p className="font-medium text-ink">当前会话</p>
+            <p className="mt-3 text-sm text-ink/80">
+              {status === "authenticated" && user
+                ? `${user.email} · ${user.role === "admin" ? "管理员" : "普通用户"}`
+                : status === "unknown"
+                  ? "正在恢复登录态"
+                  : "未登录"}
+            </p>
+            <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-xs leading-6 text-ink/75">
+              <p>学生演示账号：demo@campusbook.top / demo123456</p>
+              <p>管理员账号：admin@campusbook.top / admin123456</p>
             </div>
           </>
         }
