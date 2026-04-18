@@ -203,5 +203,65 @@
       "新会话无需直接阅读全部 reference 即可恢复上下文"
     ],
     "passes": true
+  },
+  {
+    "id": "PUX-001",
+    "category": "productization",
+    "priority": "P1",
+    "description": "建立校方产品化视觉基线、设计系统和应用壳层",
+    "acceptance": [
+      "前端存在正式颜色、卡片、按钮、导航和页面区块基线",
+      "AppShell、首页和管理首页具备统一品牌表达，不再是开发演示壳层",
+      "页面整体风格与 HKUST(GZ) 深蓝 + 金色基线一致"
+    ],
+    "passes": true
+  },
+  {
+    "id": "PUX-002",
+    "category": "productization",
+    "priority": "P1",
+    "description": "重构用户端首页、学术空间、体育设施、活动与订单页面",
+    "acceptance": [
+      "用户端关键页面完成信息架构和视觉重构",
+      "表单、列表、详情和操作反馈具备产品化状态设计",
+      "移动端下用户主路径仍可用"
+    ],
+    "passes": false
+  },
+  {
+    "id": "PUX-003",
+    "category": "productization",
+    "priority": "P1",
+    "description": "将管理端升级为正式后台工作台",
+    "acceptance": [
+      "管理端具备统一后台导航和工作区布局",
+      "资源、活动、规则维护页具备清晰层级和操作反馈",
+      "管理员日常主路径不再像接口操作面板"
+    ],
+    "passes": false
+  },
+  {
+    "id": "PUX-004",
+    "category": "productization",
+    "priority": "P2",
+    "description": "补齐响应式、状态设计和产品文案",
+    "acceptance": [
+      "核心页面具备空态、错误态、成功态和禁用态",
+      "桌面端与移动端布局都经过收口",
+      "关键页面文案不再使用技术演示口吻"
+    ],
+    "passes": false
+  },
+  {
+    "id": "PUX-005",
+    "category": "productization",
+    "priority": "P2",
+    "description": "建立浏览器级产品回归与最终演示证据",
+    "acceptance": [
+      "至少存在一条学生主链路和一条管理员主链路的真实浏览器回归",
+      "保留截图或等价浏览器证据",
+      "产品化后的关键流程具备可复用回归入口"
+    ],
+    "passes": false
   }
 ]

@@ -67,7 +67,7 @@ export function OrdersPage() {
         {ordersQuery.isLoading ? (
           <p className="text-sm text-ink/70">正在加载订单列表。</p>
         ) : ordersQuery.isError ? (
-          <p className="text-sm text-ember">
+          <p className="text-sm text-danger">
             {(ordersQuery.error as ApiError).message}
           </p>
         ) : !ordersQuery.data?.length ? (
@@ -127,7 +127,7 @@ export function OrdersPage() {
                     {canCancel(selectedOrder) ? (
                       <button
                         type="button"
-                        className="rounded-full border border-ember/25 px-4 py-2 text-sm text-ember transition hover:bg-ember/10 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full border border-danger/25 px-4 py-2 text-sm text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
                         onClick={() => cancelMutation.mutate(selectedOrder.id)}
                         disabled={cancelMutation.isPending}
                       >
@@ -212,7 +212,7 @@ export function OrdersPage() {
                 </div>
 
                 {cancelMutation.isError ? (
-                  <div className="rounded-2xl border border-ember/20 bg-ember/10 px-4 py-3 text-sm text-ember">
+                  <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
                     {(cancelMutation.error as ApiError).message}
                   </div>
                 ) : null}

@@ -42,12 +42,15 @@ export function LoginPage() {
   return (
     <>
       <PageHero
-        eyebrow="Login"
-        title="登录后即可体验预约、抢票与管理流程"
-        description="当前站点使用演示账号驱动真实 API。登录成功后，访问令牌会自动写入前端会话，refresh token 通过 HttpOnly Cookie 保存。"
+        eyebrow="Unified Access"
+        title="从同一个身份入口进入学生端或管理员端"
+        description="当前站点通过体验账号驱动真实 API。登录成功后，访问令牌会写入前端会话，refresh token 通过 HttpOnly Cookie 保存，并在刷新后自动恢复。"
       />
 
-      <PageSection title="选择演示身份">
+      <PageSection
+        title="选择身份并登录"
+        description="建议先使用学生账号体验预约和活动流程，再使用管理员账号查看后台工作台。"
+      >
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),320px]">
           <form
             className="grid gap-4"
@@ -56,10 +59,10 @@ export function LoginPage() {
               loginMutation.mutate(form);
             }}
           >
-            <label className="grid gap-2 text-sm text-ink/75">
+            <label className="grid gap-2 text-sm text-slate">
               邮箱
               <input
-                className="rounded-2xl border border-ink/15 bg-sand px-4 py-3 outline-none transition focus:border-moss"
+                className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
                 type="email"
                 value={form.email}
                 onChange={(event) =>
@@ -70,10 +73,10 @@ export function LoginPage() {
                 }
               />
             </label>
-            <label className="grid gap-2 text-sm text-ink/75">
+            <label className="grid gap-2 text-sm text-slate">
               密码
               <input
-                className="rounded-2xl border border-ink/15 bg-sand px-4 py-3 outline-none transition focus:border-moss"
+                className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
                 type="password"
                 value={form.password}
                 onChange={(event) =>
@@ -86,7 +89,7 @@ export function LoginPage() {
             </label>
 
             {loginMutation.isError ? (
-              <div className="rounded-2xl border border-ember/20 bg-ember/10 px-4 py-3 text-sm text-ember">
+              <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
                 {(loginMutation.error as ApiError).message}
               </div>
             ) : null}
@@ -100,9 +103,9 @@ export function LoginPage() {
             </button>
           </form>
 
-          <div className="rounded-[28px] bg-mist px-5 py-5">
+          <div className="rounded-[28px] border border-navy/10 bg-gradient-to-br from-sand to-mist px-5 py-5">
             <p className="text-xs uppercase tracking-[0.3em] text-moss">
-              Demo Accounts
+              Experience Accounts
             </p>
             <div className="mt-4 grid gap-3">
               {demoAccounts.map((account) => (
@@ -113,7 +116,7 @@ export function LoginPage() {
                   onClick={() => setForm(account)}
                 >
                   <p className="text-sm font-semibold text-ink">{account.label}</p>
-                  <p className="mt-1 text-sm text-ink/70">{account.email}</p>
+                  <p className="mt-1 text-sm text-slate">{account.email}</p>
                   <p className="mt-2 text-xs uppercase tracking-[0.2em] text-moss">
                     点击自动填充
                   </p>

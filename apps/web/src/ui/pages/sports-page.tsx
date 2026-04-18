@@ -130,7 +130,7 @@ export function SportsPage() {
         {resourcesQuery.isLoading ? (
           <p className="text-sm text-ink/70">正在加载体育设施。</p>
         ) : resourcesQuery.isError ? (
-          <p className="text-sm text-ember">
+          <p className="text-sm text-danger">
             {(resourcesQuery.error as ApiError).message}
           </p>
         ) : (
@@ -293,7 +293,7 @@ export function SportsPage() {
               </div>
 
               {sportsMutation.isError ? (
-                <div className="mt-4 rounded-2xl border border-ember/20 bg-ember/10 px-4 py-3 text-sm text-ember">
+                <div className="mt-4 rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
                   {(sportsMutation.error as ApiError).message}
                 </div>
               ) : null}

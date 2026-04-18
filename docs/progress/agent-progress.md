@@ -6,6 +6,26 @@
 
 ### 已完成
 
+- 完成 `PUX-001`：建立产品化第一阶段的设计系统与应用壳层
+- 新增 `docs/architecture/productization-plan-v1.md`
+- 产品化方向已明确为香港科技大学（广州）校方服务门户，而不是纯演示站点
+- 当前前端视觉基线已切换到 `HKUST(GZ)` 的深蓝 + 金色主轴：
+  - `#002F6B`
+  - `#1D4F92`
+  - `#A88337`
+  - `#C8B388`
+- `apps/web/tailwind.config.ts` 与 `apps/web/src/styles.css` 已完成首轮品牌色、阴影、背景与字体基线调整
+- `AppShell` 已重构为正式门户壳层，新增：
+  - 顶部校方服务条
+  - 品牌首屏
+  - 当前模块说明
+  - 统一导航胶囊
+- `PageHero` / `PageSection` 已升级为统一设计系统区块
+- 首页已从工程阶段说明页改为校园服务门户首页
+- 登录页已改为统一身份入口页
+- 管理首页已补“运营概览”卡片区，不再只剩操作面板
+- 用户端错误态已统一切换为 `danger` 语义色，避免与品牌金混用
+- 新增验证证据 `docs/verification/2026-04-18/pux-001-design-system-baseline.md`
 - 完成 `DOCS-001`：将 `docs/reference/` 继续映射为正式产品、规则与领域模型入口
 - 新增正式文档入口：
   - `docs/architecture/product-baseline.md`
@@ -197,6 +217,15 @@
 
 ### 当前状态
 
+- 当前项目已从“主功能闭环”进入“产品化改造”阶段
+- `feature-list.json` 中已新增 `PUX-001` 到 `PUX-005`
+- 当前已完成：
+  - `PUX-001` 设计系统与应用壳层
+- 当前后续主线为：
+  - `PUX-002` 用户端页面产品化
+  - `PUX-003` 管理端后台产品化
+  - `PUX-004` 响应式与状态设计收尾
+  - `PUX-005` 浏览器级回归与最终留证
 - `feature-list.json` 中的正式任务已全部通过
 - 新会话恢复上下文的推荐入口已固定为：
   - `docs/progress/agent-progress.md`

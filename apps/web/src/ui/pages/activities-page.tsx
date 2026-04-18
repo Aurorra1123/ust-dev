@@ -93,7 +93,7 @@ export function ActivitiesPage() {
         {activitiesQuery.isLoading ? (
           <p className="text-sm text-ink/70">正在加载活动列表。</p>
         ) : activitiesQuery.isError ? (
-          <p className="text-sm text-ember">
+          <p className="text-sm text-danger">
             {(activitiesQuery.error as ApiError).message}
           </p>
         ) : !activitiesQuery.data?.length ? (
@@ -146,7 +146,7 @@ export function ActivitiesPage() {
                   {detailQuery.isLoading ? (
                     <p className="mt-4 text-sm text-ink/70">正在加载票种详情。</p>
                   ) : detailQuery.isError ? (
-                    <p className="mt-4 text-sm text-ember">
+                    <p className="mt-4 text-sm text-danger">
                       {(detailQuery.error as ApiError).message}
                     </p>
                   ) : (
@@ -193,7 +193,7 @@ export function ActivitiesPage() {
                   )}
 
                   {grabMutation.isError ? (
-                    <div className="mt-4 rounded-2xl border border-ember/20 bg-ember/10 px-4 py-3 text-sm text-ember">
+                    <div className="mt-4 rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
                       {(grabMutation.error as ApiError).message}
                     </div>
                   ) : null}
@@ -210,7 +210,7 @@ export function ActivitiesPage() {
                           当前还没有该活动的报名记录。
                         </p>
                       ) : (
-                        <p className="mt-4 text-sm text-ember">
+                        <p className="mt-4 text-sm text-danger">
                           {(registrationStatusQuery.error as ApiError).message}
                         </p>
                       )

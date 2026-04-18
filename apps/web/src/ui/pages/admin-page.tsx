@@ -62,7 +62,7 @@ export function AdminPage() {
     type: "academic_space" as ResourceType,
     code: "res_admin_demo_new",
     name: "创新协作室",
-    description: "管理端创建的演示资源",
+    description: "由管理后台新增的学术空间资源。",
     location: "A 栋 4 楼",
     status: "active" as const
   });
@@ -80,8 +80,8 @@ export function AdminPage() {
     const eventEnd = addHours(eventStart, 2);
 
     return {
-      title: "CampusBook 管理后台演示活动",
-      description: "由管理后台直接创建的演示活动。",
+      title: "CampusBook 校园服务说明会",
+      description: "由管理后台创建的活动示例，用于验证票种和状态流转。",
       location: "学生活动中心",
       totalQuota: 30,
       saleStartTime: toDateTimeLocalValue(saleStart),
@@ -220,21 +220,49 @@ export function AdminPage() {
   return (
     <>
       <PageHero
-        eyebrow="Admin Console"
-        title="管理端已经具备资源和活动的最小维护能力"
-        description="当前后台可以直接创建资源、补资源单元、创建活动、追加票种并切换活动状态。前台页面会实时复用这些真实数据。"
+        eyebrow="Operations Center"
+        title="资源、活动与规则维护已经进入同一工作台"
+        description="当前后台用于维护预约资源、活动票种和规则绑定。前台页面会直接复用这些真实数据，因此后台信息架构需要保持清晰、可审计且便于高频操作。"
         aside={
           <>
             <p className="font-medium text-ink">当前站点概览</p>
-            <p className="mt-3 text-sm text-ink/75">
+            <p className="mt-3 text-sm text-slate">
               资源 {resourceStats.resourceCount} 个 / 单元 {resourceStats.unitCount} 个
             </p>
-            <p className="mt-2 text-sm text-ink/75">
+            <p className="mt-2 text-sm text-slate">
               活动 {activitiesQuery.data?.length ?? 0} 个 / 规则 {rulesQuery.data?.length ?? 0} 条
             </p>
           </>
         }
       />
+
+      <PageSection
+        title="运营概览"
+        description="当前后台优先覆盖三块高频维护内容：资源、活动和规则。后续产品化阶段会继续重构层级、状态反馈和移动端适配。"
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <AdminStatCard
+            label="资源总数"
+            value={String(resourceStats.resourceCount)}
+            detail="覆盖学术空间与体育设施"
+          />
+          <AdminStatCard
+            label="资源单元"
+            value={String(resourceStats.unitCount)}
+            detail="用于预约与组合资源校验"
+          />
+          <AdminStatCard
+            label="活动数量"
+            value={String(activitiesQuery.data?.length ?? 0)}
+            detail="统一维护活动、票种和状态"
+          />
+          <AdminStatCard
+            label="规则数量"
+            value={String(rulesQuery.data?.length ?? 0)}
+            detail="绑定资源并进入预约主流程"
+          />
+        </div>
+      </PageSection>
 
       <PageSection title="资源维护">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),340px]">
@@ -242,7 +270,7 @@ export function AdminPage() {
             {resourcesQuery.isLoading ? (
               <p className="text-sm text-ink/70">正在加载资源。</p>
             ) : resourcesQuery.isError ? (
-              <p className="text-sm text-ember">
+              <p className="text-sm text-danger">
                 {(resourcesQuery.error as ApiError).message}
               </p>
             ) : (
@@ -428,7 +456,7 @@ export function AdminPage() {
             {activitiesQuery.isLoading ? (
               <p className="text-sm text-ink/70">正在加载活动。</p>
             ) : activitiesQuery.isError ? (
-              <p className="text-sm text-ember">
+              <p className="text-sm text-danger">
                 {(activitiesQuery.error as ApiError).message}
               </p>
             ) : (
@@ -745,7 +773,7 @@ export function AdminPage() {
         {rulesQuery.isLoading ? (
           <p className="text-sm text-ink/70">正在加载规则配置。</p>
         ) : rulesQuery.isError ? (
-          <p className="text-sm text-ember">
+          <p className="text-sm text-danger">
             {(rulesQuery.error as ApiError).message}
           </p>
         ) : (
@@ -789,7 +817,7 @@ function MutationState({
 }) {
   if (mutation.isError) {
     return (
-      <div className="mt-4 rounded-2xl border border-ember/20 bg-ember/10 px-4 py-3 text-sm text-ember">
+      <div className="mt-4 rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
         {(mutation.error as ApiError).message}
       </div>
     );
@@ -804,4 +832,22 @@ function MutationState({
   }
 
   return null;
+}
+
+function AdminStatCard({
+  label,
+  value,
+  detail
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-[24px] border border-navy/10 bg-gradient-to-br from-white to-sand px-5 py-5">
+      <p className="text-xs uppercase tracking-[0.22em] text-moss">{label}</p>
+      <p className="mt-3 text-3xl font-semibold text-ink">{value}</p>
+      <p className="mt-2 text-sm leading-6 text-slate">{detail}</p>
+    </div>
+  );
 }

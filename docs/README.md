@@ -29,6 +29,7 @@
 - `adr/0001-repo-as-agent-memory.md`：仓库作为 agent 主记忆体
 - `adr/0004-single-node-typescript-platform-baseline.md`：当前技术基线决策
 - `architecture/product-baseline.md`：当前正式产品范围与用户路径
+- `architecture/productization-plan-v1.md`：当前产品化改造方案
 - `architecture/domain-model-baseline.md`：当前正式领域模型入口
 - `architecture/technical-solution-v2.md`：当前推荐技术方案
 - `architecture/architecture-diagrams.md`：架构图与流程图
