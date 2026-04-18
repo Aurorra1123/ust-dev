@@ -6,6 +6,19 @@
 
 ### 已完成
 
+- 完成一次低频 compose 部署更新，将域名入口切到当前前后端版本
+- 顺序执行：
+  - `docker compose stop web api worker`
+  - `docker compose build api`
+  - `docker compose up -d api worker`
+  - `docker compose build web`
+  - `docker compose up -d web`
+  - `docker compose restart nginx`
+- 验证通过：
+  - `api.campusbook.top/health` 返回 `200`
+  - `campusbook.top` 返回最新前端 `index.html`
+  - compose 常驻容器 `api / worker / web / nginx / postgres / redis` 全部恢复运行
+- 新增验证证据 `docs/verification/2026-04-18/ops-live-compose-refresh.md`
 - 完成 `APP-011`：将前端用户页与最小管理端页面接通真实 API
 - 前端新增真实会话状态管理、`refresh` 恢复逻辑与角色路由守卫
 - 新增页面：
@@ -125,8 +138,10 @@
   - 票种追加
   - 活动状态切换
   - 规则快照查看
-- 本轮为了避免单机过载，前端联调使用的是源码级校验 + 本机 `3001` 临时 API smoke，未重建 compose 镜像
-- 当前域名下的 compose 容器仍运行旧镜像；若要让 `campusbook.top` / `api.campusbook.top` 直接反映本轮变更，需要后续单独做一次低频部署更新
+- 当前域名入口已经完成低频部署更新：
+  - `campusbook.top` / `www.campusbook.top` 提供最新前端静态站点
+  - `api.campusbook.top` 提供最新 API 与 worker 配套后端
+- 本轮部署采用顺序构建与单服务重启，避免了全栈同时重建导致的内存尖峰
 - `APP-010` 已通过，规则引擎已经从模型占位进入可执行状态
 - 当前预约主流程已不再把信用分、时长和身份差异规则硬编码在接口里，而是统一走规则执行器
 - 规则配置表已具备最小管理员维护入口，可继续为 `APP-011` 的管理端页面提供真实 API
@@ -145,8 +160,8 @@
 ### 下一步建议
 
 1. 执行 `OPS-001`，把当前前后端主链路整理成可重复的 smoke test 与回归样本
-2. 选择低频窗口完成一次 compose 镜像更新，让域名入口切到 `APP-011` 最新版本
-3. 最后执行 `OPS-002`，收口 HTTPS 与正式部署基线
+2. 执行 `OPS-002`，收口 HTTPS 与正式部署基线
+3. 交付前补一轮前端真实浏览器回归与管理端操作样本
 
 ### 注意事项
 
