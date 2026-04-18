@@ -9,6 +9,12 @@ import { queryClient } from "../../lib/query-client";
 import { useSessionStore } from "../../store/session-store";
 import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
+import {
+  EmptyPanel,
+  MetricCard,
+  MetricGrid,
+  StatusPill
+} from "../user-experience-kit";
 
 export function OrdersPage() {
   const user = useSessionStore((state) => state.user);
@@ -25,6 +31,16 @@ export function OrdersPage() {
       null,
     [ordersQuery.data, selectedOrderId]
   );
+  const orderStats = useMemo(() => {
+    const orders = ordersQuery.data ?? [];
+
+    return {
+      total: orders.length,
+      pending: orders.filter((order) => order.status === "pending_confirmation").length,
+      confirmed: orders.filter((order) => order.status === "confirmed").length,
+      cancelled: orders.filter((order) => order.status === "cancelled").length
+    };
+  }, [ordersQuery.data]);
 
   useEffect(() => {
     const firstOrder = ordersQuery.data?.[0];
@@ -55,15 +71,46 @@ export function OrdersPage() {
         }
         aside={
           <>
-            <p className="text-sm text-ink/75">当前展示最近 30 条订单。</p>
-            <p className="mt-2 text-sm text-ink/75">
+            <p className="text-sm text-slate">当前展示最近 30 条订单。</p>
+            <p className="mt-2 text-sm text-slate">
               普通用户只能看到自己的订单，管理员可以看到全站订单。
             </p>
           </>
         }
       />
 
-      <PageSection title="最近订单">
+      <PageSection
+        title="订单概览"
+        description="订单页用于统一回看预约、活动报名和状态迁移记录。所有关键动作都会进入状态日志。"
+      >
+        <MetricGrid>
+          <MetricCard
+            label="订单总数"
+            value={String(orderStats.total)}
+            detail="当前可见范围内的最近订单数"
+          />
+          <MetricCard
+            label="待确认"
+            value={String(orderStats.pending)}
+            detail="通常代表已创建、待确认或等待超时处理"
+          />
+          <MetricCard
+            label="已确认"
+            value={String(orderStats.confirmed)}
+            detail="已完成确认的预约或报名记录"
+          />
+          <MetricCard
+            label="已取消"
+            value={String(orderStats.cancelled)}
+            detail="取消后应已同步释放资源或票种占用"
+          />
+        </MetricGrid>
+      </PageSection>
+
+      <PageSection
+        title="最近订单"
+        description="左侧快速切换订单，右侧查看明细、状态和日志。"
+      >
         {ordersQuery.isLoading ? (
           <p className="text-sm text-ink/70">正在加载订单列表。</p>
         ) : ordersQuery.isError ? (
@@ -71,7 +118,10 @@ export function OrdersPage() {
             {(ordersQuery.error as ApiError).message}
           </p>
         ) : !ordersQuery.data?.length ? (
-          <p className="text-sm text-ink/70">当前还没有可展示的订单。</p>
+          <EmptyPanel
+            title="当前还没有可展示的订单"
+            description="登录后完成预约或活动报名后，订单会自动出现在这里。"
+          />
         ) : (
           <div className="grid gap-4 lg:grid-cols-[340px,minmax(0,1fr)]">
             <div className="grid gap-3">
@@ -120,9 +170,20 @@ export function OrdersPage() {
                       <h3 className="mt-2 text-2xl font-semibold text-ink">
                         {selectedOrder.orderNo}
                       </h3>
-                      <p className="mt-2 text-sm text-ink/75">
-                        当前状态：{statusLabel(selectedOrder.status)}
-                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <StatusPill
+                          tone={
+                            selectedOrder.status === "cancelled"
+                              ? "danger"
+                              : selectedOrder.status === "confirmed"
+                                ? "success"
+                                : "brand"
+                          }
+                        >
+                          {statusLabel(selectedOrder.status)}
+                        </StatusPill>
+                        <StatusPill>{bizTypeLabel(selectedOrder)}</StatusPill>
+                      </div>
                     </div>
                     {canCancel(selectedOrder) ? (
                       <button

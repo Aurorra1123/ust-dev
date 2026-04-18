@@ -7,6 +7,13 @@ import { queryClient } from "../../lib/query-client";
 import { useSessionStore } from "../../store/session-store";
 import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
+import {
+  EmptyPanel,
+  GuidancePanel,
+  MetricCard,
+  MetricGrid,
+  StatusPill
+} from "../user-experience-kit";
 
 export function SpacesPage() {
   const sessionStatus = useSessionStore((state) => state.status);
@@ -41,6 +48,16 @@ export function SpacesPage() {
   }, [resourceUnitId, units]);
 
   const selectedUnit = units.find((unit) => unit.id === resourceUnitId) ?? null;
+  const durationHours = useMemo(() => {
+    const start = new Date(startTime).getTime();
+    const end = new Date(endTime).getTime();
+
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+      return "0";
+    }
+
+    return ((end - start) / 3_600_000).toFixed(1);
+  }, [endTime, startTime]);
 
   const reservationMutation = useMutation({
     mutationFn: createAcademicReservation,
@@ -55,13 +72,13 @@ export function SpacesPage() {
     <>
       <PageHero
         eyebrow="Academic Spaces"
-        title="学术空间预约已经接通真实资源数据与下单流程"
-        description="这里展示的是当前可预约的学术空间资源单元。提交请求后，后端会自动扩展前后 5 分钟缓冲，并由 PostgreSQL 排斥约束兜底冲突。"
+        title="为学习、研讨与协作提供统一的学术空间预约入口"
+        description="用户可以按连续时间段提交预约。系统会自动带入前后 5 分钟缓冲，并在下单时执行规则校验、冲突校验和统一订单创建。"
         aside={
           <>
             <p className="font-medium text-ink">当前可预约单元</p>
             <p className="mt-3 text-3xl font-semibold text-ink">{units.length}</p>
-            <p className="mt-2 text-sm text-ink/70">
+            <p className="mt-2 text-sm text-slate">
               {sessionStatus === "authenticated"
                 ? "已登录，可直接提交预约。"
                 : "未登录时可浏览数据，但无法提交预约。"}
@@ -70,13 +87,49 @@ export function SpacesPage() {
         }
       />
 
-      <PageSection title="空间列表">
+      <PageSection
+        title="服务概览"
+        description="当前列表使用 demo seed 中的真实资源数据。提交预约后，你可以在“我的订单”里回看状态迁移和缓冲信息。"
+      >
+        <MetricGrid>
+          <MetricCard
+            label="空间资源"
+            value={String(resourcesQuery.data?.length ?? 0)}
+            detail="当前可浏览的学术空间资源数"
+          />
+          <MetricCard
+            label="预约单元"
+            value={String(units.length)}
+            detail="可直接占用的原子资源单元"
+          />
+          <MetricCard
+            label="默认时长"
+            value={`${durationHours}h`}
+            detail="会根据你选择的开始和结束时间实时变化"
+          />
+          <MetricCard
+            label="预约状态"
+            value={sessionStatus === "authenticated" ? "已登录" : "未登录"}
+            detail="未登录时可以浏览，但无法提交预约"
+          />
+        </MetricGrid>
+      </PageSection>
+
+      <PageSection
+        title="空间列表与预约"
+        description="左侧浏览资源与单元，右侧直接发起预约。提交成功后，系统会自动写入统一订单。"
+      >
         {resourcesQuery.isLoading ? (
           <p className="text-sm text-ink/70">正在加载学术空间。</p>
         ) : resourcesQuery.isError ? (
           <p className="text-sm text-danger">
             {(resourcesQuery.error as ApiError).message}
           </p>
+        ) : !resourcesQuery.data?.length ? (
+          <EmptyPanel
+            title="当前还没有可用的学术空间"
+            description="可以稍后刷新，或使用管理员账号进入后台补充资源与资源单元。"
+          />
         ) : (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),340px]">
             <div className="grid gap-4">
@@ -94,12 +147,15 @@ export function SpacesPage() {
                         {resource.name}
                       </h3>
                     </div>
-                    <span className="rounded-full bg-sand px-3 py-1 text-xs text-ink/70">
+                    <span className="rounded-full bg-sand px-3 py-1 text-xs text-slate">
                       {resource.unitCount} 个单元
                     </span>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-ink/70">
+                  <p className="mt-3 text-sm leading-6 text-slate">
                     {resource.description || "当前资源暂无补充描述。"}
+                  </p>
+                  <p className="mt-2 text-sm text-slate">
+                    {resource.location || "校内位置待补充"}
                   </p>
                   <div className="mt-4 grid gap-3">
                     {resource.units.map((unit) => (
@@ -133,7 +189,7 @@ export function SpacesPage() {
             </div>
 
             <form
-              className="rounded-[24px] border border-ink/10 bg-mist px-5 py-5"
+              className="grid gap-4 rounded-[24px] border border-navy/10 bg-mist px-5 py-5"
               onSubmit={(event) => {
                 event.preventDefault();
                 reservationMutation.mutate({
@@ -151,6 +207,12 @@ export function SpacesPage() {
                   ? `${selectedUnit.resourceName} · ${selectedUnit.name}`
                   : "请选择资源单元"}
               </h3>
+              {selectedUnit ? (
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill tone="brand">{selectedUnit.code}</StatusPill>
+                  <StatusPill tone="success">前后各 5 分钟缓冲</StatusPill>
+                </div>
+              ) : null}
 
               <div className="mt-4 grid gap-4">
                 <label className="grid gap-2 text-sm text-ink/75">
@@ -173,6 +235,16 @@ export function SpacesPage() {
                   />
                 </label>
               </div>
+
+              <GuidancePanel
+                title="预约说明"
+                description="学术空间按连续时间段预约。系统会自动扩展前后各 5 分钟缓冲，因此相邻时段也可能被视为冲突。"
+              >
+                <div className="grid gap-2 text-sm text-slate">
+                  <p>当前预约时长：{durationHours} 小时</p>
+                  <p>成功后可在“我的订单”中查看状态和日志。</p>
+                </div>
+              </GuidancePanel>
 
               {reservationMutation.isError ? (
                 <div className="mt-4 rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">

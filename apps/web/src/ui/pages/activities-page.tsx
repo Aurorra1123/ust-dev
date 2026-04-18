@@ -14,6 +14,13 @@ import { formatDateTime } from "../../lib/date";
 import { useSessionStore } from "../../store/session-store";
 import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
+import {
+  EmptyPanel,
+  GuidancePanel,
+  MetricCard,
+  MetricGrid,
+  StatusPill
+} from "../user-experience-kit";
 
 export function ActivitiesPage() {
   const sessionStatus = useSessionStore((state) => state.status);
@@ -72,15 +79,15 @@ export function ActivitiesPage() {
     <>
       <PageHero
         eyebrow="Activity Grab"
-        title="活动列表、详情和抢票入口已经接通真实链路"
-        description="抢票请求会先打到 Redis 做热点校验和预扣库存，再进入 BullMQ 异步落单。你可以直接在这里触发报名，并看到排队中、已确认或失败状态。"
+        title="统一浏览校园活动并完成报名与抢票"
+        description="活动报名先经过 Redis 热点校验和库存预扣，再进入异步建单流程。页面会展示活动详情、票种入口和当前用户的报名状态。"
         aside={
           <>
             <p className="font-medium text-ink">当前公开活动</p>
             <p className="mt-3 text-3xl font-semibold text-ink">
               {activitiesQuery.data?.length ?? 0}
             </p>
-            <p className="mt-2 text-sm text-ink/70">
+            <p className="mt-2 text-sm text-slate">
               {sessionStatus === "authenticated"
                 ? "已登录，可直接发起抢票。"
                 : "未登录时可浏览活动，但无法参与抢票。"}
@@ -89,7 +96,38 @@ export function ActivitiesPage() {
         }
       />
 
-      <PageSection title="活动与抢票状态">
+      <PageSection
+        title="服务概览"
+        description="活动页负责统一处理活动浏览、票种报名、排队状态和最终订单结果。"
+      >
+        <MetricGrid>
+          <MetricCard
+            label="公开活动"
+            value={String(activitiesQuery.data?.length ?? 0)}
+            detail="当前处于可浏览范围内的活动数量"
+          />
+          <MetricCard
+            label="剩余额度"
+            value={String(selectedActivity?.remainingQuota ?? 0)}
+            detail="当前选中活动的公开剩余额度"
+          />
+          <MetricCard
+            label="票种数量"
+            value={String(detailQuery.data?.tickets.length ?? 0)}
+            detail="当前选中活动可见票种数"
+          />
+          <MetricCard
+            label="报名状态"
+            value={sessionStatus === "authenticated" ? "可报名" : "需登录"}
+            detail="登录后可直接发起报名并查看自己的状态"
+          />
+        </MetricGrid>
+      </PageSection>
+
+      <PageSection
+        title="活动与抢票状态"
+        description="左侧选择活动，右侧查看详情、票种和当前用户状态。"
+      >
         {activitiesQuery.isLoading ? (
           <p className="text-sm text-ink/70">正在加载活动列表。</p>
         ) : activitiesQuery.isError ? (
@@ -97,7 +135,10 @@ export function ActivitiesPage() {
             {(activitiesQuery.error as ApiError).message}
           </p>
         ) : !activitiesQuery.data?.length ? (
-          <p className="text-sm text-ink/70">当前没有已发布活动。</p>
+          <EmptyPanel
+            title="当前没有已发布活动"
+            description="可以稍后刷新，或使用管理员账号进入后台创建活动并发布票种。"
+          />
         ) : (
           <div className="grid gap-4 lg:grid-cols-[320px,minmax(0,1fr)]">
             <div className="grid gap-3">
@@ -120,8 +161,17 @@ export function ActivitiesPage() {
                   <h3 className="mt-2 text-2xl font-semibold text-ink">
                     {selectedActivity.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-6 text-ink/70">
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <StatusPill tone="brand">{statusLabel(selectedActivity.status)}</StatusPill>
+                    <StatusPill tone={soldOut ? "danger" : "success"}>
+                      {soldOut ? "名额紧张" : "可报名"}
+                    </StatusPill>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate">
                     {selectedActivity.description || "当前活动暂无补充描述。"}
+                  </p>
+                  <p className="mt-2 text-sm text-slate">
+                    {selectedActivity.location || "活动地点待补充"}
                   </p>
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -164,6 +214,9 @@ export function ActivitiesPage() {
                               <p className="mt-2 text-sm text-ink/70">
                                 库存 {ticket.stock} / 已保留 {ticket.reserved}
                               </p>
+                              <p className="mt-1 text-sm text-slate">
+                                价格 {ticket.priceCents === 0 ? "免费" : `¥${(ticket.priceCents / 100).toFixed(2)}`}
+                              </p>
                             </div>
                             <button
                               type="button"
@@ -197,6 +250,13 @@ export function ActivitiesPage() {
                       {(grabMutation.error as ApiError).message}
                     </div>
                   ) : null}
+
+                  <div className="mt-4">
+                    <GuidancePanel
+                      title="抢票说明"
+                      description="提交请求后，系统可能先返回排队中。最终是否成功，以异步建单后的报名状态和订单结果为准。"
+                    />
+                  </div>
                 </div>
 
                 {sessionStatus === "authenticated" ? (
