@@ -6,6 +6,14 @@
 
 ### 已完成
 
+- 完成 `APP-008B`：将超时取消从显式 HTTP 入口推进到 BullMQ delayed job 与独立 worker
+- 新增 `OrderExpirationQueueService`，为待确认订单写入延迟取消任务并支持重建扫描
+- 新增 `worker.ts` / `WorkerModule` / `OrderExpirationWorkerService`
+- `ReservationService` 已在创建待确认订单后自动调度过期任务
+- `OrdersService` 已在订单迁移出 `PENDING_CONFIRMATION` 后移除对应延迟任务
+- `infra/docker-compose.yml` 已加入 `worker` 服务，并让 `api` / `worker` 共享同一运行时镜像
+- 新增环境变量 `ORDER_PENDING_EXPIRE_SECONDS`，默认 `900`
+- 新增验证证据 `docs/verification/2026-04-18/app-008b-delayed-expiry-worker.md`
 - 完成 `DATA-001`：补齐 demo seed、资源/活动公共读接口与最小管理员维护入口
 - 新增 `pnpm seed:demo`，可重复写入 demo 用户、资源、资源单元、组合资源与活动票种
 - 新增公共接口：
@@ -37,6 +45,8 @@
 
 ### 当前状态
 
+- `APP-008B` 已通过，超时取消已不再依赖手动 HTTP 触发
+- 仓库已经具备独立 worker 进程基线，后续活动抢票可以直接复用同一模式
 - `DATA-001` 已通过，前端联调不再依赖手工 SQL 插库
 - API 已具备资源、活动的公共读接口和最小管理员维护入口
 - 当前公共活动列表由 `published` 状态驱动，管理员修改活动状态后可立即影响公共可见性
@@ -47,12 +57,13 @@
 
 ### 下一步建议
 
-1. 执行 `APP-008B`，把超时取消从显式 HTTP 入口推进到 worker
-2. 再进入 `APP-009`，补活动抢票的 Redis 预扣、队列建单和库存兜底
-3. 随后推进 `APP-010` 与 `APP-011`
+1. 执行 `APP-009`，补活动抢票的 Redis 预扣、队列建单和库存兜底
+2. 再推进 `APP-010`，把规则引擎接入现有用户与订单模型
+3. 随后推进 `APP-011`
 
 ### 注意事项
 
+- 当前 Nginx 对容器 upstream 的解析在 `api` 容器重建后可能短暂命中旧 IP；后续交付前应补一版更稳的容器 DNS 解析配置
 - 当前 seed 脚本默认使用本机 `127.0.0.1:5432` 的 PostgreSQL 作为兜底连接；若后续端口或数据库名变化，需要同步更新
 - 演示环境中的 `DEMO_ADMIN_*` 与 `INTERNAL_JOB_TOKEN` 仅用于当前开发基线，正式部署前必须替换
 - 后续新增需要写入状态的接口时，不要重新引入请求体身份字段，统一从鉴权上下文取用户身份

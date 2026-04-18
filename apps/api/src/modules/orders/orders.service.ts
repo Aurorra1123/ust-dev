@@ -3,16 +3,23 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException
 } from "@nestjs/common";
 import { OrderStatus } from "@prisma/client";
 import type { AuthUser } from "@campusbook/shared-types";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
+import { OrderExpirationQueueService } from "./order-expiration-queue.service";
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prismaService: PrismaService) {}
+  private readonly logger = new Logger(OrdersService.name);
+
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly orderExpirationQueueService: OrderExpirationQueueService
+  ) {}
 
   async getOrder(orderId: string, actor: AuthUser) {
     const order = await this.prismaService.order.findUnique({
@@ -89,15 +96,11 @@ export class OrdersService {
 
     for (const order of pendingOrders) {
       try {
-        const updated = await this.transitionOrder(order.id, {
-          nextStatus: OrderStatus.CANCELLED,
-          allowedFrom: [OrderStatus.PENDING_CONFIRMATION],
-          reason: "timeout-cancelled"
-        });
+        const updated = await this.expirePendingOrderById(order.id);
 
         results.push({
-          orderId: updated.id,
-          status: updated.status
+          orderId: order.id,
+          status: updated?.status ?? "skipped"
         });
       } catch (error) {
         results.push({
@@ -112,6 +115,28 @@ export class OrdersService {
       processed: results.length,
       results
     };
+  }
+
+  async expirePendingOrderById(
+    orderId: string,
+    reason = "timeout-cancelled"
+  ) {
+    try {
+      return await this.transitionOrder(orderId, {
+        nextStatus: OrderStatus.CANCELLED,
+        allowedFrom: [OrderStatus.PENDING_CONFIRMATION],
+        reason
+      });
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        return null;
+      }
+
+      throw error;
+    }
   }
 
   private async transitionOrder(
@@ -150,7 +175,7 @@ export class OrdersService {
       );
     }
 
-    return this.prismaService.$transaction(async (tx) => {
+    const latest = await this.prismaService.$transaction(async (tx) => {
       const updatedCount = await tx.order.updateMany({
         where: {
           id: order.id,
@@ -200,7 +225,7 @@ export class OrdersService {
         });
       }
 
-      const latest = await tx.order.findUnique({
+      const latestOrder = await tx.order.findUnique({
         where: { id: order.id },
         include: {
           academicReservation: true,
@@ -213,12 +238,26 @@ export class OrdersService {
         }
       });
 
-      if (!latest) {
+      if (!latestOrder) {
         throw new NotFoundException("order-not-found-after-transition");
       }
 
-      return latest;
+      return latestOrder;
     });
+
+    if (params.nextStatus !== OrderStatus.PENDING_CONFIRMATION) {
+      try {
+        await this.orderExpirationQueueService.removeExpiration(order.id);
+      } catch (error) {
+        this.logger.warn(
+          `Failed to remove expiration job for order ${order.id}: ${
+            error instanceof Error ? error.message : "unknown-error"
+          }`
+        );
+      }
+    }
+
+    return latest;
   }
 
   private assertOrderReadable(orderUserId: string, actor: AuthUser) {

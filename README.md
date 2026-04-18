@@ -29,6 +29,7 @@
 
 - `pnpm dev:web`
 - `pnpm dev:api`
+- `pnpm dev:worker`
 - `pnpm build`
 - `pnpm lint`
 - `pnpm dev:stack`

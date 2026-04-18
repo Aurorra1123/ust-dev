@@ -29,6 +29,9 @@ class EnvironmentVariables {
   @IsNotEmpty()
   JWT_REFRESH_SECRET!: string;
 
+  @IsNumber()
+  ORDER_PENDING_EXPIRE_SECONDS!: number;
+
   @IsString()
   @IsNotEmpty()
   DEMO_USER_EMAIL!: string;

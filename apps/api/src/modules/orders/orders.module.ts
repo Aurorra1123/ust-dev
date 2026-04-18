@@ -2,11 +2,13 @@ import { Module } from "@nestjs/common";
 
 import { AuthModule } from "../auth/auth.module";
 import { OrdersController } from "./orders.controller";
+import { OrderExpirationQueueService } from "./order-expiration-queue.service";
 import { OrdersService } from "./orders.service";
 
 @Module({
   imports: [AuthModule],
   controllers: [OrdersController],
-  providers: [OrdersService]
+  providers: [OrdersService, OrderExpirationQueueService],
+  exports: [OrderExpirationQueueService, OrdersService]
 })
 export class OrdersModule {}

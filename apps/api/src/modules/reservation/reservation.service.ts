@@ -2,9 +2,11 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   OrderBizType,
   OrderStatus,
@@ -21,14 +23,21 @@ import type {
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import type { AuthenticatedUser } from "../auth/auth.types";
+import { OrderExpirationQueueService } from "../orders/order-expiration-queue.service";
 
 const ACADEMIC_BUFFER_MINUTES = 5;
-const ORDER_EXPIRE_MINUTES = 15;
+const DEFAULT_ORDER_EXPIRE_SECONDS = 15 * 60;
 const SPORTS_SLOT_MINUTES = 60;
 
 @Injectable()
 export class ReservationService {
-  constructor(private readonly prismaService: PrismaService) {}
+  private readonly logger = new Logger(ReservationService.name);
+
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly configService: ConfigService,
+    private readonly orderExpirationQueueService: OrderExpirationQueueService
+  ) {}
 
   async createAcademicReservation(
     payload: AcademicReservationRequest,
@@ -85,13 +94,14 @@ export class ReservationService {
     }
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
+      const created = await this.prismaService.$transaction(async (tx) => {
+        const expireAt = buildOrderExpireAt(this.configService);
         const order = await tx.order.create({
           data: {
             userId: user.id,
             bizType: OrderBizType.RESOURCE_RESERVATION,
             status: OrderStatus.PENDING_CONFIRMATION,
-            expireAt: addMinutes(new Date(), ORDER_EXPIRE_MINUTES),
+            expireAt,
             totalAmountCents: 0,
             items: {
               create: {
@@ -129,19 +139,25 @@ export class ReservationService {
         });
 
         return {
-          reservationId: reservation.id,
-          orderId: order.id,
-          orderNo: order.orderNo,
-          userId: user.id,
-          resourceId: reservation.resourceId,
-          resourceUnitId: reservation.resourceUnitId,
-          startTime: reservation.startTime.toISOString(),
-          endTime: reservation.endTime.toISOString(),
-          bufferBeforeMin: reservation.bufferBeforeMin,
-          bufferAfterMin: reservation.bufferAfterMin,
-          status: "pending_confirmation"
+          expireAt,
+          response: {
+            reservationId: reservation.id,
+            orderId: order.id,
+            orderNo: order.orderNo,
+            userId: user.id,
+            resourceId: reservation.resourceId,
+            resourceUnitId: reservation.resourceUnitId,
+            startTime: reservation.startTime.toISOString(),
+            endTime: reservation.endTime.toISOString(),
+            bufferBeforeMin: reservation.bufferBeforeMin,
+            bufferAfterMin: reservation.bufferAfterMin,
+            status: "pending_confirmation" as const
+          }
         };
       });
+
+      await this.scheduleOrderExpiration(created.response.orderId, created.expireAt);
+      return created.response;
     } catch (error) {
       if (
         error instanceof Error &&
@@ -257,13 +273,14 @@ export class ReservationService {
     }
 
     try {
-      return await this.prismaService.$transaction(async (tx) => {
+      const created = await this.prismaService.$transaction(async (tx) => {
+        const expireAt = buildOrderExpireAt(this.configService);
         const order = await tx.order.create({
           data: {
             userId: user.id,
             bizType: OrderBizType.RESOURCE_RESERVATION,
             status: OrderStatus.PENDING_CONFIRMATION,
-            expireAt: addMinutes(new Date(), ORDER_EXPIRE_MINUTES),
+            expireAt,
             totalAmountCents: 0
           }
         });
@@ -313,17 +330,23 @@ export class ReservationService {
         });
 
         return {
-          orderId: order.id,
-          orderNo: order.orderNo,
-          userId: user.id,
-          resourceId: parentResource.id,
-          resourceUnitIds: resourceUnits.map((unit) => unit.id),
-          slotStarts: normalizedSlots.map((slot) => slot.start.toISOString()),
-          slotEnds: normalizedSlots.map((slot) => slot.end.toISOString()),
-          slotCount: sportsSlots.length,
-          status: "pending_confirmation"
+          expireAt,
+          response: {
+            orderId: order.id,
+            orderNo: order.orderNo,
+            userId: user.id,
+            resourceId: parentResource.id,
+            resourceUnitIds: resourceUnits.map((unit) => unit.id),
+            slotStarts: normalizedSlots.map((slot) => slot.start.toISOString()),
+            slotEnds: normalizedSlots.map((slot) => slot.end.toISOString()),
+            slotCount: sportsSlots.length,
+            status: "pending_confirmation" as const
+          }
         };
       });
+
+      await this.scheduleOrderExpiration(created.response.orderId, created.expireAt);
+      return created.response;
     } catch (error) {
       if (isPrismaUniqueConstraintError(error, "sports_active_slot_unique")) {
         throw new ConflictException("sports-reservation-conflict");
@@ -344,10 +367,30 @@ export class ReservationService {
 
     return user;
   }
+
+  private async scheduleOrderExpiration(orderId: string, expireAt: Date) {
+    try {
+      await this.orderExpirationQueueService.scheduleExpiration(orderId, expireAt);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to schedule expiration for order ${orderId}: ${
+          error instanceof Error ? error.message : "unknown-error"
+        }`
+      );
+    }
+  }
 }
 
 function addMinutes(value: Date, minutes: number) {
   return new Date(value.getTime() + minutes * 60 * 1000);
+}
+
+function buildOrderExpireAt(configService: ConfigService) {
+  const seconds =
+    configService.get<number>("ORDER_PENDING_EXPIRE_SECONDS") ??
+    DEFAULT_ORDER_EXPIRE_SECONDS;
+
+  return new Date(Date.now() + seconds * 1000);
 }
 
 function normalizeSportsSlots(slotStarts: string[]) {
