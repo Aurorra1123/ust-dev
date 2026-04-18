@@ -22,6 +22,7 @@
 - `standards/git-workflow.md`：git 提交与会话流程
 - `standards/agent-harness-rules.md`：长周期 agent 执行规则
 - `standards/deployment-baseline.md`：部署环境、域名与 Nginx 分流基线
+- `standards/https-deployment-playbook.md`：HTTPS 升级与证书部署手册
 - `verification/README.md`：验证证据存放规范
 - `adr/0001-repo-as-agent-memory.md`：仓库作为 agent 主记忆体
 - `adr/0004-single-node-typescript-platform-baseline.md`：当前技术基线决策

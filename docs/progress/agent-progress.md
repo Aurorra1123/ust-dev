@@ -6,6 +6,30 @@
 
 ### 已完成
 
+- 完成 `OPS-002`：补齐 HTTPS-ready 配置、证书挂载约定与正式部署手册
+- 新增 `infra/docker-compose.https.yml`
+  - 为 `nginx` 增加 `443:443`
+  - 挂载 Let’s Encrypt 证书目录
+  - 通过 override 覆盖 `campusbook.conf`，避免与基础 HTTP 配置重复定义 `80` server block
+- `infra/nginx/conf.d/campusbook.conf` 已补：
+  - ACME challenge 路径
+  - Docker DNS `127.0.0.11` 解析
+  - 更稳定的 `X-Forwarded-*` 头透传
+- 新增 `infra/nginx/https-conf.d/campusbook-https.conf.template`
+  - 前端和 API 的 `443` server block
+  - `80 -> 443` 跳转
+  - Let’s Encrypt 证书路径
+- 应用侧已补齐 HTTPS 切换关键点：
+  - 前端 API 默认地址按页面协议推导 `api.campusbook.top`
+  - `NODE_ENV=production` 时 refresh token Cookie 自动启用 `secure`
+  - `ALLOWED_ORIGINS` 默认值已同时覆盖 HTTP 与 HTTPS 的前端域名
+- 新增部署手册 `docs/standards/https-deployment-playbook.md`
+- 轻量验证通过：
+  - `docker compose -f infra/docker-compose.yml config`
+  - `docker compose -f infra/docker-compose.yml -f infra/docker-compose.https.yml config`
+  - 基础 HTTP `nginx -t`
+  - 带临时自签证书的 HTTPS `nginx -t`
+- 新增验证证据 `docs/verification/2026-04-18/ops-002-https-ready-baseline.md`
 - 完成 `OPS-001`：补齐轻量 smoke test、CI test 保留位与回归样本
 - 新增 `scripts/smoke-live.mjs`，默认校验：
   - `campusbook.top`
@@ -143,6 +167,9 @@
 
 ### 当前状态
 
+- `OPS-002` 已通过，仓库已经具备 HTTPS-ready 的配置、证书挂载约定和切换手册
+- 当前线上仍运行 HTTP；正式 HTTPS 证书尚未在这次会话中签发和启用
+- 后续只需按手册申请证书并用 `docker-compose.https.yml` 重启 `nginx`，不需要重做域名分流结构
 - `OPS-001` 已通过，仓库已具备可重复执行的 live smoke 脚本与最小回归样本
 - CI 当前链路为：
   - `prisma:generate`
@@ -185,7 +212,7 @@
 
 ### 下一步建议
 
-1. 执行 `OPS-002`，收口 HTTPS 与正式部署基线
+1. 选择低峰窗口，按 `https-deployment-playbook.md` 实际签发证书并启用 `443`
 2. 交付前补一轮前端真实浏览器回归与管理端操作样本
 3. 按 smoke 脚本为基础继续扩展更细的业务回归样本
 
@@ -198,6 +225,7 @@
 - 后续新增需要写入状态的接口时，不要重新引入请求体身份字段，统一从鉴权上下文取用户身份
 - 活动 worker 依赖 Redis 真实可写连接；后续新增基于 `RedisService.raw` 的业务逻辑时，优先使用 `RedisService.connect()` 保证首次调用不会踩到 lazy-connect 边界
 - 规则表达式当前采用结构化 JSON，而不是通用 DSL；后续扩展时优先保持显式结构，避免过早引入难以验证的表达式求值器
+- `infra/nginx/.runtime/` 属于运行时目录；正式证书、ACME challenge 文件和临时 HTTPS 产物都不进入 git
 
 ### 工具补充
 

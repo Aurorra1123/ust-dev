@@ -51,6 +51,27 @@
 - HTTPS 证书需要覆盖 `campusbook.top`、`www.campusbook.top`、`api.campusbook.top`
 - 升级时优先在现有 server block 结构上补充 `listen 443 ssl` 与跳转逻辑，避免重做路由设计
 
+## HTTPS Ready 配置基线
+
+- 基础 HTTP 编排继续使用 `infra/docker-compose.yml`
+- HTTPS 升级追加 `infra/docker-compose.https.yml`
+- 基础 HTTP 路由位于 `infra/nginx/conf.d/campusbook.conf`
+- 443 与 `80 -> 443` 跳转配置模板位于 `infra/nginx/https-conf.d/campusbook-https.conf.template`
+- ACME challenge 目录约定为 `infra/nginx/.runtime/certbot/www`
+- Let’s Encrypt 证书目录约定为 `infra/nginx/.runtime/certbot/conf`
+
+以上目录属于运行时产物，不进入 git。
+
+## 应用层切换约束
+
+- API 的 `ALLOWED_ORIGINS` 必须同时覆盖：
+  - `http://campusbook.top`
+  - `http://www.campusbook.top`
+  - `https://campusbook.top`
+  - `https://www.campusbook.top`
+- 前端默认 API 地址不得硬编码为单一协议；应优先跟随当前页面协议推导 `api.campusbook.top`
+- 切换到正式 HTTPS 时，`NODE_ENV` 必须为 `production`，以便 refresh token Cookie 自动启用 `secure`
+
 ## 运维要求
 
 - 部署文档中的域名、端口、服务归属必须与本文件一致

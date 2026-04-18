@@ -22,8 +22,16 @@ import type {
 
 import { useSessionStore } from "../store/session-store";
 
+function inferDefaultApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return "http://api.campusbook.top";
+  }
+
+  return `${window.location.protocol}//api.campusbook.top`;
+}
+
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://api.campusbook.top";
+  import.meta.env.VITE_API_BASE_URL ?? inferDefaultApiBaseUrl();
 
 export class ApiError extends Error {
   constructor(

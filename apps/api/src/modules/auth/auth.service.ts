@@ -45,10 +45,13 @@ export class AuthService {
   }
 
   getRefreshCookieOptions() {
+    const isProduction =
+      this.configService.get<string>("NODE_ENV") === "production";
+
     return {
       httpOnly: true,
       sameSite: "lax" as const,
-      secure: false,
+      secure: isProduction,
       path: "/auth",
       maxAge: REFRESH_TOKEN_TTL_SECONDS * 1000
     };

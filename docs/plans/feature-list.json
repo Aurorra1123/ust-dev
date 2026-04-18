@@ -190,7 +190,7 @@
       "部署文档或工作流能支撑远端更新",
       "正式环境符合 campusbook.top / www / api 的既定域名结构"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "DOCS-001",

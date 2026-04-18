@@ -1,0 +1,7 @@
+services:
+  nginx:
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx/https-conf.d/campusbook-https.conf.template:/etc/nginx/conf.d/campusbook.conf:ro
+      - ./nginx/.runtime/certbot/conf:/etc/letsencrypt:ro
