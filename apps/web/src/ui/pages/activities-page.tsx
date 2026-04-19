@@ -80,7 +80,7 @@ export function ActivitiesPage() {
       <PageHero
         eyebrow="Activity Grab"
         title="统一浏览校园活动并完成报名与抢票"
-        description="活动报名先经过 Redis 热点校验和库存预扣，再进入异步建单流程。页面会展示活动详情、票种入口和当前用户的报名状态。"
+        description="活动页提供统一的活动浏览、票种报名和状态查看能力。提交后，页面会持续更新当前用户的报名结果和订单状态。"
         aside={
           <>
             <p className="font-medium text-ink">当前公开活动</p>
@@ -254,7 +254,7 @@ export function ActivitiesPage() {
                   <div className="mt-4">
                     <GuidancePanel
                       title="抢票说明"
-                      description="提交请求后，系统可能先返回排队中。最终是否成功，以异步建单后的报名状态和订单结果为准。"
+                      description="提交请求后，系统可能先进入排队确认阶段。最终是否成功，以页面中的报名状态和订单结果为准。"
                     />
                   </div>
                 </div>

@@ -62,7 +62,7 @@ export function HomePage() {
 
       <PageSection
         title="快速服务入口"
-        description="面向学生的三条主路径已经全部接入真实后端能力，后续会继续补齐页面细节与浏览器级回归。"
+        description="面向学生的三条主路径已经可以直接使用，后续会继续补齐页面细节、移动端体验和浏览器级回归。"
       >
         <div className="grid gap-4 lg:grid-cols-3">
           {routeCards.map((card) => (
@@ -86,7 +86,7 @@ export function HomePage() {
 
       <PageSection
         title="平台运行状态"
-        description="当前线上站点已经完成 HTTPS 切换，并接入数据库、缓存和最小回归校验。"
+        description="当前线上站点已经完成正式 HTTPS 切换，并具备稳定的服务、数据和会话能力。"
       >
         <div className="grid gap-4 sm:grid-cols-3">
           <StatusCard
@@ -95,11 +95,8 @@ export function HomePage() {
               isLoading ? "检查中" : isError ? "未连通" : data?.status ?? "未知"
             }
           />
-          <StatusCard
-            label="PostgreSQL"
-            value={data?.dependencies.postgres ?? "unknown"}
-          />
-          <StatusCard label="Redis" value={data?.dependencies.redis ?? "unknown"} />
+          <StatusCard label="数据服务" value={data?.dependencies.postgres ?? "unknown"} />
+          <StatusCard label="会话与队列" value={data?.dependencies.redis ?? "unknown"} />
         </div>
       </PageSection>
 
@@ -119,7 +116,7 @@ export function HomePage() {
             },
             {
               title: "统一规则",
-              description: "资源限制、信用分和身份约束通过规则引擎进入主流程，而不是散落在各页面。"
+              description: "资源限制、信用分和身份约束会在服务主流程中统一执行，减少页面间规则不一致。"
             }
           ].map((item) => (
             <div

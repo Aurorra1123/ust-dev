@@ -89,7 +89,7 @@ export function SpacesPage() {
 
       <PageSection
         title="服务概览"
-        description="当前列表使用 demo seed 中的真实资源数据。提交预约后，你可以在“我的订单”里回看状态迁移和缓冲信息。"
+        description="当前列表展示的是系统内已经可用的学术空间资源。提交预约后，你可以在“我的订单”里回看状态迁移和预约信息。"
       >
         <MetricGrid>
           <MetricCard
@@ -117,7 +117,7 @@ export function SpacesPage() {
 
       <PageSection
         title="空间列表与预约"
-        description="左侧浏览资源与单元，右侧直接发起预约。提交成功后，系统会自动写入统一订单。"
+        description="左侧浏览资源与单元，右侧直接发起预约。提交成功后，记录会自动进入你的订单列表。"
       >
         {resourcesQuery.isLoading ? (
           <p className="text-sm text-ink/70">正在加载学术空间。</p>
