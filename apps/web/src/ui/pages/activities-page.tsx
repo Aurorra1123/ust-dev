@@ -18,6 +18,7 @@ import {
   EmptyPanel,
   GuidancePanel,
   HighlightPanel,
+  StatePanel,
   StepList,
   StatusPill
 } from "../user-experience-kit";
@@ -140,11 +141,17 @@ export function ActivitiesPage() {
         description="左侧选择活动，右侧查看详情、票种和当前用户状态。"
       >
         {activitiesQuery.isLoading ? (
-          <p className="text-sm text-ink/70">正在加载活动列表。</p>
+          <StatePanel
+            tone="loading"
+            title="正在载入活动列表"
+            description="页面正在准备当前可浏览的活动与票种信息。"
+          />
         ) : activitiesQuery.isError ? (
-          <p className="text-sm text-danger">
-            {(activitiesQuery.error as ApiError).message}
-          </p>
+          <StatePanel
+            tone="danger"
+            title="活动列表暂时无法加载"
+            description={(activitiesQuery.error as ApiError).message}
+          />
         ) : !activitiesQuery.data?.length ? (
           <EmptyPanel
             title="当前没有已发布活动"
@@ -209,11 +216,21 @@ export function ActivitiesPage() {
                 <div className="rounded-[24px] border border-ink/10 bg-mist px-5 py-5">
                   <h3 className="text-lg font-semibold text-ink">票种与抢票入口</h3>
                   {detailQuery.isLoading ? (
-                    <p className="mt-4 text-sm text-ink/70">正在加载票种详情。</p>
+                    <div className="mt-4">
+                      <StatePanel
+                        tone="loading"
+                        title="正在载入票种详情"
+                        description="页面正在准备当前活动的票种与可报名信息。"
+                      />
+                    </div>
                   ) : detailQuery.isError ? (
-                    <p className="mt-4 text-sm text-danger">
-                      {(detailQuery.error as ApiError).message}
-                    </p>
+                    <div className="mt-4">
+                      <StatePanel
+                        tone="danger"
+                        title="票种信息暂时无法加载"
+                        description={(detailQuery.error as ApiError).message}
+                      />
+                    </div>
                   ) : (
                     <div className="mt-4 grid gap-3">
                       {detailQuery.data?.tickets.map((ticket) => (
@@ -278,16 +295,29 @@ export function ActivitiesPage() {
                   <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
                     <h3 className="text-lg font-semibold text-ink">我的报名状态</h3>
                     {registrationStatusQuery.isLoading ? (
-                      <p className="mt-4 text-sm text-ink/70">正在读取报名状态。</p>
+                      <div className="mt-4">
+                        <StatePanel
+                          tone="loading"
+                          title="正在读取报名状态"
+                          description="页面正在确认你在当前活动中的最新报名结果。"
+                        />
+                      </div>
                     ) : registrationStatusQuery.isError ? (
                       (registrationStatusQuery.error as ApiError).status === 404 ? (
-                        <p className="mt-4 text-sm text-ink/70">
-                          当前还没有该活动的报名记录。
-                        </p>
+                        <div className="mt-4">
+                          <StatePanel
+                            title="你还没有这场活动的报名记录"
+                            description="选中票种并提交后，结果会显示在这里。"
+                          />
+                        </div>
                       ) : (
-                        <p className="mt-4 text-sm text-danger">
-                          {(registrationStatusQuery.error as ApiError).message}
-                        </p>
+                        <div className="mt-4">
+                          <StatePanel
+                            tone="danger"
+                            title="报名状态暂时无法读取"
+                            description={(registrationStatusQuery.error as ApiError).message}
+                          />
+                        </div>
                       )
                     ) : registrationStatusQuery.data ? (
                       <div className="mt-4 rounded-2xl bg-sand px-4 py-4 text-sm text-ink/75">

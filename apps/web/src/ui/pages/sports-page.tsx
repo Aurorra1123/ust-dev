@@ -16,6 +16,7 @@ import {
   EmptyPanel,
   GuidancePanel,
   HighlightPanel,
+  StatePanel,
   StepList,
   StatusPill
 } from "../user-experience-kit";
@@ -186,11 +187,17 @@ export function SportsPage() {
         description="左侧浏览资源、单元和组合资源，右侧切换预约模式并勾选槽位。"
       >
         {resourcesQuery.isLoading ? (
-          <p className="text-sm text-ink/70">正在加载体育设施。</p>
+          <StatePanel
+            tone="loading"
+            title="正在载入体育设施"
+            description="页面正在整理当前可预约的场地与组合资源，请稍候。"
+          />
         ) : resourcesQuery.isError ? (
-          <p className="text-sm text-danger">
-            {(resourcesQuery.error as ApiError).message}
-          </p>
+          <StatePanel
+            tone="danger"
+            title="体育设施暂时无法加载"
+            description={(resourcesQuery.error as ApiError).message}
+          />
         ) : !resourcesQuery.data?.length ? (
           <EmptyPanel
             title="当前还没有可用的体育设施"
@@ -217,9 +224,11 @@ export function SportsPage() {
               </div>
 
               {resourceDetailQuery.isLoading ? (
-                <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5 text-sm text-ink/70">
-                  正在加载资源详情。
-                </div>
+                <StatePanel
+                  tone="loading"
+                  title="正在载入资源详情"
+                  description="页面正在补齐当前场地的单元和组合资源信息。"
+                />
               ) : currentResource ? (
                 <div className="overflow-hidden rounded-[26px] border border-ink/10 bg-white">
                   <div className="border-b border-navy/10 bg-gradient-to-r from-navy via-[#0d3f82] to-moss px-5 py-4 text-white">

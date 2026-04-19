@@ -11,6 +11,7 @@ import {
   EmptyPanel,
   GuidancePanel,
   HighlightPanel,
+  StatePanel,
   StepList,
   StatusPill
 } from "../user-experience-kit";
@@ -131,11 +132,17 @@ export function SpacesPage() {
         description="左侧浏览资源与单元，右侧直接发起预约。提交成功后，记录会自动进入你的订单列表。"
       >
         {resourcesQuery.isLoading ? (
-          <p className="text-sm text-ink/70">正在加载学术空间。</p>
+          <StatePanel
+            tone="loading"
+            title="正在载入学术空间"
+            description="页面正在整理当前可预约的学习与研讨空间，请稍候。"
+          />
         ) : resourcesQuery.isError ? (
-          <p className="text-sm text-danger">
-            {(resourcesQuery.error as ApiError).message}
-          </p>
+          <StatePanel
+            tone="danger"
+            title="学术空间暂时无法加载"
+            description={(resourcesQuery.error as ApiError).message}
+          />
         ) : !resourcesQuery.data?.length ? (
           <EmptyPanel
             title="当前还没有可用的学术空间"

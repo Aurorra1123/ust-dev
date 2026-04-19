@@ -147,13 +147,13 @@ export function AppShell() {
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.22em] text-white/78">
                   <span className="rounded-full border border-white/20 bg-white/10 px-3 py-2">
-                    HTTPS Live
+                    HTTPS 已启用
                   </span>
                   <span className="rounded-full border border-white/20 bg-white/10 px-3 py-2">
-                    Real Inventory
+                    统一订单
                   </span>
                   <span className="rounded-full border border-white/20 bg-white/10 px-3 py-2">
-                    Role-Based Access
+                    角色权限
                   </span>
                 </div>
               </div>
@@ -175,19 +175,18 @@ export function AppShell() {
                     {currentSection.label}
                   </span>
                   <span className="rounded-full bg-sand px-3 py-2 text-xs uppercase tracking-[0.2em] text-slate">
-                    {user?.role === "admin" ? "Admin View" : "Student View"}
+                    {user?.role === "admin" ? "管理端视图" : "学生端视图"}
                   </span>
                 </div>
               </div>
 
               <div className="mt-6 rounded-[24px] border border-navy/10 bg-sand px-5 py-5 text-sm">
                 <p className="text-xs uppercase tracking-[0.28em] text-moss">
-                  访问状态
+                  服务状态
                 </p>
-                <p className="mt-4 text-sm text-slate">
-                  前端：`campusbook.top` / `www.campusbook.top`
+                <p className="mt-4 text-sm leading-7 text-slate">
+                  当前站点已经开放学术空间、体育设施、校园活动与管理后台四类入口。
                 </p>
-                <p className="mt-1 text-sm text-slate">API：`api.campusbook.top`</p>
                 <div className="mt-4 border-t border-navy/10 pt-4">
                   {sessionStatus === "authenticated" && user ? (
                     <>
@@ -206,9 +205,9 @@ export function AppShell() {
                     </>
                   ) : (
                     <>
-                      <p className="font-medium text-ink">当前未登录</p>
+                      <p className="font-medium text-ink">当前为访客模式</p>
                       <p className="mt-1 text-slate">
-                        可使用体验账号进入学生端或管理员端。
+                        可使用示例账号进入学生端或管理端。
                       </p>
                       <Link
                         to="/login"
@@ -226,19 +225,19 @@ export function AppShell() {
 
         {sessionStatus === "unknown" ? (
           <div className="mt-4 rounded-[24px] border border-moss/15 bg-mist px-4 py-3 text-sm text-slate">
-            正在尝试通过 refresh token 恢复登录态。
+            正在恢复你的登录状态，请稍候。
           </div>
         ) : null}
 
         <nav className="mt-5 rounded-[24px] border border-navy/10 bg-white/90 p-3 shadow-panel backdrop-blur">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {navigationItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
                   [
-                    "rounded-full border px-4 py-2.5 text-sm transition",
+                    "whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition",
                     isActive
                       ? "border-ember bg-ember text-white"
                       : "border-navy/10 bg-sand text-ink hover:border-moss hover:text-moss"

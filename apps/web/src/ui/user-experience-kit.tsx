@@ -57,6 +57,32 @@ export function EmptyPanel({
   );
 }
 
+export function StatePanel({
+  title,
+  description,
+  tone = "neutral"
+}: {
+  title: string;
+  description: string;
+  tone?: "neutral" | "loading" | "danger" | "success";
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "border-danger/18 bg-danger/8"
+      : tone === "success"
+        ? "border-moss/18 bg-moss/8"
+        : tone === "loading"
+          ? "border-moss/15 bg-mist"
+          : "border-navy/10 bg-sand";
+
+  return (
+    <div className={`rounded-[24px] border px-5 py-5 ${toneClass}`}>
+      <p className="text-sm font-semibold text-ink">{title}</p>
+      <p className="mt-2 text-sm leading-7 text-slate">{description}</p>
+    </div>
+  );
+}
+
 export function StatusPill({
   children,
   tone = "neutral"

@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, login } from "../../lib/api";
 import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
+import { GuidancePanel } from "../user-experience-kit";
 
 const defaultAccount = {
   label: "普通用户",
@@ -44,12 +45,12 @@ export function LoginPage() {
       <PageHero
         eyebrow="Unified Access"
         title="从同一个身份入口进入学生端或管理员端"
-        description="当前站点通过体验账号驱动真实 API。登录成功后，访问令牌会写入前端会话，refresh token 通过 HttpOnly Cookie 保存，并在刷新后自动恢复。"
+        description="这里是 CampusBook 的统一身份入口。登录后可以直接进入学生服务或管理后台，不需要再切换不同站点。"
       />
 
       <PageSection
         title="选择身份并登录"
-        description="建议先使用学生账号体验预约和活动流程，再使用管理员账号查看后台工作台。"
+        description="建议先用学生示例账号体验预约和活动流程，再使用管理员示例账号查看后台工作台。"
       >
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),320px]">
           <form
@@ -101,11 +102,16 @@ export function LoginPage() {
             >
               {loginMutation.isPending ? "登录中" : "登录并进入站点"}
             </button>
+
+            <GuidancePanel
+              title="登录提示"
+              description="学生入口适合体验预约、抢票和订单流程；管理入口适合查看资源、活动和规则维护界面。"
+            />
           </form>
 
           <div className="rounded-[28px] border border-navy/10 bg-gradient-to-br from-sand to-mist px-5 py-5">
             <p className="text-xs uppercase tracking-[0.3em] text-moss">
-              Experience Accounts
+              示例账号
             </p>
             <div className="mt-4 grid gap-3">
               {demoAccounts.map((account) => (

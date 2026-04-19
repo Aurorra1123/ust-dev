@@ -75,12 +75,12 @@ export function HomePage() {
                 {status === "authenticated" ? "已进入服务门户" : "欢迎访问"}
               </span>
               <span className="rounded-full bg-white px-3 py-2 text-xs uppercase tracking-[0.18em] text-slate">
-                {user?.role === "admin" ? "Admin Workspace" : "Student Services"}
+                {user?.role === "admin" ? "管理端工作台" : "学生服务入口"}
               </span>
             </div>
             <div className="mt-4 rounded-2xl bg-white px-4 py-3 text-xs leading-6 text-slate">
-              <p>学生体验账号：demo@campusbook.top / demo123456</p>
-              <p>管理员账号：admin@campusbook.top / admin123456</p>
+              <p>学生入口：demo@campusbook.top / demo123456</p>
+              <p>管理入口：admin@campusbook.top / admin123456</p>
             </div>
           </>
         }
@@ -88,7 +88,7 @@ export function HomePage() {
 
       <PageSection
         title="今日服务总览"
-        description="首页不再只是技术说明区，而是把当天最常用的服务入口、资源规模和平台状态集中放在同一个总览面板里。"
+        description="首页把当天最常用的服务入口、资源规模和平台状态集中放在同一个总览面板里，方便第一次进入时快速找到主路径。"
       >
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr),380px]">
           <HighlightPanel
@@ -126,11 +126,11 @@ export function HomePage() {
                   }
                 />
                 <StatusCard
-                  label="数据服务"
+                  label="数据可用性"
                   value={data?.dependencies.postgres ?? "unknown"}
                 />
                 <StatusCard
-                  label="会话与队列"
+                  label="服务支撑"
                   value={data?.dependencies.redis ?? "unknown"}
                 />
               </div>
@@ -140,7 +140,7 @@ export function HomePage() {
               <p className="mt-3 text-sm leading-7 text-slate">
                 {status === "authenticated"
                   ? "你已经可以直接进入预约、抢票与订单页面。后续如需维护资源与规则，可切换到管理员账号。"
-                  : "先用体验账号登录，再进入学术空间、体育设施、活动或管理后台。"}
+                  : "先用示例账号登录，再进入学术空间、体育设施、活动或管理后台。"}
               </p>
             </div>
           </div>
@@ -237,7 +237,7 @@ export function HomePage() {
 
       <PageSection
         title="关键规模"
-        description="这些数字不是宣传文案，而是当前线上演示环境中已经可以被真实浏览和操作的服务规模。"
+        description="这些数字反映的是当前平台已经开放给站点访客浏览和使用的服务规模。"
       >
         <MetricGrid>
           <MetricCard

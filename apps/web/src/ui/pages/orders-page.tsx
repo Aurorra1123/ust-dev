@@ -12,6 +12,7 @@ import { PageSection } from "../page-section";
 import {
   EmptyPanel,
   HighlightPanel,
+  StatePanel,
   StepList,
   StatusPill
 } from "../user-experience-kit";
@@ -120,11 +121,17 @@ export function OrdersPage() {
         description="左侧快速切换订单，右侧查看明细、状态和日志。"
       >
         {ordersQuery.isLoading ? (
-          <p className="text-sm text-ink/70">正在加载订单列表。</p>
+          <StatePanel
+            tone="loading"
+            title="正在载入订单中心"
+            description="页面正在整理最近的预约、报名与状态变化记录。"
+          />
         ) : ordersQuery.isError ? (
-          <p className="text-sm text-danger">
-            {(ordersQuery.error as ApiError).message}
-          </p>
+          <StatePanel
+            tone="danger"
+            title="订单中心暂时无法加载"
+            description={(ordersQuery.error as ApiError).message}
+          />
         ) : !ordersQuery.data?.length ? (
           <EmptyPanel
             title="当前还没有可展示的订单"

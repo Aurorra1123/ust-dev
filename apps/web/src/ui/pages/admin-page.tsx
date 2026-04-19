@@ -21,6 +21,7 @@ import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
 import {
   HighlightPanel,
+  StatePanel,
   StatusPill,
   StepList
 } from "../user-experience-kit";
@@ -453,11 +454,17 @@ export function AdminPage() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),340px]">
           <div className="grid gap-4">
             {resourcesQuery.isLoading ? (
-              <p className="text-sm text-ink/70">正在加载资源。</p>
+              <StatePanel
+                tone="loading"
+                title="正在载入资源工作区"
+                description="页面正在整理当前可维护的资源与资源单元。"
+              />
             ) : resourcesQuery.isError ? (
-              <p className="text-sm text-danger">
-                {(resourcesQuery.error as ApiError).message}
-              </p>
+              <StatePanel
+                tone="danger"
+                title="资源工作区暂时无法加载"
+                description={(resourcesQuery.error as ApiError).message}
+              />
             ) : (
               resourcesQuery.data?.map((resource) => (
                 <button
@@ -681,11 +688,17 @@ export function AdminPage() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),360px]">
           <div className="grid gap-4">
             {activitiesQuery.isLoading ? (
-              <p className="text-sm text-ink/70">正在加载活动。</p>
+              <StatePanel
+                tone="loading"
+                title="正在载入活动工作区"
+                description="页面正在整理当前活动、票种与状态信息。"
+              />
             ) : activitiesQuery.isError ? (
-              <p className="text-sm text-danger">
-                {(activitiesQuery.error as ApiError).message}
-              </p>
+              <StatePanel
+                tone="danger"
+                title="活动工作区暂时无法加载"
+                description={(activitiesQuery.error as ApiError).message}
+              />
             ) : (
               activitiesQuery.data?.map((activity) => (
                 <button
@@ -1054,11 +1067,17 @@ export function AdminPage() {
         description="规则当前以快照方式呈现，重点帮助管理员快速理解站点正在执行哪些限制，以及它们绑定了多少资源。"
       >
         {rulesQuery.isLoading ? (
-          <p className="text-sm text-ink/70">正在加载规则配置。</p>
+          <StatePanel
+            tone="loading"
+            title="正在载入规则工作区"
+            description="页面正在整理当前启用的规则和资源绑定关系。"
+          />
         ) : rulesQuery.isError ? (
-          <p className="text-sm text-danger">
-            {(rulesQuery.error as ApiError).message}
-          </p>
+          <StatePanel
+            tone="danger"
+            title="规则工作区暂时无法加载"
+            description={(rulesQuery.error as ApiError).message}
+          />
         ) : (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),340px]">
             <div className="grid gap-3 lg:grid-cols-2">
