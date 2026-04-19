@@ -11,8 +11,8 @@ import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
 import {
   EmptyPanel,
-  MetricCard,
-  MetricGrid,
+  HighlightPanel,
+  StepList,
   StatusPill
 } from "../user-experience-kit";
 
@@ -66,8 +66,8 @@ export function OrdersPage() {
         title={user?.role === "admin" ? "订单中心" : "我的订单"}
         description={
           user?.role === "admin"
-            ? "管理员可以查看最近订单状态，确认当前站点的预约、抢票与取消流转是否正常。"
-            : "这里会展示你最近的预约、抢票和状态变更日志，便于回看每一笔操作的生命周期。"
+            ? "管理员可以在这里回看全站订单和状态迁移，快速确认预约、抢票与取消链路是否稳定。"
+            : "这里会集中展示你的预约、活动报名和状态变更日志，方便回看每一笔操作的生命周期。"
         }
         aside={
           <>
@@ -81,30 +81,38 @@ export function OrdersPage() {
 
       <PageSection
         title="订单概览"
-        description="订单页用于统一回看预约、活动报名和状态迁移记录。所有关键动作都会进入状态日志。"
+        description="订单页是所有服务的收口位置。无论你是预约空间、预约体育设施还是报名活动，结果都会汇总到这里。"
       >
-        <MetricGrid>
-          <MetricCard
-            label="订单总数"
-            value={String(orderStats.total)}
-            detail="当前可见范围内的最近订单数"
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr),420px]">
+          <HighlightPanel
+            eyebrow="Unified Orders"
+            title="用一处订单中心回看全部预约与报名结果"
+            description="订单页把不同业务的结果统一成相同的状态语言。你不需要再回到原页面查找结果，只要在这里看状态、明细和日志即可。"
+          >
+            <div className="grid gap-3 sm:grid-cols-4">
+              <QuickFact label="订单总数" value={String(orderStats.total)} />
+              <QuickFact label="待确认" value={String(orderStats.pending)} />
+              <QuickFact label="已确认" value={String(orderStats.confirmed)} />
+              <QuickFact label="已取消" value={String(orderStats.cancelled)} />
+            </div>
+          </HighlightPanel>
+          <StepList
+            items={[
+              {
+                title: "切换订单",
+                description: "先从左侧列表切换到想查看的预约或报名记录。"
+              },
+              {
+                title: "查看明细",
+                description: "右侧会展示资源、时段、票种和提交用户等关键信息。"
+              },
+              {
+                title: "回看日志",
+                description: "状态变化和原因都会进入日志，便于追踪整笔订单的生命周期。"
+              }
+            ]}
           />
-          <MetricCard
-            label="待确认"
-            value={String(orderStats.pending)}
-            detail="通常代表已创建、待确认或等待超时处理"
-          />
-          <MetricCard
-            label="已确认"
-            value={String(orderStats.confirmed)}
-            detail="已完成确认的预约或报名记录"
-          />
-          <MetricCard
-            label="已取消"
-            value={String(orderStats.cancelled)}
-            detail="取消后应已同步释放资源或票种占用"
-          />
-        </MetricGrid>
+        </div>
       </PageSection>
 
       <PageSection
@@ -129,9 +137,9 @@ export function OrdersPage() {
                 <button
                   key={order.id}
                   type="button"
-                  className={`rounded-[24px] border px-4 py-4 text-left transition ${
+                  className={`rounded-[26px] border px-4 py-4 text-left transition ${
                     selectedOrder?.id === order.id
-                      ? "border-ember bg-ember/10"
+                      ? "border-ember bg-gradient-to-br from-ember/10 to-white"
                       : "border-ink/10 bg-sand hover:border-moss"
                   }`}
                   onClick={() => setSelectedOrderId(order.id)}
@@ -291,6 +299,15 @@ function InfoCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl bg-white px-4 py-4">
       <p className="text-xs uppercase tracking-[0.2em] text-ink/45">{label}</p>
       <p className="mt-2 text-sm font-medium text-ink">{value}</p>
+    </div>
+  );
+}
+
+function QuickFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-white/15 bg-white/10 px-4 py-4 backdrop-blur">
+      <p className="text-xs uppercase tracking-[0.18em] text-white/65">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
 }

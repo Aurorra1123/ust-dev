@@ -17,8 +17,8 @@ import { PageSection } from "../page-section";
 import {
   EmptyPanel,
   GuidancePanel,
-  MetricCard,
-  MetricGrid,
+  HighlightPanel,
+  StepList,
   StatusPill
 } from "../user-experience-kit";
 
@@ -80,7 +80,7 @@ export function ActivitiesPage() {
       <PageHero
         eyebrow="Activity Grab"
         title="统一浏览校园活动并完成报名与抢票"
-        description="活动页提供统一的活动浏览、票种报名和状态查看能力。提交后，页面会持续更新当前用户的报名结果和订单状态。"
+        description="活动页把“活动浏览、票种选择、排队确认和结果回看”收进同一处工作区，避免在报名和查状态之间来回切换。"
         aside={
           <>
             <p className="font-medium text-ink">当前公开活动</p>
@@ -98,30 +98,41 @@ export function ActivitiesPage() {
 
       <PageSection
         title="服务概览"
-        description="活动页负责统一处理活动浏览、票种报名、排队状态和最终订单结果。"
+        description="活动页不只是活动列表，更是报名、排队和结果回看的统一入口。"
       >
-        <MetricGrid>
-          <MetricCard
-            label="公开活动"
-            value={String(activitiesQuery.data?.length ?? 0)}
-            detail="当前处于可浏览范围内的活动数量"
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr),420px]">
+          <HighlightPanel
+            eyebrow="Events & Tickets"
+            title="从浏览活动到拿到结果，留在同一页完成"
+            description="选中活动后，可以直接看到状态、票种、名额和自己的报名结果。若系统进入排队确认，页面会自动刷新当前状态。"
+          >
+            <div className="grid gap-3 sm:grid-cols-4">
+              <QuickFact label="公开活动" value={String(activitiesQuery.data?.length ?? 0)} />
+              <QuickFact label="剩余额度" value={String(selectedActivity?.remainingQuota ?? 0)} />
+              <QuickFact label="票种数量" value={String(detailQuery.data?.tickets.length ?? 0)} />
+              <QuickFact
+                label="当前状态"
+                value={sessionStatus === "authenticated" ? "可报名" : "需登录"}
+              />
+            </div>
+          </HighlightPanel>
+          <StepList
+            items={[
+              {
+                title: "选择活动",
+                description: "先在左侧锁定想参与的讲座、社团活动或校园活动。"
+              },
+              {
+                title: "确认票种",
+                description: "查看票种剩余情况后提交报名。系统会在后台处理排队与建单。"
+              },
+              {
+                title: "回看结果",
+                description: "右侧会持续更新当前用户的报名结果和对应订单号。"
+              }
+            ]}
           />
-          <MetricCard
-            label="剩余额度"
-            value={String(selectedActivity?.remainingQuota ?? 0)}
-            detail="当前选中活动的公开剩余额度"
-          />
-          <MetricCard
-            label="票种数量"
-            value={String(detailQuery.data?.tickets.length ?? 0)}
-            detail="当前选中活动可见票种数"
-          />
-          <MetricCard
-            label="报名状态"
-            value={sessionStatus === "authenticated" ? "可报名" : "需登录"}
-            detail="登录后可直接发起报名并查看自己的状态"
-          />
-        </MetricGrid>
+        </div>
       </PageSection>
 
       <PageSection
@@ -154,40 +165,44 @@ export function ActivitiesPage() {
 
             {selectedActivity ? (
               <div className="grid gap-4">
-                <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
-                  <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                    Activity Detail
-                  </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-ink">
-                    {selectedActivity.title}
-                  </h3>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <StatusPill tone="brand">{statusLabel(selectedActivity.status)}</StatusPill>
-                    <StatusPill tone={soldOut ? "danger" : "success"}>
-                      {soldOut ? "名额紧张" : "可报名"}
-                    </StatusPill>
+                <div className="overflow-hidden rounded-[26px] border border-ink/10 bg-white">
+                  <div className="border-b border-navy/10 bg-gradient-to-r from-navy via-[#0d3f82] to-moss px-5 py-4 text-white">
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+                      Activity Detail
+                    </p>
+                    <h3 className="mt-2 text-2xl font-semibold">
+                      {selectedActivity.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-white/80">
+                      {selectedActivity.location || "活动地点待补充"}
+                    </p>
                   </div>
-                  <p className="mt-4 text-sm leading-6 text-slate">
-                    {selectedActivity.description || "当前活动暂无补充描述。"}
-                  </p>
-                  <p className="mt-2 text-sm text-slate">
-                    {selectedActivity.location || "活动地点待补充"}
-                  </p>
+                  <div className="px-5 py-5">
+                    <div className="flex flex-wrap gap-2">
+                      <StatusPill tone="brand">{statusLabel(selectedActivity.status)}</StatusPill>
+                      <StatusPill tone={soldOut ? "danger" : "success"}>
+                        {soldOut ? "名额紧张" : "可报名"}
+                      </StatusPill>
+                    </div>
+                    <p className="mt-4 text-sm leading-6 text-slate">
+                      {selectedActivity.description || "当前活动暂无补充描述。"}
+                    </p>
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <InfoCard
-                      label="开售时间"
-                      value={formatDateTime(selectedActivity.saleStartTime)}
-                    />
-                    <InfoCard
-                      label="停售时间"
-                      value={formatDateTime(selectedActivity.saleEndTime)}
-                    />
-                    <InfoCard label="状态" value={statusLabel(selectedActivity.status)} />
-                    <InfoCard
-                      label="剩余额度"
-                      value={`${selectedActivity.remainingQuota}`}
-                    />
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <InfoCard
+                        label="开售时间"
+                        value={formatDateTime(selectedActivity.saleStartTime)}
+                      />
+                      <InfoCard
+                        label="停售时间"
+                        value={formatDateTime(selectedActivity.saleEndTime)}
+                      />
+                      <InfoCard label="状态" value={statusLabel(selectedActivity.status)} />
+                      <InfoCard
+                        label="剩余额度"
+                        value={`${selectedActivity.remainingQuota}`}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -254,7 +269,7 @@ export function ActivitiesPage() {
                   <div className="mt-4">
                     <GuidancePanel
                       title="抢票说明"
-                      description="提交请求后，系统可能先进入排队确认阶段。最终是否成功，以页面中的报名状态和订单结果为准。"
+                      description="提交请求后，系统可能先进入排队确认阶段。最终是否成功，以右侧状态和“我的订单”里的结果为准。"
                     />
                   </div>
                 </div>
@@ -297,6 +312,15 @@ export function ActivitiesPage() {
         )}
       </PageSection>
     </>
+  );
+}
+
+function QuickFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-white/15 bg-white/10 px-4 py-4 backdrop-blur">
+      <p className="text-xs uppercase tracking-[0.18em] text-white/65">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+    </div>
   );
 }
 

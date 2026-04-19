@@ -15,8 +15,8 @@ import { PageSection } from "../page-section";
 import {
   EmptyPanel,
   GuidancePanel,
-  MetricCard,
-  MetricGrid,
+  HighlightPanel,
+  StepList,
   StatusPill
 } from "../user-experience-kit";
 
@@ -134,12 +134,12 @@ export function SportsPage() {
       <PageHero
         eyebrow="Sports Booking"
         title="为球场与组合场地提供统一的槽位预约入口"
-        description="体育设施采用 1 小时离散槽位建模。你可以在同一页面切换单场地预约和组合场地预约，系统会在统一事务内完成校验与下单。"
+        description="体育设施页面按“选资源、定模式、勾槽位、提预约”的节奏组织，把单场地与组合场地预约都收进同一工作区。"
         aside={
           <>
             <p className="font-medium text-ink">默认展示未来 6 个槽位</p>
             <p className="mt-3 text-sm text-slate">
-              可以直接体验单场地预约，也可以切换到组合预约验证整单失败逻辑。
+              可以直接体验单场地预约，也可以切换到组合预约感受整单一致性校验。
             </p>
           </>
         }
@@ -147,30 +147,38 @@ export function SportsPage() {
 
       <PageSection
         title="服务概览"
-        description="体育设施页聚焦“选择资源、选择模式、选择槽位”三步。所有槽位占用都会写入统一订单和状态日志。"
+        description="体育设施页的重点不是展示所有字段，而是把资源选择、模式切换和槽位勾选拆成清楚的三步。"
       >
-        <MetricGrid>
-          <MetricCard
-            label="设施资源"
-            value={String(resourcesQuery.data?.length ?? 0)}
-            detail="当前可浏览的体育设施资源数"
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr),420px]">
+          <HighlightPanel
+            eyebrow="Slot-Based Booking"
+            title="面向运动场地的离散槽位服务"
+            description="系统默认展示未来 6 个可预约槽位。你可以在同一资源内切换单场地与组合场地模式，所有占用最终都会汇总到同一订单里。"
+          >
+            <div className="grid gap-3 sm:grid-cols-4">
+              <QuickFact label="设施资源" value={String(resourcesQuery.data?.length ?? 0)} />
+              <QuickFact label="场地单元" value={String(totalUnits)} />
+              <QuickFact label="组合资源" value={String(totalGroups)} />
+              <QuickFact label="槽位数量" value={String(slotOptions.length)} />
+            </div>
+          </HighlightPanel>
+          <StepList
+            items={[
+              {
+                title: "先选资源",
+                description: "从资源标签中先确定想要使用的球场、场地或馆区。"
+              },
+              {
+                title: "切换模式",
+                description: "单场地模式适合个人预约，组合模式适合多单元一起占用。"
+              },
+              {
+                title: "勾选槽位",
+                description: "每个槽位都是 1 小时。若组合中的任一单元冲突，整单会失败。"
+              }
+            ]}
           />
-          <MetricCard
-            label="场地单元"
-            value={String(totalUnits)}
-            detail="所有资源单元的总数"
-          />
-          <MetricCard
-            label="组合资源"
-            value={String(totalGroups)}
-            detail="可用于组合预约的资源集合"
-          />
-          <MetricCard
-            label="槽位数量"
-            value={String(slotOptions.length)}
-            detail="当前默认展示未来 6 个连续槽位"
-          />
-        </MetricGrid>
+        </div>
       </PageSection>
 
       <PageSection
@@ -213,57 +221,59 @@ export function SportsPage() {
                   正在加载资源详情。
                 </div>
               ) : currentResource ? (
-                <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
-                  <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                    Sports Resource
-                  </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-ink">
-                    {currentResource.name}
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-slate">
-                    {currentResource.description || "当前资源暂无补充描述。"}
-                  </p>
-                  <p className="mt-2 text-sm text-slate">
-                    {currentResource.location || "校内位置待补充"}
-                  </p>
+                <div className="overflow-hidden rounded-[26px] border border-ink/10 bg-white">
+                  <div className="border-b border-navy/10 bg-gradient-to-r from-navy via-[#0d3f82] to-moss px-5 py-4 text-white">
+                    <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+                      Sports Resource
+                    </p>
+                    <h3 className="mt-2 text-2xl font-semibold">{currentResource.name}</h3>
+                    <p className="mt-2 text-sm text-white/80">
+                      {currentResource.location || "校内位置待补充"}
+                    </p>
+                  </div>
+                  <div className="px-5 py-5">
+                    <p className="text-sm leading-6 text-slate">
+                      {currentResource.description || "当前资源暂无补充描述。"}
+                    </p>
 
-                  <div className="mt-5 grid gap-4 md:grid-cols-2">
-                    <div>
-                      <p className="text-sm font-medium text-ink">场地单元</p>
-                      <div className="mt-3 grid gap-3">
-                        {currentResource.units.map((unit) => (
-                          <div
-                            key={unit.id}
-                            className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
-                          >
-                            <p className="font-medium text-ink">{unit.name}</p>
-                            <p className="mt-2 text-xs uppercase tracking-[0.2em] text-ink/45">
-                              {unit.code}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-ink">组合资源</p>
-                      <div className="mt-3 grid gap-3">
-                        {currentResource.groups.length ? (
-                          currentResource.groups.map((group) => (
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      <div>
+                        <p className="text-sm font-medium text-ink">场地单元</p>
+                        <div className="mt-3 grid gap-3">
+                          {currentResource.units.map((unit) => (
                             <div
-                              key={group.id}
+                              key={unit.id}
                               className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
                             >
-                              <p className="font-medium text-ink">{group.name}</p>
-                              <p className="mt-2 text-sm text-ink/70">
-                                {group.items.length} 个单元
+                              <p className="font-medium text-ink">{unit.name}</p>
+                              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-ink/45">
+                                {unit.code}
                               </p>
                             </div>
-                          ))
-                        ) : (
-                          <div className="rounded-2xl border border-dashed border-ink/15 bg-sand px-4 py-4 text-sm text-ink/60">
-                            当前资源没有预设组合资源。
-                          </div>
-                        )}
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-ink">组合资源</p>
+                        <div className="mt-3 grid gap-3">
+                          {currentResource.groups.length ? (
+                            currentResource.groups.map((group) => (
+                              <div
+                                key={group.id}
+                                className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
+                              >
+                                <p className="font-medium text-ink">{group.name}</p>
+                                <p className="mt-2 text-sm text-ink/70">
+                                  {group.items.length} 个单元
+                                </p>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="rounded-2xl border border-dashed border-ink/15 bg-sand px-4 py-4 text-sm text-ink/60">
+                              当前资源没有预设组合资源。
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -316,6 +326,15 @@ export function SportsPage() {
                   {mode === "group" ? "组合资源模式" : "单场地模式"}
                 </StatusPill>
                 <StatusPill tone="success">整单冲突则整单失败</StatusPill>
+              </div>
+
+              <div className="rounded-[22px] border border-white/70 bg-white px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-moss">当前配置</p>
+                <div className="mt-3 grid gap-2 text-sm text-slate">
+                  <p>模式：{mode === "group" ? "组合场地" : "单场地"}</p>
+                  <p>目标数量：{availableTargets.length}</p>
+                  <p>已选槽位：{slotStarts.length} 个</p>
+                </div>
               </div>
 
               <label className="mt-4 grid gap-2 text-sm text-ink/75">
@@ -403,5 +422,14 @@ export function SportsPage() {
         )}
       </PageSection>
     </>
+  );
+}
+
+function QuickFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-white/15 bg-white/10 px-4 py-4 backdrop-blur">
+      <p className="text-xs uppercase tracking-[0.18em] text-white/65">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+    </div>
   );
 }
