@@ -6,6 +6,27 @@
 
 ### 已完成
 
+- 修复登录页示例账号导致的非法字段提交问题
+- 根因已确认：
+  - 登录页的示例账号对象包含 `label`
+  - 点击“自动填充”后直接把整对象写进表单状态
+  - 提交登录时把 `label` 一并发给了 `/auth/login`
+  - 后端 DTO 校验因此返回 `property label should not exist`
+- `apps/web/src/ui/pages/login-page.tsx` 已改为：
+  - 登录表单状态只保留 `email/password`
+  - 点击示例账号时只回填 `email/password`，不再带 `label`
+- 本轮前端已通过：
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+- 已低负载热刷新线上 `web` 容器
+- 线上首页当前返回的新前端资源：
+  - `index-BPcO5s7o.js`
+  - `index-CJKyMaj0.css`
+- 已通过接口验证：
+  - 只提交 `email/password` 时登录成功
+  - 带 `label` 时后端仍会按预期返回 `property label should not exist`
+- 新增验证证据：
+  - `docs/verification/2026-04-19/bugfix-login-label-payload.md`
 - 完成 `PUX-006`：重做登录后首页与身份分流
 - 首页当前已按三种状态分流：
   - 未登录：简洁统一登录入口

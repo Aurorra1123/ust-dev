@@ -7,13 +7,22 @@ import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
 import { GuidancePanel } from "../user-experience-kit";
 
-const defaultAccount = {
+type LoginFormState = {
+  email: string;
+  password: string;
+};
+
+type DemoAccount = LoginFormState & {
+  label: string;
+};
+
+const defaultAccount: DemoAccount = {
   label: "普通用户",
   email: "demo@campusbook.top",
   password: "demo123456"
 };
 
-const adminAccount = {
+const adminAccount: DemoAccount = {
   label: "管理员",
   email: "admin@campusbook.top",
   password: "admin123456"
@@ -25,7 +34,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = useMemo(() => searchParams.get("redirect"), [searchParams]);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<LoginFormState>({
     email: defaultAccount.email,
     password: defaultAccount.password
   });
@@ -116,7 +125,12 @@ export function LoginPage() {
                   key={account.label}
                   type="button"
                   className="rounded-2xl border border-white/70 bg-white px-4 py-4 text-left transition hover:border-moss"
-                  onClick={() => setForm(account)}
+                  onClick={() =>
+                    setForm({
+                      email: account.email,
+                      password: account.password
+                    })
+                  }
                 >
                   <p className="text-sm font-semibold text-ink">{account.label}</p>
                   <p className="mt-1 text-sm text-slate">{account.email}</p>
