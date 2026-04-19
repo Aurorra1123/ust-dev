@@ -250,9 +250,9 @@ export function AdminPage() {
   return (
     <>
       <PageHero
-        eyebrow="Operations Center"
-        title="把资源、活动与规则维护收进同一后台工作台"
-        description="管理端不再只是把几个接口表单堆在一起，而是围绕“今天要维护什么”来组织工作区。资源、活动和规则都会直接影响前台用户体验，因此后台需要更稳定的层级和更清楚的状态反馈。"
+        eyebrow="Teacher Workspace"
+        title="教师工作台"
+        description="登录后直接进入工作台，围绕资源、活动和规则维护展开日常操作。这里不再混入学生端入口，而是聚焦今天需要处理的服务更新。"
         aside={
           <>
             <p className="font-medium text-ink">当前工作区</p>
@@ -339,8 +339,8 @@ export function AdminPage() {
 
       {workspaceTab === "overview" ? (
         <PageSection
-          title="运营概览"
-          description="总览页用于快速判断站点当前维护规模、工作重心和高频入口。正式后台不应该要求管理员先滑到某个表单，才能知道现在站点是什么状态。"
+          title="今日维护概览"
+          description="教师工作台首页优先展示今天最需要关注的维护范围、当前选中对象和快捷入口，不再把所有表单直接铺在第一屏。"
         >
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr),360px]">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -442,6 +442,20 @@ export function AdminPage() {
                 </>
               ) : null}
             </OverviewPanel>
+          </div>
+
+          <div className="mt-6">
+            <HighlightPanel
+              eyebrow="Today Update"
+              title="今日功能更新与维护入口"
+              description="当前工作台已经可以直接进入资源维护、活动维护和规则查看。后续如需补通知发布，也应作为工作台中的单独操作入口，而不是回到学生首页处理。"
+            >
+              <div className="grid gap-3 sm:grid-cols-3">
+                <WorkspaceBadge label="资源维护" value={`${resourceStats.resourceCount} 项`} />
+                <WorkspaceBadge label="活动维护" value={`${activityStats.total} 场`} />
+                <WorkspaceBadge label="规则查看" value={`${ruleStats.total} 条`} />
+              </div>
+            </HighlightPanel>
           </div>
         </PageSection>
       ) : null}

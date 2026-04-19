@@ -31,19 +31,19 @@ export function AppShell() {
   }, [sessionStatus, setAnonymous]);
 
   const navigationItems = useMemo(() => {
+    if (user?.role === "admin") {
+      return [{ label: "教师工作台", to: "/admin" }];
+    }
+
     const baseItems = [
-      { label: "总览", to: "/" },
-      { label: "学术空间", to: "/spaces" },
-      { label: "体育设施", to: "/sports" },
-      { label: "校园活动", to: "/activities" }
+      { label: sessionStatus === "authenticated" ? "学生首页" : "登录入口", to: "/" },
+      { label: "体育空间", to: "/sports" },
+      { label: "校园活动", to: "/activities" },
+      { label: "学术空间", to: "/spaces" }
     ];
 
     if (sessionStatus === "authenticated") {
-      baseItems.push({ label: "我的订单", to: "/orders" });
-    }
-
-    if (user?.role === "admin") {
-      baseItems.push({ label: "管理后台", to: "/admin" });
+      baseItems.push({ label: "历史记录", to: "/orders" });
     }
 
     return baseItems;
@@ -78,17 +78,17 @@ export function AppShell() {
 
     if (pathname.startsWith("/orders")) {
       return {
-        label: "我的订单",
-        title: "预约与报名记录",
-        description: "查看个人订单、状态变化和取消结果。"
+        label: "历史记录",
+        title: "近期预约与报名记录",
+        description: "回看个人订单、状态变化和最近完成的服务记录。"
       };
     }
 
     if (pathname.startsWith("/admin")) {
       return {
-        label: "管理后台",
-        title: "运营与配置工作台",
-        description: "集中维护资源、活动、票种和规则配置。"
+        label: "教师工作台",
+        title: "工作台与服务维护",
+        description: "集中查看资源、活动、规则更新和日常维护入口。"
       };
     }
 
@@ -100,12 +100,26 @@ export function AppShell() {
       };
     }
 
-    return {
-      label: "服务总览",
-      title: "校园预约与活动门户",
-      description: "统一提供空间预约、体育设施、活动报名与管理入口。"
-    };
-  }, [location.pathname]);
+    if (user?.role === "admin") {
+      return {
+        label: "教师工作台",
+        title: "今日维护概览",
+        description: "聚焦资源、活动和规则的维护任务，不再混入学生端服务入口。"
+      };
+    }
+
+    return sessionStatus === "authenticated"
+      ? {
+          label: "学生首页",
+          title: "今日常用服务",
+          description: "从体育空间、校园活动和学术空间三个入口开始，再查看历史记录与近期通知。"
+        }
+      : {
+          label: "统一入口",
+          title: "登录后进入对应工作区",
+          description: "学生进入校园服务首页，教师或管理身份进入工作台。"
+        };
+  }, [location.pathname, sessionStatus, user?.role]);
 
   async function handleLogout() {
     setIsLoggingOut(true);

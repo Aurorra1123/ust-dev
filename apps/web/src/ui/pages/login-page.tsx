@@ -24,10 +24,7 @@ const demoAccounts = [defaultAccount, adminAccount];
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = useMemo(
-    () => searchParams.get("redirect") || "/",
-    [searchParams]
-  );
+  const redirectTo = useMemo(() => searchParams.get("redirect"), [searchParams]);
   const [form, setForm] = useState({
     email: defaultAccount.email,
     password: defaultAccount.password
@@ -35,8 +32,8 @@ export function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: () => {
-      navigate(redirectTo);
+    onSuccess: (session) => {
+      navigate(redirectTo || (session.user.role === "admin" ? "/admin" : "/"));
     }
   });
 
