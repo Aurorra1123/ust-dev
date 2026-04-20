@@ -28,6 +28,7 @@
 - `standards/https-deployment-playbook.md`：HTTPS 升级与证书部署手册
 - `verification/README.md`：验证证据存放规范
 - `adr/0001-repo-as-agent-memory.md`：仓库作为 agent 主记忆体
+- `adr/0006-public-resource-reservation-status-for-student-schedule.md`：为学生端时段表开放脱敏预约状态接口
 - `adr/0004-single-node-typescript-platform-baseline.md`：当前技术基线决策
 - `architecture/product-baseline.md`：当前正式产品范围与用户路径
 - `architecture/productization-plan-v1.md`：当前产品化改造方案

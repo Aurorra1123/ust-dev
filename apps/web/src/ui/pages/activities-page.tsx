@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 import type { ActivityListItem } from "@campusbook/shared-types";
 
@@ -332,6 +333,14 @@ export function ActivitiesPage() {
                         <p className="mt-1">
                           {registrationStatusQuery.data.reason || "暂无失败原因。"}
                         </p>
+                        {registrationStatusQuery.data.orderId ? (
+                          <Link
+                            to={`/orders/${registrationStatusQuery.data.orderId}`}
+                            className="mt-3 inline-flex rounded-full border border-navy/10 px-4 py-2 text-sm text-ink transition hover:border-moss"
+                          >
+                            查看订单详情
+                          </Link>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>

@@ -1,478 +1,213 @@
-import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
-import type { OrderDetailResponse } from "@campusbook/shared-types";
-
-import {
-  ApiError,
-  cancelOrder,
-  checkInReservation,
-  fetchOrders
-} from "../../lib/api";
+import { ApiError, fetchOrders } from "../../lib/api";
 import { formatDateTime } from "../../lib/date";
-import { queryClient } from "../../lib/query-client";
-import { useSessionStore } from "../../store/session-store";
 import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
+import { EmptyPanel, StatePanel, StatusPill } from "../user-experience-kit";
 import {
-  EmptyPanel,
-  HighlightPanel,
-  StatePanel,
-  StepList,
-  StatusPill
-} from "../user-experience-kit";
+  bizTypeLabel,
+  getCancelledAt,
+  orderCategoryLabel,
+  orderProgressLabel,
+  orderProgressTone,
+  orderResourceLabel,
+  orderTimeLabel
+} from "./order-utils";
+
+type OrderFilter = "all" | "pending" | "ongoing" | "finished" | "cancelled";
+
+const filterLabels: Record<OrderFilter, string> = {
+  all: "全部记录",
+  pending: "待确认",
+  ongoing: "进行中",
+  finished: "已结束",
+  cancelled: "已取消"
+};
 
 export function OrdersPage() {
-  const user = useSessionStore((state) => state.user);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<OrderFilter>("all");
   const ordersQuery = useQuery({
     queryKey: ["orders"],
     queryFn: fetchOrders
   });
 
-  const selectedOrder = useMemo(
-    () =>
-      ordersQuery.data?.find((order) => order.id === selectedOrderId) ??
-      ordersQuery.data?.[0] ??
-      null,
-    [ordersQuery.data, selectedOrderId]
-  );
-  const orderStats = useMemo(() => {
+  const metrics = useMemo(() => {
     const orders = ordersQuery.data ?? [];
 
     return {
       total: orders.length,
-      pending: orders.filter((order) => order.status === "pending_confirmation").length,
-      confirmed: orders.filter((order) => order.status === "confirmed").length,
-      cancelled: orders.filter((order) => order.status === "cancelled").length
+      pending: orders.filter((order) => orderProgressLabel(order) === "待确认").length,
+      ongoing: orders.filter((order) => orderProgressLabel(order) === "进行中").length,
+      finished: orders.filter((order) => orderProgressLabel(order) === "已结束").length,
+      cancelled: orders.filter((order) => orderProgressLabel(order) === "已取消").length
     };
   }, [ordersQuery.data]);
 
-  useEffect(() => {
-    const firstOrder = ordersQuery.data?.[0];
+  const filteredOrders = useMemo(() => {
+    const orders = [...(ordersQuery.data ?? [])].sort(
+      (left, right) =>
+        new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+    );
 
-    if (!selectedOrderId && firstOrder) {
-      setSelectedOrderId(firstOrder.id);
+    if (filter === "all") {
+      return orders;
     }
-  }, [ordersQuery.data, selectedOrderId]);
 
-  const cancelMutation = useMutation({
-    mutationFn: (orderId: string) => cancelOrder(orderId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["orders"]
-      });
-    }
-  });
-  const checkInMutation = useMutation({
-    mutationFn: (orderId: string) => checkInReservation(orderId),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["orders"]
-      });
-    }
-  });
+    return orders.filter((order) => {
+      const progress = orderProgressLabel(order);
+
+      switch (filter) {
+        case "pending":
+          return progress === "待确认";
+        case "ongoing":
+          return progress === "进行中" || progress === "已确认";
+        case "finished":
+          return progress === "已结束";
+        case "cancelled":
+          return progress === "已取消";
+        default:
+          return true;
+      }
+    });
+  }, [filter, ordersQuery.data]);
 
   return (
     <>
       <PageHero
-        eyebrow="Orders"
-        title={user?.role === "admin" ? "订单中心" : "我的订单"}
-        description={
-          user?.role === "admin"
-            ? "管理员可以在这里回看全站订单和状态迁移，快速确认预约、抢票与取消链路是否稳定。"
-            : "这里会集中展示你的预约、活动报名和状态变更日志，方便回看每一笔操作的生命周期。"
-        }
+        eyebrow="My Records"
+        title="我的订单与预约状态"
+        description="个人中心里的记录页统一展示日期、类别、资源和状态。完成预约后，你可以先在这里看整体状态，再进入详情页处理签到、取消或重新预约。"
         aside={
-          <>
-            <p className="text-sm text-slate">当前展示最近 30 条订单。</p>
-            <p className="mt-2 text-sm text-slate">
-              普通用户只能看到自己的订单，管理员可以看到全站订单。
-            </p>
-          </>
+          <div className="grid gap-3">
+            <MetricCard label="全部记录" value={String(metrics.total)} />
+            <MetricCard label="进行中" value={String(metrics.ongoing)} />
+            <MetricCard label="已取消" value={String(metrics.cancelled)} />
+          </div>
         }
       />
 
       <PageSection
-        title="订单概览"
-        description="订单页是所有服务的收口位置。无论你是预约空间、预约体育设施还是报名活动，结果都会汇总到这里。"
-      >
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr),420px]">
-          <HighlightPanel
-            eyebrow="Unified Orders"
-            title="用一处订单中心回看全部预约与报名结果"
-            description="订单页把不同业务的结果统一成相同的状态语言。你不需要再回到原页面查找结果，只要在这里看状态、明细和日志即可。"
+        title="记录总览"
+        description="列表集中展示你发起过的预约和报名记录，方便快速区分待确认、进行中、已结束和已取消状态。"
+        action={
+          <Link
+            to="/orders/cancellations"
+            className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
           >
-            <div className="grid gap-3 sm:grid-cols-4">
-              <QuickFact label="订单总数" value={String(orderStats.total)} />
-              <QuickFact label="待确认" value={String(orderStats.pending)} />
-              <QuickFact label="已确认" value={String(orderStats.confirmed)} />
-              <QuickFact label="已取消" value={String(orderStats.cancelled)} />
-            </div>
-          </HighlightPanel>
-          <StepList
-            items={[
-              {
-                title: "切换订单",
-                description: "先从左侧列表切换到想查看的预约或报名记录。"
-              },
-              {
-                title: "查看明细",
-                description: "右侧会展示资源、时段、票种和提交用户等关键信息。"
-              },
-              {
-                title: "回看日志",
-                description: "状态变化和原因都会进入日志，便于追踪整笔订单的生命周期。"
-              }
-            ]}
-          />
-        </div>
-      </PageSection>
-
-      <PageSection
-        title="最近订单"
-        description="左侧快速切换订单，右侧查看明细、状态和日志。"
+            查看取消记录
+          </Link>
+        }
       >
-        {ordersQuery.isLoading ? (
-          <StatePanel
-            tone="loading"
-            title="正在载入订单中心"
-            description="页面正在整理最近的预约、报名与状态变化记录。"
-          />
-        ) : ordersQuery.isError ? (
-          <StatePanel
-            tone="danger"
-            title="订单中心暂时无法加载"
-            description={(ordersQuery.error as ApiError).message}
-          />
-        ) : !ordersQuery.data?.length ? (
-          <EmptyPanel
-            title="当前还没有可展示的订单"
-            description="登录后完成预约或活动报名后，订单会自动出现在这里。"
-          />
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-[340px,minmax(0,1fr)]">
-            <div className="grid gap-3">
-              {ordersQuery.data.map((order) => (
-                <button
-                  key={order.id}
-                  type="button"
-                  className={`rounded-[26px] border px-4 py-4 text-left transition ${
-                    selectedOrder?.id === order.id
-                      ? "border-ember bg-gradient-to-br from-ember/10 to-white"
-                      : "border-ink/10 bg-sand hover:border-moss"
-                  }`}
-                  onClick={() => setSelectedOrderId(order.id)}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                        {bizTypeLabel(order)}
-                      </p>
-                      <p className="mt-2 text-base font-semibold text-ink">
-                        {order.orderNo}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs text-ink/75">
-                      {statusLabel(order.status)}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm text-ink/75">
-                    {describeOrder(order)}
-                  </p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.2em] text-ink/45">
-                    {formatDateTime(order.createdAt)}
-                  </p>
-                </button>
-              ))}
-            </div>
+        <div className="flex flex-wrap gap-2">
+          {(
+            Object.entries(filterLabels) as Array<[OrderFilter, string]>
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`rounded-full border px-4 py-2 text-sm transition ${
+                filter === value
+                  ? "border-ember bg-ember text-white"
+                  : "border-navy/10 bg-white text-ink hover:border-moss"
+              }`}
+              onClick={() => setFilter(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-            {selectedOrder ? (
-              <div className="grid gap-4">
-                <div className="rounded-[24px] border border-ink/10 bg-sand px-5 py-5">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                        订单详情
-                      </p>
-                      <h3 className="mt-2 text-2xl font-semibold text-ink">
-                        {selectedOrder.orderNo}
-                      </h3>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <StatusPill
-                          tone={
-                            selectedOrder.status === "cancelled"
-                              ? "danger"
-                              : selectedOrder.status === "confirmed"
-                                ? "success"
-                                : "brand"
-                          }
-                        >
-                          {statusLabel(selectedOrder.status)}
+        <div className="mt-6">
+          {ordersQuery.isLoading ? (
+            <StatePanel
+              tone="loading"
+              title="正在整理我的订单"
+              description="页面正在汇总你的预约类别、资源名称和最新状态。"
+            />
+          ) : ordersQuery.isError ? (
+            <StatePanel
+              tone="danger"
+              title="我的订单暂时无法加载"
+              description={(ordersQuery.error as ApiError).message}
+            />
+          ) : !filteredOrders.length ? (
+            <EmptyPanel
+              title="当前筛选条件下没有记录"
+              description="你可以切换状态筛选，或先返回首页发起新的预约。"
+            />
+          ) : (
+            <div className="grid gap-4">
+              {filteredOrders.map((order) => {
+                const progress = orderProgressLabel(order);
+
+                return (
+                  <Link
+                    key={order.id}
+                    to={`/orders/${order.id}`}
+                    className="rounded-[26px] border border-ink/10 bg-white px-5 py-5 transition hover:border-moss hover:shadow-panel"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.24em] text-moss">
+                          {formatDateTime(order.createdAt)}
+                        </p>
+                        <h3 className="mt-2 text-xl font-semibold text-ink">
+                          {orderResourceLabel(order)}
+                        </h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <StatusPill>{orderCategoryLabel(order)}</StatusPill>
+                        <StatusPill tone={orderProgressTone(progress)}>
+                          {progress}
                         </StatusPill>
-                        <StatusPill>{bizTypeLabel(selectedOrder)}</StatusPill>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {canCheckIn(selectedOrder, user?.id) ? (
-                        <button
-                          type="button"
-                          className="rounded-full border border-moss/25 px-4 py-2 text-sm text-moss transition hover:bg-moss/10 disabled:cursor-not-allowed disabled:opacity-60"
-                          onClick={() => checkInMutation.mutate(selectedOrder.id)}
-                          disabled={checkInMutation.isPending}
-                        >
-                          {checkInMutation.isPending ? "签到中" : "立即签到"}
-                        </button>
-                      ) : null}
-                      {canCancel(selectedOrder, user?.id, user?.role) ? (
-                        <button
-                          type="button"
-                          className="rounded-full border border-danger/25 px-4 py-2 text-sm text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
-                          onClick={() => cancelMutation.mutate(selectedOrder.id)}
-                          disabled={cancelMutation.isPending}
-                        >
-                          {cancelMutation.isPending ? "取消中" : "取消订单"}
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <InfoCard label="业务类型" value={bizTypeLabel(selectedOrder)} />
-                    <InfoCard
-                      label="下单时间"
-                      value={formatDateTime(selectedOrder.createdAt)}
-                    />
-                    <InfoCard
-                      label="过期时间"
-                      value={formatDateTime(selectedOrder.expireAt)}
-                    />
-                    <InfoCard
-                      label="提交用户"
-                      value={selectedOrder.userEmail}
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
-                  <h3 className="text-lg font-semibold text-ink">业务明细</h3>
-                  <div className="mt-4 grid gap-3 text-sm text-ink/80">
-                    {selectedOrder.academicReservation ? (
-                      <DetailItem
-                        title={selectedOrder.academicReservation.resourceName}
-                        description={`${selectedOrder.academicReservation.resourceUnitName} · ${formatDateTime(selectedOrder.academicReservation.startTime)} - ${formatDateTime(selectedOrder.academicReservation.endTime)}`}
-                      />
-                    ) : null}
-                    {selectedOrder.sportsReservationSlots.length ? (
-                      <DetailItem
-                        title={
-                          selectedOrder.sportsReservationSlots[0]?.resourceName ??
-                          "体育预约"
+                    <div className="mt-4 grid gap-3 text-sm text-slate md:grid-cols-4">
+                      <RecordItem label="类别" value={bizTypeLabel(order)} />
+                      <RecordItem label="资源" value={orderResourceLabel(order)} />
+                      <RecordItem label="时间" value={orderTimeLabel(order)} />
+                      <RecordItem
+                        label={progress === "已取消" ? "取消时间" : "当前状态"}
+                        value={
+                          progress === "已取消"
+                            ? formatDateTime(getCancelledAt(order))
+                            : progress
                         }
-                        description={`${selectedOrder.sportsReservationSlots
-                          .map((slot) => slot.resourceUnitName)
-                          .join(" / ")} · ${selectedOrder.sportsReservationSlots.length} 个槽位`}
-                      />
-                    ) : null}
-                    {selectedOrder.activityRegistration ? (
-                      <DetailItem
-                        title={selectedOrder.activityRegistration.activityTitle}
-                        description={selectedOrder.activityRegistration.activityTicketName}
-                      />
-                    ) : null}
-                    {!selectedOrder.academicReservation &&
-                    !selectedOrder.sportsReservationSlots.length &&
-                    !selectedOrder.activityRegistration ? (
-                      <p className="text-sm text-ink/60">暂无明细。</p>
-                    ) : null}
-                  </div>
-                </div>
-
-                {selectedOrder.reservationCategory ? (
-                  <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
-                    <h3 className="text-lg font-semibold text-ink">签到与同行人</h3>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <InfoCard
-                        label="签到开放"
-                        value={formatDateTime(selectedOrder.checkInOpenAt)}
-                      />
-                      <InfoCard
-                        label="签到截止"
-                        value={formatDateTime(selectedOrder.checkInCloseAt)}
                       />
                     </div>
-                    <div className="mt-4 grid gap-3">
-                      {selectedOrder.reservationParticipants.map((participant) => (
-                        <div
-                          key={participant.userId}
-                          className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-medium text-ink">
-                                {participant.userEmail}
-                              </p>
-                              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-ink/45">
-                                {participant.isHost ? "预约人" : "同行人"}
-                              </p>
-                            </div>
-                            <StatusPill
-                              tone={participant.checkedInAt ? "success" : "brand"}
-                            >
-                              {participant.checkedInAt ? "已签到" : "未签到"}
-                            </StatusPill>
-                          </div>
-                          <p className="mt-2 text-sm text-ink/70">
-                            {participant.checkedInAt
-                              ? `签到时间：${formatDateTime(participant.checkedInAt)}`
-                              : "尚未完成签到"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
 
-                <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
-                  <h3 className="text-lg font-semibold text-ink">状态日志</h3>
-                  <div className="mt-4 grid gap-3">
-                    {selectedOrder.statusLogs.map((log) => (
-                      <div
-                        key={log.id}
-                        className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
-                      >
-                        <p className="text-sm font-medium text-ink">
-                          {(log.fromStatus
-                            ? `${statusLabel(log.fromStatus)} -> `
-                            : "") + statusLabel(log.toStatus)}
-                        </p>
-                        <p className="mt-2 text-sm text-ink/70">
-                          {log.reason || "未记录原因"}
-                        </p>
-                        <p className="mt-2 text-xs uppercase tracking-[0.2em] text-ink/45">
-                          {formatDateTime(log.createdAt)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {cancelMutation.isError ? (
-                  <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
-                    {(cancelMutation.error as ApiError).message}
-                  </div>
-                ) : null}
-                {checkInMutation.isError ? (
-                  <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
-                    {(checkInMutation.error as ApiError).message}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        )}
+                    <p className="mt-4 text-sm text-ink/65">
+                      订单号 {order.orderNo} · 点击查看详情与后续操作
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </PageSection>
     </>
   );
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-white px-4 py-4">
+      <p className="text-xs uppercase tracking-[0.22em] text-moss">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-ink">{value}</p>
+    </div>
+  );
+}
+
+function RecordItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-sand px-4 py-4">
       <p className="text-xs uppercase tracking-[0.2em] text-ink/45">{label}</p>
       <p className="mt-2 text-sm font-medium text-ink">{value}</p>
     </div>
   );
-}
-
-function QuickFact({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[18px] border border-white/15 bg-white/10 px-4 py-4 backdrop-blur">
-      <p className="text-xs uppercase tracking-[0.18em] text-white/65">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
-    </div>
-  );
-}
-
-function DetailItem({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="rounded-2xl border border-ink/10 bg-sand px-4 py-4">
-      <p className="text-sm font-semibold text-ink">{title}</p>
-      <p className="mt-2 text-sm text-ink/70">{description}</p>
-    </div>
-  );
-}
-
-function canCancel(
-  order: OrderDetailResponse,
-  currentUserId?: string,
-  currentUserRole?: "student" | "admin"
-) {
-  return (
-    (currentUserRole === "admin" || order.userId === currentUserId) &&
-    (order.status === "pending_confirmation" || order.status === "confirmed")
-  );
-}
-
-function canCheckIn(order: OrderDetailResponse, currentUserId?: string) {
-  if (!currentUserId || order.status !== "confirmed") {
-    return false;
-  }
-
-  if (!order.reservationCategory || !order.checkInOpenAt || !order.checkInCloseAt) {
-    return false;
-  }
-
-  const participant = order.reservationParticipants.find(
-    (item) => item.userId === currentUserId
-  );
-
-  if (!participant || participant.checkedInAt) {
-    return false;
-  }
-
-  const now = Date.now();
-  return (
-    new Date(order.checkInOpenAt).getTime() <= now &&
-    now <= new Date(order.checkInCloseAt).getTime()
-  );
-}
-
-function describeOrder(order: OrderDetailResponse) {
-  if (order.academicReservation) {
-    return `${order.academicReservation.resourceUnitName} · ${formatDateTime(order.academicReservation.startTime)}`;
-  }
-
-  if (order.sportsReservationSlots.length) {
-    const firstSlot = order.sportsReservationSlots[0];
-
-    if (!firstSlot) {
-      return "体育预约";
-    }
-
-    return `${firstSlot.resourceName} · ${order.sportsReservationSlots.length} 个槽位`;
-  }
-
-  if (order.activityRegistration) {
-    return `${order.activityRegistration.activityTitle} · ${order.activityRegistration.activityTicketName}`;
-  }
-
-  return "待补充业务摘要";
-}
-
-function bizTypeLabel(order: OrderDetailResponse) {
-  return order.bizType === "activity_registration" ? "活动报名" : "资源预约";
-}
-
-function statusLabel(status: OrderDetailResponse["status"]) {
-  switch (status) {
-    case "pending_confirmation":
-      return "待确认";
-    case "confirmed":
-      return "已确认";
-    case "cancelled":
-      return "已取消";
-    case "no_show":
-      return "已爽约";
-  }
 }

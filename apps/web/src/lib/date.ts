@@ -16,9 +16,37 @@ export function formatDateTime(value?: string | null) {
   }).format(new Date(value));
 }
 
-export function startOfNextHour(base = new Date()) {
+export function formatDate(value?: string | null) {
+  if (!value) {
+    return "未设置";
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short"
+  }).format(new Date(value));
+}
+
+export function formatTime(value?: string | null) {
+  if (!value) {
+    return "未设置";
+  }
+
+  return new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+export function startOfHour(base = new Date()) {
   const next = new Date(base);
   next.setMinutes(0, 0, 0);
+  return next;
+}
+
+export function startOfNextHour(base = new Date()) {
+  const next = startOfHour(base);
   next.setHours(next.getHours() + 1);
   return next;
 }
@@ -26,5 +54,11 @@ export function startOfNextHour(base = new Date()) {
 export function addHours(date: Date, hours: number) {
   const next = new Date(date);
   next.setHours(next.getHours() + hours);
+  return next;
+}
+
+export function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
   return next;
 }

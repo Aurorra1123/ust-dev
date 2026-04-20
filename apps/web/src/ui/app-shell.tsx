@@ -56,6 +56,10 @@ export function AppShell() {
     ];
 
     baseItems.push({ label: localeText(locale, "历史记录", "History"), to: "/orders" });
+    baseItems.push({
+      label: localeText(locale, "取消记录", "Cancelled"),
+      to: "/orders/cancellations"
+    });
 
     return baseItems;
   }, [isEnglish, locale, sessionStatus, user?.role]);
@@ -95,6 +99,30 @@ export function AppShell() {
           locale,
           "面向讲座、社团和校园活动的统一入口。",
           "A unified entry for lectures, clubs, and campus event registration."
+        )
+      };
+    }
+
+    if (pathname.startsWith("/orders/cancellations")) {
+      return {
+        label: localeText(locale, "取消记录", "Cancelled History"),
+        title: localeText(locale, "历史取消记录", "Cancelled Reservations"),
+        description: localeText(
+          locale,
+          "集中查看已取消预约的时间、备注和历史信息。",
+          "Review cancelled reservations, timestamps, and notes in one place."
+        )
+      };
+    }
+
+    if (/^\/orders\/[^/]+/.test(pathname)) {
+      return {
+        label: localeText(locale, "订单详情", "Order Detail"),
+        title: localeText(locale, "预约详情与状态处理", "Reservation Detail"),
+        description: localeText(
+          locale,
+          "在详情页查看总览状态、关键字段和后续操作。",
+          "Review summary status, key fields, and follow-up actions in the detail view."
         )
       };
     }
@@ -342,6 +370,11 @@ export function AppShell() {
               <NavLink
                 key={item.to}
                 to={item.to}
+                end={
+                  item.to === "/" ||
+                  item.to === "/orders" ||
+                  item.to === "/orders/cancellations"
+                }
                 className={({ isActive }) =>
                   [
                     "whitespace-nowrap rounded-full border px-4 py-2.5 text-sm transition",

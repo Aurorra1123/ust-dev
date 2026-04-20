@@ -3,6 +3,7 @@ import type {
   AdminBulkMutationResponse,
   AdminResourceDetailResponse,
   AdminResourceReservationStatusResponse,
+  PublicResourceReservationStatusResponse,
   ResourceBookingClosureDetail,
   ResourceDetailResponse,
   ResourceReleaseRuleDetail,
@@ -38,6 +39,18 @@ export class ResourceController {
   @Get(":id")
   getResource(@Param("id") id: string): Promise<ResourceDetailResponse> {
     return this.resourceService.getResourceDetail(id);
+  }
+
+  @Get(":id/reservation-status")
+  getPublicReservationStatus(
+    @Param("id") id: string,
+    @Query() query: ResourceReservationStatusQueryDto
+  ): Promise<PublicResourceReservationStatusResponse> {
+    return this.resourceService.getPublicReservationStatus(
+      id,
+      query.from,
+      query.to
+    );
   }
 }
 

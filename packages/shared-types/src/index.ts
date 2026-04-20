@@ -362,6 +362,17 @@ export interface AdminResourceReservationRecord {
   checkedInCount: number;
 }
 
+export interface PublicResourceReservationRecord {
+  orderId: string;
+  status: OrderStatus;
+  resourceUnitId: string;
+  resourceUnitName: string;
+  startTime: string;
+  endTime: string;
+  participantCount: number;
+  checkedInCount: number;
+}
+
 export interface AdminResourceReservationStatusResponse {
   resourceId: string;
   resourceName: string;
@@ -372,6 +383,18 @@ export interface AdminResourceReservationStatusResponse {
   closures: ResourceBookingClosureDetail[];
   academicReservations: AdminResourceReservationRecord[];
   sportsReservations: AdminResourceReservationRecord[];
+}
+
+export interface PublicResourceReservationStatusResponse {
+  resourceId: string;
+  resourceName: string;
+  from: string;
+  to: string;
+  generatedAt: string;
+  channelStatus: ResourceChannelSnapshot;
+  closures: ResourceBookingClosureDetail[];
+  academicReservations: PublicResourceReservationRecord[];
+  sportsReservations: PublicResourceReservationRecord[];
 }
 
 export interface ActivityListItem extends AppActivity {

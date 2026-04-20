@@ -15,6 +15,7 @@ import type {
   CreateResourceReleaseRulePayload,
   HealthStatus,
   OrderDetailResponse,
+  PublicResourceReservationStatusResponse,
   ReservationCheckInResponse,
   ResourceDetailResponse,
   ResourceListItem,
@@ -173,6 +174,26 @@ export function fetchResourceDetail(resourceId: string) {
   return requestJson<ResourceDetailResponse>(`/resources/${resourceId}`, {
     allowRefresh: false
   });
+}
+
+export function fetchResourceReservationStatus(
+  resourceId: string,
+  params?: { from?: string; to?: string }
+) {
+  const query = new URLSearchParams();
+  if (params?.from) {
+    query.set("from", params.from);
+  }
+  if (params?.to) {
+    query.set("to", params.to);
+  }
+  const suffix = query.size ? `?${query.toString()}` : "";
+  return requestJson<PublicResourceReservationStatusResponse>(
+    `/resources/${resourceId}/reservation-status${suffix}`,
+    {
+      allowRefresh: false
+    }
+  );
 }
 
 export function createAcademicReservation(payload: AcademicReservationRequest) {

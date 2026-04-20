@@ -1,13 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 import {
   ApiError,
   createSportsReservation,
   fetchResourceDetail,
+  fetchResourceReservationStatus,
   fetchResources
 } from "../../lib/api";
-import { formatDateTime, startOfNextHour } from "../../lib/date";
+import {
+  addHours,
+  formatDate,
+  formatDateTime,
+  formatTime,
+  startOfHour,
+  startOfNextHour
+} from "../../lib/date";
 import { queryClient } from "../../lib/query-client";
 import { useSessionStore } from "../../store/session-store";
 import { PageHero } from "../page-hero";
@@ -15,19 +24,28 @@ import { PageSection } from "../page-section";
 import {
   EmptyPanel,
   GuidancePanel,
-  HighlightPanel,
-  StatePanel,
-  StepList,
-  StatusPill
+  StatePanel
 } from "../user-experience-kit";
 
+const SLOT_COUNT = 8;
+
+type CellState =
+  | "available"
+  | "occupied"
+  | "in_progress"
+  | "closed"
+  | "selected";
+
 export function SportsPage() {
+  const navigate = useNavigate();
   const sessionStatus = useSessionStore((state) => state.status);
   const [resourceId, setResourceId] = useState("");
   const [mode, setMode] = useState<"unit" | "group">("unit");
   const [targetId, setTargetId] = useState("");
   const [slotStarts, setSlotStarts] = useState<string[]>([]);
   const [companionEmailsText, setCompanionEmailsText] = useState("");
+  const [displayStart, setDisplayStart] = useState(() => startOfHour(new Date()));
+
   const resourcesQuery = useQuery({
     queryKey: ["resources", "sports_facility"],
     queryFn: () => fetchResources("sports_facility")
@@ -38,22 +56,34 @@ export function SportsPage() {
     enabled: Boolean(resourceId)
   });
 
+  const displayEnd = useMemo(
+    () => addHours(displayStart, SLOT_COUNT),
+    [displayStart]
+  );
+  const scheduleQuery = useQuery({
+    queryKey: [
+      "resource-reservation-status",
+      resourceId,
+      displayStart.toISOString(),
+      displayEnd.toISOString()
+    ],
+    queryFn: () =>
+      fetchResourceReservationStatus(resourceId, {
+        from: displayStart.toISOString(),
+        to: displayEnd.toISOString()
+      }),
+    enabled: Boolean(resourceId)
+  });
+
   const currentResourceSummary =
     resourcesQuery.data?.find((resource) => resource.id === resourceId) ??
     resourcesQuery.data?.[0] ??
     null;
   const currentResource = resourceDetailQuery.data ?? null;
-  const totalUnits = useMemo(
+  const slotMoments = useMemo(
     () =>
-      resourcesQuery.data?.reduce((total, resource) => total + resource.units.length, 0) ??
-      0,
-    [resourcesQuery.data]
-  );
-  const totalGroups = useMemo(
-    () =>
-      resourcesQuery.data?.reduce((total, resource) => total + resource.groupCount, 0) ??
-      0,
-    [resourcesQuery.data]
+      Array.from({ length: SLOT_COUNT }, (_, index) => addHours(displayStart, index)),
+    [displayStart]
   );
 
   const availableTargets = useMemo(() => {
@@ -76,21 +106,14 @@ export function SportsPage() {
     }));
   }, [currentResource, mode]);
 
-  const slotOptions = useMemo(() => {
-    const firstSlot = startOfNextHour();
-
-    return Array.from({ length: 6 }, (_, index) => {
-      const slotStart = new Date(firstSlot);
-      slotStart.setHours(slotStart.getHours() + index);
-      const slotEnd = new Date(slotStart);
-      slotEnd.setHours(slotEnd.getHours() + 1);
-
-      return {
-        value: slotStart.toISOString(),
-        label: `${formatDateTime(slotStart.toISOString())} - ${formatDateTime(slotEnd.toISOString())}`
-      };
-    });
-  }, []);
+  const selectedGroup = useMemo(
+    () => currentResource?.groups.find((group) => group.id === targetId) ?? null,
+    [currentResource, targetId]
+  );
+  const selectedGroupUnitIds = useMemo(
+    () => new Set(selectedGroup?.items.map((item) => item.resourceUnitId) ?? []),
+    [selectedGroup]
+  );
 
   useEffect(() => {
     const firstResource = resourcesQuery.data?.[0];
@@ -120,175 +143,356 @@ export function SportsPage() {
 
   useEffect(() => {
     setTargetId(availableTargets[0]?.id ?? "");
+    setSlotStarts([]);
   }, [mode, resourceId, availableTargets]);
 
   const sportsMutation = useMutation({
     mutationFn: createSportsReservation,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["orders"]
-      });
+    onSuccess: async (result) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["orders"]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["resource-reservation-status", resourceId]
+        })
+      ]);
+      navigate(`/orders/${result.orderId}`);
     }
   });
+
+  const totalUnits = currentResource?.units.length ?? 0;
+  const totalGroups = currentResource?.groups.length ?? 0;
+  const currentHourStart = useMemo(() => startOfHour(new Date()), []);
+  const bookingThreshold = useMemo(() => startOfNextHour(new Date()), []);
+
+  function getSlotState(resourceUnitId: string, slotStart: Date): CellState {
+    const slotEnd = addHours(slotStart, 1);
+    const slotStartTime = slotStart.getTime();
+    const slotEndTime = slotEnd.getTime();
+    const now = Date.now();
+
+    if (isSlotClosed(scheduleQuery.data, slotStart, slotEnd)) {
+      return "closed";
+    }
+
+    const matchedReservation = scheduleQuery.data?.sportsReservations.find(
+      (reservation) =>
+        reservation.resourceUnitId === resourceUnitId &&
+        new Date(reservation.startTime).getTime() < slotEndTime &&
+        new Date(reservation.endTime).getTime() > slotStartTime
+    );
+
+    if (matchedReservation) {
+      return now >= slotStartTime && now < slotEndTime ? "in_progress" : "occupied";
+    }
+
+    if (slotStartTime < bookingThreshold.getTime()) {
+      return now >= slotStartTime && now < slotEndTime ? "in_progress" : "closed";
+    }
+
+    if (
+      mode === "unit" &&
+      targetId === resourceUnitId &&
+      slotStarts.includes(slotStart.toISOString())
+    ) {
+      return "selected";
+    }
+
+    return "available";
+  }
+
+  function getGroupSlotState(slotStart: Date): CellState {
+    if (!selectedGroup) {
+      return "closed";
+    }
+
+    const memberStates = currentResource?.units
+      .filter((unit) => selectedGroupUnitIds.has(unit.id))
+      .map((unit) => getSlotState(unit.id, slotStart)) ?? [];
+
+    if (!memberStates.length) {
+      return "closed";
+    }
+
+    if (slotStarts.includes(slotStart.toISOString())) {
+      return "selected";
+    }
+
+    if (memberStates.some((state) => state === "closed")) {
+      return "closed";
+    }
+
+    if (memberStates.some((state) => state === "in_progress")) {
+      return "in_progress";
+    }
+
+    if (memberStates.some((state) => state === "occupied")) {
+      return "occupied";
+    }
+
+    return "available";
+  }
+
+  function toggleSlot(slotStartIso: string) {
+    setSlotStarts((current) =>
+      current.includes(slotStartIso)
+        ? current.filter((item) => item !== slotStartIso)
+        : [...current, slotStartIso].sort()
+    );
+  }
 
   return (
     <>
       <PageHero
         eyebrow="Sports Booking"
-        title="为球场与组合场地提供统一的槽位预约入口"
-        description="体育设施页面按“选资源、定模式、勾槽位、提预约”的节奏组织，把单场地与组合场地预约都收进同一工作区。"
+        title="体育馆预约工作区"
+        description="体育页按照草图改成“资源信息 + 时间表 + 状态说明”的三栏结构。中间区域直接展示不同时段的占用情况，右侧负责模式切换、状态说明和预约提交。"
         aside={
           <>
-            <p className="font-medium text-ink">默认展示未来 6 个槽位</p>
-            <p className="mt-3 text-sm text-slate">
-              可以直接体验单场地预约，也可以切换到组合预约感受整单一致性校验。
-            </p>
+            <p className="font-medium text-ink">当前视图</p>
+            <div className="mt-4 grid gap-3">
+              <MetricCard label="资源类型" value={String(resourcesQuery.data?.length ?? 0)} />
+              <MetricCard label="场地单元" value={String(totalUnits)} />
+              <MetricCard label="组合资源" value={String(totalGroups)} />
+              <MetricCard
+                label="预约通道"
+                value={scheduleQuery.data?.channelStatus.status === "open" ? "开放" : "受限"}
+              />
+            </div>
           </>
         }
       />
 
       <PageSection
-        title="服务概览"
-        description="体育设施页的重点不是展示所有字段，而是把资源选择、模式切换和槽位勾选拆成清楚的三步。"
-      >
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr),420px]">
-          <HighlightPanel
-            eyebrow="Slot-Based Booking"
-            title="面向运动场地的离散槽位服务"
-            description="系统默认展示未来 6 个可预约槽位。你可以在同一资源内切换单场地与组合场地模式，所有占用最终都会汇总到同一订单里。"
-          >
-            <div className="grid gap-3 sm:grid-cols-4">
-              <QuickFact label="设施资源" value={String(resourcesQuery.data?.length ?? 0)} />
-              <QuickFact label="场地单元" value={String(totalUnits)} />
-              <QuickFact label="组合资源" value={String(totalGroups)} />
-              <QuickFact label="槽位数量" value={String(slotOptions.length)} />
-            </div>
-          </HighlightPanel>
-          <StepList
-            items={[
-              {
-                title: "先选资源",
-                description: "从资源标签中先确定想要使用的球场、场地或馆区。"
-              },
-              {
-                title: "切换模式",
-                description: "单场地模式适合个人预约，组合模式适合多单元一起占用。"
-              },
-              {
-                title: "勾选槽位",
-                description: "每个槽位都是 1 小时。若组合中的任一单元冲突，整单会失败。"
-              }
-            ]}
-          />
-        </div>
-      </PageSection>
-
-      <PageSection
-        title="体育资源与预约"
-        description="左侧浏览资源、单元和组合资源，右侧切换预约模式并勾选槽位。"
+        title="体育资源预约"
+        description="左侧浏览资源和场地信息，中间查看按时间展开的占用表格，右侧切换单场地或组合模式并提交预约。"
       >
         {resourcesQuery.isLoading ? (
           <StatePanel
             tone="loading"
-            title="正在载入体育设施"
-            description="页面正在整理当前可预约的场地与组合资源，请稍候。"
+            title="正在载入体育资源"
+            description="页面正在准备场馆、场地单元和当前时段状态。"
           />
         ) : resourcesQuery.isError ? (
           <StatePanel
             tone="danger"
-            title="体育设施暂时无法加载"
+            title="体育资源暂时无法加载"
             description={(resourcesQuery.error as ApiError).message}
           />
         ) : !resourcesQuery.data?.length ? (
           <EmptyPanel
-            title="当前还没有可用的体育设施"
-            description="可以稍后刷新，或使用管理员账号进入后台补充体育资源、资源单元和组合资源。"
+            title="当前没有可预约的体育资源"
+            description="请稍后刷新，或使用管理员账号先补充体育资源和场地单元。"
           />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),360px]">
-            <div className="grid gap-4">
-              <div className="flex flex-wrap gap-3">
-                {resourcesQuery.data?.map((resource) => (
-                  <button
-                    key={resource.id}
-                    type="button"
-                    className={`rounded-full border px-4 py-2 text-sm transition ${
-                      resource.id === currentResourceSummary?.id
-                        ? "border-ember bg-ember text-white"
-                        : "border-ink/15 bg-white hover:border-moss"
-                    }`}
-                    onClick={() => setResourceId(resource.id)}
-                  >
-                    {resource.name}
-                  </button>
-                ))}
+          <div className="grid gap-4 xl:grid-cols-[280px,minmax(0,1fr),340px]">
+            <aside className="grid gap-4">
+              <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-moss">资源切换</p>
+                <div className="mt-4 grid gap-3">
+                  {resourcesQuery.data.map((resource) => (
+                    <button
+                      key={resource.id}
+                      type="button"
+                      className={`rounded-2xl border px-4 py-4 text-left transition ${
+                        resource.id === currentResourceSummary?.id
+                          ? "border-ember bg-ember/10"
+                          : "border-ink/10 bg-sand hover:border-moss"
+                      }`}
+                      onClick={() => setResourceId(resource.id)}
+                    >
+                      <p className="text-sm font-semibold text-ink">{resource.name}</p>
+                      <p className="mt-2 text-xs uppercase tracking-[0.2em] text-ink/45">
+                        {resource.unitCount} 个单元 · {resource.groupCount} 个组合
+                      </p>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {resourceDetailQuery.isLoading ? (
                 <StatePanel
                   tone="loading"
-                  title="正在载入资源详情"
-                  description="页面正在补齐当前场地的单元和组合资源信息。"
+                  title="正在读取场馆信息"
+                  description="页面正在整理当前场馆的场地单元和组合资源。"
                 />
               ) : currentResource ? (
-                <div className="overflow-hidden rounded-[26px] border border-ink/10 bg-white">
-                  <div className="border-b border-navy/10 bg-gradient-to-r from-navy via-[#0d3f82] to-moss px-5 py-4 text-white">
-                    <p className="text-xs uppercase tracking-[0.2em] text-white/70">
-                      Sports Resource
-                    </p>
-                    <h3 className="mt-2 text-2xl font-semibold">{currentResource.name}</h3>
-                    <p className="mt-2 text-sm text-white/80">
-                      {currentResource.location || "校内位置待补充"}
-                    </p>
-                  </div>
-                  <div className="px-5 py-5">
-                    <p className="text-sm leading-6 text-slate">
-                      {currentResource.description || "当前资源暂无补充描述。"}
-                    </p>
+                <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
+                  <p className="text-xs uppercase tracking-[0.24em] text-moss">场馆信息</p>
+                  <h3 className="mt-3 text-2xl font-semibold text-ink">
+                    {currentResource.name}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-slate">
+                    {currentResource.description || "当前场馆暂无补充描述。"}
+                  </p>
+                  <p className="mt-3 text-sm text-ink/70">
+                    {currentResource.location || "校内位置待补充"}
+                  </p>
 
-                    <div className="mt-5 grid gap-4 md:grid-cols-2">
-                      <div>
-                        <p className="text-sm font-medium text-ink">场地单元</p>
-                        <div className="mt-3 grid gap-3">
-                          {currentResource.units.map((unit) => (
-                            <div
-                              key={unit.id}
-                              className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
-                            >
-                              <p className="font-medium text-ink">{unit.name}</p>
-                              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-ink/45">
-                                {unit.code}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-ink">组合资源</p>
-                        <div className="mt-3 grid gap-3">
-                          {currentResource.groups.length ? (
-                            currentResource.groups.map((group) => (
-                              <div
-                                key={group.id}
-                                className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
-                              >
-                                <p className="font-medium text-ink">{group.name}</p>
-                                <p className="mt-2 text-sm text-ink/70">
-                                  {group.items.length} 个单元
-                                </p>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="rounded-2xl border border-dashed border-ink/15 bg-sand px-4 py-4 text-sm text-ink/60">
-                              当前资源没有预设组合资源。
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                  <div className="mt-5 grid gap-3">
+                    <div className="rounded-2xl bg-sand px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
+                        场地单元
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-ink">
+                        {currentResource.units.map((unit) => unit.name).join(" / ")}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-sand px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
+                        组合资源
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-ink">
+                        {currentResource.groups.length
+                          ? currentResource.groups.map((group) => group.name).join(" / ")
+                          : "当前没有预设组合"}
+                      </p>
                     </div>
                   </div>
                 </div>
               ) : null}
+            </aside>
+
+            <div className="grid gap-4">
+              <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-moss">
+                      时间表
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold text-ink">
+                      {formatDate(displayStart.toISOString())} · {formatTime(displayStart.toISOString())} - {formatTime(displayEnd.toISOString())}
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded-full border border-navy/10 px-4 py-2 text-sm text-ink transition hover:border-moss disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => setDisplayStart(addHours(displayStart, -SLOT_COUNT))}
+                      disabled={displayStart.getTime() <= currentHourStart.getTime()}
+                    >
+                      上一时段
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full border border-navy/10 px-4 py-2 text-sm text-ink transition hover:border-moss"
+                      onClick={() => setDisplayStart(addHours(displayStart, SLOT_COUNT))}
+                    >
+                      下一时段
+                    </button>
+                  </div>
+                </div>
+
+                {scheduleQuery.isLoading ? (
+                  <div className="mt-4">
+                    <StatePanel
+                      tone="loading"
+                      title="正在载入时段占用状态"
+                      description="页面正在读取当前场馆未来时段的占用与关闭情况。"
+                    />
+                  </div>
+                ) : scheduleQuery.isError ? (
+                  <div className="mt-4">
+                    <StatePanel
+                      tone="danger"
+                      title="时段状态暂时无法加载"
+                      description={(scheduleQuery.error as ApiError).message}
+                    />
+                  </div>
+                ) : currentResource ? (
+                  <div className="mt-4 overflow-x-auto">
+                    <div
+                      className="grid min-w-[900px] gap-2"
+                      style={{
+                        gridTemplateColumns: `180px repeat(${slotMoments.length}, minmax(92px, 1fr))`
+                      }}
+                    >
+                      <div className="rounded-2xl bg-sand px-4 py-4 text-sm font-medium text-ink">
+                        场地 / 时间
+                      </div>
+                      {slotMoments.map((slot) => {
+                        const slotIso = slot.toISOString();
+                        const groupState = getGroupSlotState(slot);
+
+                        return (
+                          <div key={slotIso} className="rounded-2xl bg-sand px-3 py-3 text-center">
+                            <p className="text-xs uppercase tracking-[0.18em] text-ink/45">
+                              {formatTime(slotIso)}
+                            </p>
+                            {mode === "group" ? (
+                              <button
+                                type="button"
+                                className={`mt-2 w-full rounded-xl px-2 py-2 text-xs font-medium transition ${headerStateClass(
+                                  groupState
+                                )}`}
+                                disabled={
+                                  groupState !== "available" && groupState !== "selected"
+                                }
+                                onClick={() => toggleSlot(slotIso)}
+                              >
+                                {headerStateLabel(groupState)}
+                              </button>
+                            ) : (
+                              <p className="mt-2 text-xs text-ink/60">
+                                {formatTime(addHours(slot, 1).toISOString())}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {currentResource.units.map((unit) => (
+                        <Fragment key={unit.id}>
+                          <div
+                            className={`rounded-2xl border px-4 py-4 ${
+                              mode === "group" && selectedGroupUnitIds.has(unit.id)
+                                ? "border-ember/25 bg-ember/10"
+                                : targetId === unit.id
+                                  ? "border-moss/25 bg-mist"
+                                  : "border-ink/10 bg-white"
+                            }`}
+                          >
+                            <p className="text-sm font-semibold text-ink">{unit.name}</p>
+                            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink/45">
+                              {unit.code}
+                            </p>
+                          </div>
+                          {slotMoments.map((slot) => {
+                            const slotIso = slot.toISOString();
+                            const state = getSlotState(unit.id, slot);
+
+                            return (
+                              <button
+                                key={`${unit.id}-${slotIso}`}
+                                type="button"
+                                className={`min-h-[82px] rounded-2xl border px-3 py-3 text-left transition ${cellStateClass(
+                                  state
+                                )}`}
+                                disabled={
+                                  mode !== "unit" ||
+                                  (state !== "available" && state !== "selected")
+                                }
+                                onClick={() => {
+                                  setTargetId(unit.id);
+                                  toggleSlot(slotIso);
+                                }}
+                              >
+                                <p className="text-xs uppercase tracking-[0.16em] text-ink/45">
+                                  {formatTime(slotIso)}
+                                </p>
+                                <p className="mt-2 text-sm font-medium text-ink">
+                                  {cellStateLabel(state)}
+                                </p>
+                              </button>
+                            );
+                          })}
+                        </Fragment>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <form
@@ -304,16 +508,13 @@ export function SportsPage() {
                 });
               }}
             >
-              <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                创建体育预约
-              </p>
-              <div className="mt-4 flex gap-2">
+              <p className="text-xs uppercase tracking-[0.24em] text-moss">预约操作区</p>
+
+              <div className="flex gap-2">
                 <button
                   type="button"
                   className={`rounded-full px-4 py-2 text-sm transition ${
-                    mode === "unit"
-                      ? "bg-ember text-white"
-                      : "bg-white text-ink"
+                    mode === "unit" ? "bg-ember text-white" : "bg-white text-ink"
                   }`}
                   onClick={() => setMode("unit")}
                 >
@@ -322,9 +523,7 @@ export function SportsPage() {
                 <button
                   type="button"
                   className={`rounded-full px-4 py-2 text-sm transition ${
-                    mode === "group"
-                      ? "bg-ember text-white"
-                      : "bg-white text-ink"
+                    mode === "group" ? "bg-ember text-white" : "bg-white text-ink"
                   }`}
                   onClick={() => setMode("group")}
                   disabled={!currentResource?.groups.length}
@@ -332,29 +531,26 @@ export function SportsPage() {
                   组合场地
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusPill tone="brand">
-                  {mode === "group" ? "组合资源模式" : "单场地模式"}
-                </StatusPill>
-                <StatusPill tone="success">整单冲突则整单失败</StatusPill>
-              </div>
 
               <div className="rounded-[22px] border border-white/70 bg-white px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-moss">当前配置</p>
                 <div className="mt-3 grid gap-2 text-sm text-slate">
                   <p>模式：{mode === "group" ? "组合场地" : "单场地"}</p>
-                  <p>目标数量：{availableTargets.length}</p>
-                  <p>已选槽位：{slotStarts.length} 个</p>
+                  <p>目标：{availableTargets.find((target) => target.id === targetId)?.label ?? "未选择"}</p>
+                  <p>已选时段：{slotStarts.length} 个</p>
                   <p>同行人数：{parseCompanionEmails(companionEmailsText).length}</p>
                 </div>
               </div>
 
-              <label className="mt-4 grid gap-2 text-sm text-ink/75">
-                目标资源
+              <label className="grid gap-2 text-sm text-ink/75">
+                预约目标
                 <select
                   className="rounded-2xl border border-white/70 bg-white px-4 py-3 outline-none transition focus:border-moss"
                   value={targetId}
-                  onChange={(event) => setTargetId(event.target.value)}
+                  onChange={(event) => {
+                    setTargetId(event.target.value);
+                    setSlotStarts([]);
+                  }}
                 >
                   {availableTargets.map((target) => (
                     <option key={target.id} value={target.id}>
@@ -364,27 +560,28 @@ export function SportsPage() {
                 </select>
               </label>
 
-              <div className="mt-4 grid gap-3">
-                <p className="text-sm font-medium text-ink">选择槽位</p>
-                {slotOptions.map((slot) => (
-                  <label
-                    key={slot.value}
-                    className="flex items-center justify-between rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm text-ink/75"
-                  >
-                    <span>{slot.label}</span>
-                    <input
-                      type="checkbox"
-                      checked={slotStarts.includes(slot.value)}
-                      onChange={(event) => {
-                        setSlotStarts((current) =>
-                          event.target.checked
-                            ? [...current, slot.value]
-                            : current.filter((item) => item !== slot.value)
-                        );
-                      }}
-                    />
-                  </label>
-                ))}
+              <div className="rounded-[22px] border border-white/70 bg-white px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-moss">已选时段</p>
+                {slotStarts.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {slotStarts.map((slotStartIso) => (
+                      <button
+                        key={slotStartIso}
+                        type="button"
+                        className="rounded-full bg-ember/10 px-3 py-2 text-xs text-ember"
+                        onClick={() => toggleSlot(slotStartIso)}
+                      >
+                        {formatDateTime(slotStartIso)}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-slate">
+                    {mode === "unit"
+                      ? "请在中间时间表中点击绿色时段。"
+                      : "组合模式下请点击时间表顶部的可用列。"}
+                  </p>
+                )}
               </div>
 
               <label className="grid gap-2 text-sm text-ink/75">
@@ -398,34 +595,29 @@ export function SportsPage() {
               </label>
 
               <GuidancePanel
-                title="预约说明"
-                description="体育设施按离散槽位预约。若选择组合资源，只要其中任一场地任一槽位冲突，整单都会失败。"
+                title="状态说明"
+                description="表格中的颜色用于说明当前时段含义，避免用户依赖额外说明文字理解预约状态。"
               >
                 <div className="grid gap-2 text-sm text-slate">
-                  <p>当前已选槽位：{slotStarts.length} 个</p>
-                  <p>未登录时可浏览资源，但无法提交预约。</p>
+                  <LegendItem label="可预约" tone="available" />
+                  <LegendItem label="已占用" tone="occupied" />
+                  <LegendItem label="进行中" tone="in_progress" />
+                  <LegendItem label="已选中" tone="selected" />
+                  <LegendItem label="暂不可约" tone="closed" />
                 </div>
               </GuidancePanel>
 
               {sportsMutation.isError ? (
-                <div className="mt-4 rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
-                  {(sportsMutation.error as ApiError).message}
-                </div>
-              ) : null}
-
-              {sportsMutation.data ? (
-                <div className="mt-4 rounded-2xl border border-moss/20 bg-white px-4 py-4 text-sm text-ink/75">
-                  <p className="font-medium text-ink">体育预约已创建</p>
-                  <p className="mt-2">订单号：{sportsMutation.data.orderNo}</p>
-                  <p className="mt-1">
-                    覆盖槽位数：{sportsMutation.data.slotCount}
-                  </p>
-                </div>
+                <StatePanel
+                  tone="danger"
+                  title="预约未提交成功"
+                  description={(sportsMutation.error as ApiError).message}
+                />
               ) : null}
 
               <button
                 type="submit"
-                className="mt-5 w-full rounded-full bg-ember px-5 py-3 text-sm font-medium text-white transition hover:bg-ember/90 disabled:cursor-not-allowed disabled:bg-ember/50"
+                className="w-full rounded-full bg-ember px-5 py-3 text-sm font-medium text-white transition hover:bg-ember/90 disabled:cursor-not-allowed disabled:bg-ember/50"
                 disabled={
                   sessionStatus !== "authenticated" ||
                   !targetId ||
@@ -447,13 +639,103 @@ export function SportsPage() {
   );
 }
 
-function QuickFact({ label, value }: { label: string; value: string }) {
+function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[18px] border border-white/15 bg-white/10 px-4 py-4 backdrop-blur">
-      <p className="text-xs uppercase tracking-[0.18em] text-white/65">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+    <div className="rounded-2xl bg-white px-4 py-4">
+      <p className="text-xs uppercase tracking-[0.22em] text-moss">{label}</p>
+      <p className="mt-2 text-xl font-semibold text-ink">{value}</p>
     </div>
   );
+}
+
+function LegendItem({
+  label,
+  tone
+}: {
+  label: string;
+  tone: Exclude<CellState, never>;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className={`h-4 w-4 rounded-full ${legendToneClass(tone)}`} />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function cellStateLabel(state: CellState) {
+  switch (state) {
+    case "available":
+      return "可预约";
+    case "occupied":
+      return "已占用";
+    case "in_progress":
+      return "进行中";
+    case "closed":
+      return "不可约";
+    case "selected":
+      return "已选择";
+  }
+}
+
+function headerStateLabel(state: CellState) {
+  switch (state) {
+    case "available":
+      return "可选";
+    case "selected":
+      return "已选";
+    case "occupied":
+      return "冲突";
+    case "in_progress":
+      return "进行中";
+    case "closed":
+      return "关闭";
+  }
+}
+
+function cellStateClass(state: CellState) {
+  switch (state) {
+    case "available":
+      return "border-moss/25 bg-white hover:border-moss hover:bg-moss/10";
+    case "occupied":
+      return "border-gold/25 bg-[#fff6e8]";
+    case "in_progress":
+      return "border-navy/20 bg-[#e9f1ff]";
+    case "closed":
+      return "border-ink/10 bg-[#f1f3f7] opacity-70";
+    case "selected":
+      return "border-ember/30 bg-ember/12";
+  }
+}
+
+function headerStateClass(state: CellState) {
+  switch (state) {
+    case "available":
+      return "bg-moss/10 text-moss hover:bg-moss/18";
+    case "selected":
+      return "bg-ember text-white";
+    case "occupied":
+      return "bg-gold/15 text-[#9a6b18]";
+    case "in_progress":
+      return "bg-navy/10 text-navy";
+    case "closed":
+      return "bg-ink/8 text-ink/45";
+  }
+}
+
+function legendToneClass(state: CellState) {
+  switch (state) {
+    case "available":
+      return "bg-moss/60";
+    case "occupied":
+      return "bg-gold/70";
+    case "in_progress":
+      return "bg-navy/70";
+    case "closed":
+      return "bg-ink/30";
+    case "selected":
+      return "bg-ember/80";
+  }
 }
 
 function parseCompanionEmails(value: string) {
@@ -464,5 +746,24 @@ function parseCompanionEmails(value: string) {
         .map((item) => item.trim().toLowerCase())
         .filter(Boolean)
     )
+  );
+}
+
+function isSlotClosed(
+  schedule:
+    | Awaited<ReturnType<typeof fetchResourceReservationStatus>>
+    | undefined,
+  slotStart: Date,
+  slotEnd: Date
+) {
+  return (
+    schedule?.closures.some((closure) => {
+      const closureStart = new Date(closure.startsAt).getTime();
+      const closureEnd = closure.endsAt
+        ? new Date(closure.endsAt).getTime()
+        : Number.POSITIVE_INFINITY;
+
+      return closureStart < slotEnd.getTime() && closureEnd > slotStart.getTime();
+    }) ?? false
   );
 }

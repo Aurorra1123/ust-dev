@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 import { ApiError, createAcademicReservation, fetchResources } from "../../lib/api";
 import { addHours, formatDateTime, startOfNextHour, toDateTimeLocalValue } from "../../lib/date";
@@ -17,6 +18,7 @@ import {
 } from "../user-experience-kit";
 
 export function SpacesPage() {
+  const navigate = useNavigate();
   const sessionStatus = useSessionStore((state) => state.status);
   const resourcesQuery = useQuery({
     queryKey: ["resources", "academic_space"],
@@ -63,10 +65,11 @@ export function SpacesPage() {
 
   const reservationMutation = useMutation({
     mutationFn: createAcademicReservation,
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await queryClient.invalidateQueries({
         queryKey: ["orders"]
       });
+      navigate(`/orders/${result.orderId}`);
     }
   });
 

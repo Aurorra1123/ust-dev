@@ -16,6 +16,8 @@ import type {
   AdminResourceDetailResponse,
   AdminResourceReservationRecord,
   AdminResourceReservationStatusResponse,
+  PublicResourceReservationRecord,
+  PublicResourceReservationStatusResponse,
   ResourceAvailabilityMode,
   ResourceBookingClosureDetail,
   ResourceChannelSnapshot,
@@ -451,6 +453,42 @@ export class ResourceService {
     };
   }
 
+  async getPublicReservationStatus(
+    resourceId: string,
+    fromRaw?: string,
+    toRaw?: string
+  ): Promise<PublicResourceReservationStatusResponse> {
+    const [resource, academicReservations, sportsReservations] = await Promise.all([
+      this.getPublicResourceRecord(resourceId),
+      this.getAcademicReservations(resourceId, fromRaw, toRaw),
+      this.getSportsReservations(resourceId, fromRaw, toRaw)
+    ]);
+
+    const now = new Date();
+    const from = fromRaw ? new Date(fromRaw) : now;
+    const to = toRaw ? new Date(toRaw) : addDays(now, 7);
+
+    if (to.getTime() <= from.getTime()) {
+      throw new BadRequestException("resource-reservation-status-invalid-range");
+    }
+
+    return {
+      resourceId: resource.id,
+      resourceName: resource.name,
+      from: from.toISOString(),
+      to: to.toISOString(),
+      generatedAt: now.toISOString(),
+      channelStatus: toChannelStatus(
+        computeResourceChannelSnapshot(resource.releaseRules, resource.bookingClosures, now)
+      ),
+      closures: getOverlappingClosures(resource.bookingClosures, from, to).map((closure) =>
+        toBookingClosureDetail(closure, now)
+      ),
+      academicReservations: academicReservations.map(toPublicReservationRecord),
+      sportsReservations: sportsReservations.map(toPublicReservationRecord)
+    };
+  }
+
   async getResourceChannelGuard(resourceIds: string[], now = new Date()) {
     const resources = await this.prismaService.resource.findMany({
       where: {
@@ -484,6 +522,22 @@ export class ResourceService {
   private async getAdminResourceDetail(id: string) {
     const resource = await this.getAdminResourceRecord(id);
     return toAdminResourceDetail(resource, new Date());
+  }
+
+  private async getPublicResourceRecord(id: string) {
+    const resource = await this.prismaService.resource.findFirst({
+      where: {
+        id,
+        status: PrismaResourceStatus.ACTIVE
+      },
+      include: adminResourceInclude
+    });
+
+    if (!resource) {
+      throw new NotFoundException("resource-not-found");
+    }
+
+    return resource;
   }
 
   private async getAdminResourceRecord(id: string) {
@@ -827,6 +881,49 @@ function toAdminReservationRecord(
     orderNo: reservation.order.orderNo,
     userId: reservation.order.userId,
     userEmail: reservation.order.user.email,
+    status: mapPrismaOrderStatus(reservation.status),
+    resourceUnitId: reservation.resourceUnitId,
+    resourceUnitName: reservation.resourceUnit.name,
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+    participantCount: reservation.order.reservationParticipants.length,
+    checkedInCount: reservation.order.reservationParticipants.filter(
+      (participant) => participant.checkedInAt !== null
+    ).length
+  };
+}
+
+function toPublicReservationRecord(
+  reservation:
+    | Prisma.AcademicReservationGetPayload<{
+        include: {
+          order: {
+            include: {
+              user: true;
+              reservationParticipants: true;
+            };
+          };
+          resourceUnit: true;
+        };
+      }>
+    | Prisma.SportsReservationSlotGetPayload<{
+        include: {
+          order: {
+            include: {
+              user: true;
+              reservationParticipants: true;
+            };
+          };
+          resourceUnit: true;
+        };
+      }>
+): PublicResourceReservationRecord {
+  const isAcademic = "startTime" in reservation;
+  const startTime = isAcademic ? reservation.startTime : reservation.slotStart;
+  const endTime = isAcademic ? reservation.endTime : reservation.slotEnd;
+
+  return {
+    orderId: reservation.orderId,
     status: mapPrismaOrderStatus(reservation.status),
     resourceUnitId: reservation.resourceUnitId,
     resourceUnitName: reservation.resourceUnit.name,

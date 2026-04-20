@@ -3,8 +3,10 @@ import { createBrowserRouter } from "react-router-dom";
 import { AppShell } from "./ui/app-shell";
 import { ActivitiesPage } from "./ui/pages/activities-page";
 import { AdminPage } from "./ui/pages/admin-page";
+import { CancelledOrdersPage } from "./ui/pages/cancelled-orders-page";
 import { HomePage } from "./ui/pages/home-page";
 import { LoginPage } from "./ui/pages/login-page";
+import { OrderDetailPage } from "./ui/pages/order-detail-page";
 import { OrdersPage } from "./ui/pages/orders-page";
 import { SpacesPage } from "./ui/pages/spaces-page";
 import { SportsPage } from "./ui/pages/sports-page";
@@ -41,6 +43,14 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
           {
             path: "orders",
             element: <OrdersPage />
+          },
+          {
+            path: "orders/cancellations",
+            element: <CancelledOrdersPage />
+          },
+          {
+            path: "orders/:orderId",
+            element: <OrderDetailPage />
           }
         ]
       },
