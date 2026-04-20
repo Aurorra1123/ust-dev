@@ -6,6 +6,33 @@
 
 ### 已完成
 
+- 已将用户提供的校园预约平台前端草图要求正式入库：
+  - 新增 `docs/architecture/pux-009-student-frontend-prototype.md`
+  - 已把入口页、首页、资源预约页、订单详情页、我的订单页、取消记录页与整条学生端流程闭环整理为正式需求稿
+- `docs/plans/feature-list.json` 已新增 `PUX-009`
+- 文档导航已补充：
+  - `docs/README.md`
+  - `docs/architecture/README.md`
+
+### 当前状态
+
+- 学生端前端原型需求当前已经不只存在聊天记录中，后续实现可直接以 `PUX-009` 和专项需求稿作为正式输入
+- 当前仍未开始页面实现，本轮工作只完成需求沉淀与文档化
+
+### 下一步建议
+
+1. 以 `docs/architecture/pux-009-student-frontend-prototype.md` 为基线，继续补页面结构、路由映射和关键交互的执行方案
+2. 在得到批准后，再开始实际前端页面改造
+
+### 注意事项
+
+- 本轮主要是文档沉淀，不涉及业务代码与接口行为变更
+- 若后续实现需要新增预约状态查询接口或调整现有页面拆分，应单独记录实现决策
+
+## 2026-04-20
+
+### 已完成
+
 - 新增新服务器部署手册 `docs/standards/new-server-deployment-playbook.md`
 - 手册当前已收口为“首次上线最短路径”，覆盖：
   - 拉代码

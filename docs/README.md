@@ -31,6 +31,7 @@
 - `adr/0004-single-node-typescript-platform-baseline.md`：当前技术基线决策
 - `architecture/product-baseline.md`：当前正式产品范围与用户路径
 - `architecture/productization-plan-v1.md`：当前产品化改造方案
+- `architecture/pux-009-student-frontend-prototype.md`：学生端前端原型专项需求稿
 - `architecture/domain-model-baseline.md`：当前正式领域模型入口
 - `architecture/technical-solution-v2.md`：当前推荐技术方案
 - `architecture/architecture-diagrams.md`：架构图与流程图
