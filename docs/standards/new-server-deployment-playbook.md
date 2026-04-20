@@ -45,6 +45,11 @@ cd /data/ustdev/ust-dev
 cp .env.example .env
 ```
 
+说明：
+
+- 当前 `docker-compose.yml` 位于 `infra/` 目录下，执行 compose 命令时请显式带上 `--env-file .env`
+- 否则不同环境下可能回退到 compose 文件中的默认值，导致生产环境误用开发配置
+
 至少修改以下值：
 
 ```dotenv
@@ -86,20 +91,20 @@ mkdir -p infra/nginx/.runtime/certbot/conf
 当前项目默认按低内存单机处理，首次部署不要并行构建：
 
 ```bash
-docker compose -f infra/docker-compose.yml build api
-docker compose -f infra/docker-compose.yml build web
+docker compose --env-file .env -f infra/docker-compose.yml build api
+docker compose --env-file .env -f infra/docker-compose.yml build web
 ```
 
 ### 5. 启动数据库和缓存
 
 ```bash
-docker compose -f infra/docker-compose.yml up -d postgres redis
+docker compose --env-file .env -f infra/docker-compose.yml up -d postgres redis
 ```
 
 ### 6. 执行数据库迁移
 
 ```bash
-docker compose -f infra/docker-compose.yml run --rm api pnpm --filter api prisma:migrate:deploy
+docker compose --env-file .env -f infra/docker-compose.yml run --rm api pnpm --filter api prisma:migrate:deploy
 ```
 
 ### 7. 初始化数据
@@ -107,7 +112,7 @@ docker compose -f infra/docker-compose.yml run --rm api pnpm --filter api prisma
 如果需要一套可立即登录验证的演示环境，执行：
 
 ```bash
-docker compose -f infra/docker-compose.yml run --rm api pnpm --filter api seed:demo
+docker compose --env-file .env -f infra/docker-compose.yml run --rm api pnpm --filter api seed:demo
 ```
 
 如果是正式生产环境且不需要演示账号，可以跳过这一步。
@@ -115,8 +120,8 @@ docker compose -f infra/docker-compose.yml run --rm api pnpm --filter api seed:d
 ### 8. 启动应用
 
 ```bash
-docker compose -f infra/docker-compose.yml up -d api worker web nginx
-docker compose -f infra/docker-compose.yml ps
+docker compose --env-file .env -f infra/docker-compose.yml up -d api worker web nginx
+docker compose --env-file .env -f infra/docker-compose.yml ps
 ```
 
 ### 9. 验证 HTTP
@@ -159,7 +164,7 @@ docker run --rm \
 ### 11. 启用 HTTPS
 
 ```bash
-docker compose -f infra/docker-compose.yml -f infra/docker-compose.https.yml up -d nginx
+docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.https.yml up -d nginx
 ```
 
 ### 12. 验证 HTTPS
@@ -184,14 +189,14 @@ curl -i https://api.campusbook.top/health
 cd /data/ustdev/ust-dev
 git pull
 
-docker compose -f infra/docker-compose.yml build api
-docker compose -f infra/docker-compose.yml run --rm api pnpm --filter api prisma:migrate:deploy
-docker compose -f infra/docker-compose.yml up -d api worker
+docker compose --env-file .env -f infra/docker-compose.yml build api
+docker compose --env-file .env -f infra/docker-compose.yml run --rm api pnpm --filter api prisma:migrate:deploy
+docker compose --env-file .env -f infra/docker-compose.yml up -d api worker
 
-docker compose -f infra/docker-compose.yml build web
-docker compose -f infra/docker-compose.yml up -d web
+docker compose --env-file .env -f infra/docker-compose.yml build web
+docker compose --env-file .env -f infra/docker-compose.yml up -d web
 
-docker compose -f infra/docker-compose.yml restart nginx
+docker compose --env-file .env -f infra/docker-compose.yml restart nginx
 ```
 
 ## 常见问题

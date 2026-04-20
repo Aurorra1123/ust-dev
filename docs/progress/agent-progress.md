@@ -6,6 +6,45 @@
 
 ### 已完成
 
+- 已在服务器上将 CampusBook 切换到正式公网模式
+- 已补生产环境 `.env` 并生成新的生产演示账号口令与 JWT 相关密钥
+- 已按正式链路完成：
+  - 镜像构建
+  - PostgreSQL / Redis 启动
+  - Prisma migration deploy
+  - demo seed
+  - `api / worker / web / nginx` 启动
+  - HTTPS Nginx 配置启用
+- 已确认公网可访问：
+  - `https://campusbook.top`
+  - `https://www.campusbook.top`
+  - `https://api.campusbook.top/health`
+- 已确认 HTTP 会重定向到 HTTPS
+- 已确认学生与管理员演示账号均可通过正式公网 API 登录
+- 新增验证记录：
+  - `docs/verification/2026-04-21/ops-production-public-deploy.md`
+- 已修正文档中正式部署命令，显式要求使用 `--env-file .env`
+
+### 当前状态
+
+- 当前服务器正在运行正式公网模式，而不是 judge 模式
+- 线上 `nginx` 当前监听 `80/443`
+- PostgreSQL 与 Redis 当前只绑定 `127.0.0.1`，未直接暴露到公网
+
+### 下一步建议
+
+1. 如需长期公网运行，后续可继续补证书续期演练与容器重启后的恢复验证
+2. 若不再需要演示账号，可进一步收掉 demo 口令或改为仅内部分发
+
+### 注意事项
+
+- 当前 PostgreSQL 使用的是已有数据卷
+- 本轮发现正式部署时需要显式传入 `--env-file .env`，否则 compose 可能回退到默认开发值
+
+## 2026-04-21
+
+### 已完成
+
 - 修复 GitHub Actions `quality` 任务失败
 - 定位到真实失败原因为前端 lint 扫描 `apps/web/public/config.js` 时触发 `no-undef`
 - 已在 `apps/web/eslint.config.mjs` 中排除 `public/config.js`
