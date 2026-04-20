@@ -10,7 +10,7 @@ import {
   fetchResources
 } from "../../lib/api";
 import { formatDateTime } from "../../lib/date";
-import { isEnglishLocale } from "../../lib/locale";
+import { isEnglishLocale, localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
 import { PageHero } from "../page-hero";
@@ -130,6 +130,8 @@ function GuestHome() {
 
 function StudentHome() {
   const user = useSessionStore((state) => state.user);
+  const locale = useLocaleStore((state) => state.locale);
+  const isEnglish = isEnglishLocale(locale);
   const sportsQuery = useQuery({
     queryKey: ["resources", "sports_facility", "student-home"],
     queryFn: () => fetchResources("sports_facility")
@@ -156,112 +158,147 @@ function StudentHome() {
   return (
     <>
       <PageHero
-        eyebrow="Student Services"
-        title={`欢迎回来，${user?.email ?? "同学"}`}
-        description="这里就是学生登录后的真实首页。你最常用的三类校园服务会直接放在第一屏，历史记录和近期活动通知也集中放在同一页。"
+        eyebrow={localeText(locale, "学生服务", "Student Services")}
+        title={
+          isEnglish
+            ? `Welcome back, ${user?.email ?? "Student"}`
+            : `欢迎回来，${user?.email ?? "同学"}`
+        }
+        description={localeText(
+          locale,
+          "这里就是学生登录后的真实首页。你最常用的三类校园服务会直接放在第一屏，历史记录和近期活动通知也集中放在同一页。",
+          "This is the real student homepage after login. Your three most-used campus services stay in the first view, while history and recent activity notices are grouped below."
+        )}
         aside={
           <>
-            <p className="font-medium text-ink">今日入口</p>
+            <p className="font-medium text-ink">{localeText(locale, "今日入口", "Today’s Entries")}</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <StatusPill tone="brand">体育空间</StatusPill>
-              <StatusPill tone="brand">校园活动</StatusPill>
-              <StatusPill tone="brand">学术空间</StatusPill>
+              <StatusPill tone="brand">{localeText(locale, "体育空间", "Sports")}</StatusPill>
+              <StatusPill tone="brand">{localeText(locale, "校园活动", "Activities")}</StatusPill>
+              <StatusPill tone="brand">{localeText(locale, "学术空间", "Study Spaces")}</StatusPill>
             </div>
             <div className="mt-4 rounded-2xl bg-white px-4 py-4 text-sm text-slate">
-              <p>最近记录：{ordersQuery.data?.length ?? 0} 条</p>
-              <p className="mt-1">近期通知：{recentActivities.length} 条</p>
+              <p>{localeText(locale, "最近记录：", "Recent records: ")}{ordersQuery.data?.length ?? 0}{localeText(locale, " 条", "",)}</p>
+              <p className="mt-1">{localeText(locale, "近期通知：", "Recent notices: ")}{recentActivities.length}{localeText(locale, " 条", "",)}</p>
             </div>
           </>
         }
       />
 
       <PageSection
-        title="常用服务"
-        description="学生首页只保留三类最常用的服务入口，不再把所有功能和说明堆在第一屏。"
+        title={localeText(locale, "常用服务", "Common Services")}
+        description={localeText(
+          locale,
+          "学生首页只保留三类最常用的服务入口，不再把所有功能和说明堆在第一屏。",
+          "The student homepage only keeps the three most common service entries instead of stacking everything into the first screen."
+        )}
       >
         <div className="grid gap-4 lg:grid-cols-3">
           {studentServices.map((service) => (
             <StudentServiceCard
               key={service.href}
-              title={service.title}
-              description={service.description}
+              title={localeText(locale, service.title, service.badge === "Sports" ? "Sports" : service.badge === "Activities" ? "Activities" : "Study Spaces")}
+              description={localeText(
+                locale,
+                service.description,
+                service.badge === "Sports"
+                  ? "Check available court slots and complete a booking quickly."
+                  : service.badge === "Activities"
+                    ? "Browse recent events and complete registration or ticket requests."
+                    : "Book continuous time slots for study rooms, discussion rooms, and collaboration spaces."
+              )}
               href={service.href}
               badge={service.badge}
               stat={
                 service.href === "/sports"
-                  ? `${sportsQuery.data?.length ?? 0} 类资源`
+                  ? isEnglish
+                    ? `${sportsQuery.data?.length ?? 0} resource types`
+                    : `${sportsQuery.data?.length ?? 0} 类资源`
                   : service.href === "/activities"
-                    ? `${activitiesQuery.data?.length ?? 0} 场活动`
-                    : `${academicQuery.data?.length ?? 0} 类资源`
+                    ? isEnglish
+                      ? `${activitiesQuery.data?.length ?? 0} events`
+                      : `${activitiesQuery.data?.length ?? 0} 场活动`
+                    : isEnglish
+                      ? `${academicQuery.data?.length ?? 0} resource types`
+                      : `${academicQuery.data?.length ?? 0} 类资源`
               }
+              enterLabel={localeText(locale, "进入", "Open")}
             />
           ))}
         </div>
       </PageSection>
 
       <PageSection
-        title="历史记录"
-        description="最近的预约、报名和状态变化会出现在这里，方便你快速回看。"
+        title={localeText(locale, "历史记录", "History")}
+        description={localeText(
+          locale,
+          "最近的预约、报名和状态变化会出现在这里，方便你快速回看。",
+          "Your recent bookings, registrations, and status changes appear here for quick review."
+        )}
         action={
           <Link
             to="/orders"
             className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
           >
-            查看全部记录
+            {localeText(locale, "查看全部记录", "View All")}
           </Link>
         }
       >
         {ordersQuery.isLoading ? (
           <StatePanel
             tone="loading"
-            title="正在载入历史记录"
-            description="页面正在整理你最近的预约与活动报名结果。"
+            title={localeText(locale, "正在载入历史记录", "Loading History")}
+            description={localeText(locale, "页面正在整理你最近的预约与活动报名结果。", "Preparing your recent bookings and activity registrations.")}
           />
         ) : ordersQuery.isError ? (
           <StatePanel
             tone="danger"
-            title="历史记录暂时无法读取"
+            title={localeText(locale, "历史记录暂时无法读取", "History Unavailable")}
             description={(ordersQuery.error as ApiError).message}
           />
         ) : !recentOrders.length ? (
           <EmptyPanel
-            title="你还没有最近记录"
-            description="完成一次预约或活动报名后，最近记录会立即显示在这里。"
+            title={localeText(locale, "你还没有最近记录", "No recent records yet")}
+            description={localeText(locale, "完成一次预约或活动报名后，最近记录会立即显示在这里。", "Once you complete a booking or activity registration, it will appear here immediately.")}
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
             {recentOrders.map((order) => (
-              <HistoryCard key={order.id} order={order} />
+              <HistoryCard key={order.id} order={order} locale={locale} />
             ))}
           </div>
         )}
       </PageSection>
 
       <PageSection
-        title="近期活动通知栏"
-        description="这里展示近期值得关注的活动，方便你从首页直接进入活动页。"
+        title={localeText(locale, "近期活动通知栏", "Recent Activity Notices")}
+        description={localeText(
+          locale,
+          "这里展示近期值得关注的活动，方便你从首页直接进入活动页。",
+          "Recent events worth attention are listed here so that you can jump into the activities page directly."
+        )}
       >
         {activitiesQuery.isLoading ? (
           <StatePanel
             tone="loading"
-            title="正在载入近期活动"
-            description="页面正在准备最近可关注的活动通知。"
+            title={localeText(locale, "正在载入近期活动", "Loading Recent Activities")}
+            description={localeText(locale, "页面正在准备最近可关注的活动通知。", "Preparing recent activity notices for you.")}
           />
         ) : activitiesQuery.isError ? (
           <StatePanel
             tone="danger"
-            title="近期活动暂时无法读取"
+            title={localeText(locale, "近期活动暂时无法读取", "Recent Activities Unavailable")}
             description={(activitiesQuery.error as ApiError).message}
           />
         ) : !recentActivities.length ? (
           <EmptyPanel
-            title="近期没有新的活动通知"
-            description="稍后刷新页面，或直接进入校园活动页查看全部内容。"
+            title={localeText(locale, "近期没有新的活动通知", "No new activity notices")}
+            description={localeText(locale, "稍后刷新页面，或直接进入校园活动页查看全部内容。", "Refresh later or visit the activities page to see the full list.")}
           />
         ) : (
           <div className="grid gap-4 lg:grid-cols-3">
             {recentActivities.map((activity) => (
-              <NoticeCard key={activity.id} activity={activity} />
+              <NoticeCard key={activity.id} activity={activity} locale={locale} />
             ))}
           </div>
         )}
@@ -275,13 +312,15 @@ function StudentServiceCard({
   description,
   href,
   badge,
-  stat
+  stat,
+  enterLabel
 }: {
   title: string;
   description: string;
   href: string;
   badge: string;
   stat: string;
+  enterLabel: string;
 }) {
   return (
     <Link
@@ -296,20 +335,22 @@ function StudentServiceCard({
           {stat}
         </span>
         <span className="text-sm font-medium text-ember transition group-hover:translate-x-1">
-          进入 →
+          {enterLabel} →
         </span>
       </div>
     </Link>
   );
 }
 
-function HistoryCard({ order }: { order: OrderDetailResponse }) {
+function HistoryCard({ order, locale }: { order: OrderDetailResponse; locale: "zh-CN" | "en" }) {
   return (
     <div className="rounded-[26px] border border-navy/10 bg-white px-5 py-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-moss">
-            {order.bizType === "activity_registration" ? "校园活动" : "资源服务"}
+            {order.bizType === "activity_registration"
+              ? localeText(locale, "校园活动", "Activity")
+              : localeText(locale, "资源服务", "Resource Service")}
           </p>
           <h3 className="mt-2 text-lg font-semibold text-ink">{order.orderNo}</h3>
         </div>
@@ -322,10 +363,10 @@ function HistoryCard({ order }: { order: OrderDetailResponse }) {
                 : "brand"
           }
         >
-          {orderStatusLabel(order.status)}
+          {orderStatusLabel(order.status, locale)}
         </StatusPill>
       </div>
-      <p className="mt-4 text-sm leading-7 text-slate">{describeOrder(order)}</p>
+      <p className="mt-4 text-sm leading-7 text-slate">{describeOrder(order, locale)}</p>
       <p className="mt-3 text-xs uppercase tracking-[0.18em] text-ink/45">
         {formatDateTime(order.createdAt)}
       </p>
@@ -333,20 +374,24 @@ function HistoryCard({ order }: { order: OrderDetailResponse }) {
   );
 }
 
-function NoticeCard({ activity }: { activity: ActivityListItem }) {
+function NoticeCard({ activity, locale }: { activity: ActivityListItem; locale: "zh-CN" | "en" }) {
   return (
     <Link
       to="/activities"
       className="rounded-[26px] border border-navy/10 bg-gradient-to-br from-white to-sand px-5 py-5 transition hover:-translate-y-1 hover:border-moss"
     >
-      <p className="text-xs uppercase tracking-[0.2em] text-moss">Campus Notice</p>
+      <p className="text-xs uppercase tracking-[0.2em] text-moss">
+        {localeText(locale, "校园通知", "Campus Notice")}
+      </p>
       <h3 className="mt-3 text-lg font-semibold text-ink">{activity.title}</h3>
       <p className="mt-3 text-sm leading-7 text-slate">
-        {activity.location || "活动地点待补充"}
+        {activity.location || localeText(locale, "活动地点待补充", "Location pending")}
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
-        <StatusPill tone="brand">{activityStatusLabel(activity.status)}</StatusPill>
-        <StatusPill tone="success">{`剩余 ${activity.remainingQuota}`}</StatusPill>
+        <StatusPill tone="brand">{activityStatusLabel(activity.status, locale)}</StatusPill>
+        <StatusPill tone="success">
+          {localeText(locale, `剩余 ${activity.remainingQuota}`, `${activity.remainingQuota} left`)}
+        </StatusPill>
       </div>
       <p className="mt-4 text-xs uppercase tracking-[0.18em] text-ink/45">
         {formatDateTime(activity.saleStartTime)}
@@ -355,7 +400,7 @@ function NoticeCard({ activity }: { activity: ActivityListItem }) {
   );
 }
 
-function describeOrder(order: OrderDetailResponse) {
+function describeOrder(order: OrderDetailResponse, locale: "zh-CN" | "en") {
   if (order.academicReservation) {
     return `${order.academicReservation.resourceUnitName} · ${formatDateTime(order.academicReservation.startTime)}`;
   }
@@ -363,39 +408,39 @@ function describeOrder(order: OrderDetailResponse) {
   if (order.sportsReservationSlots.length) {
     const firstSlot = order.sportsReservationSlots[0];
     return firstSlot
-      ? `${firstSlot.resourceName} · ${order.sportsReservationSlots.length} 个槽位`
-      : "体育空间预约";
+      ? `${firstSlot.resourceName} · ${order.sportsReservationSlots.length}${localeText(locale, " 个槽位", " slots")}`
+      : localeText(locale, "体育空间预约", "Sports booking");
   }
 
   if (order.activityRegistration) {
     return `${order.activityRegistration.activityTitle} · ${order.activityRegistration.activityTicketName}`;
   }
 
-  return "近期服务记录";
+  return localeText(locale, "近期服务记录", "Recent service record");
 }
 
-function orderStatusLabel(status: OrderDetailResponse["status"]) {
+function orderStatusLabel(status: OrderDetailResponse["status"], locale: "zh-CN" | "en") {
   switch (status) {
     case "pending_confirmation":
-      return "待确认";
+      return localeText(locale, "待确认", "Pending");
     case "confirmed":
-      return "已确认";
+      return localeText(locale, "已确认", "Confirmed");
     case "cancelled":
-      return "已取消";
+      return localeText(locale, "已取消", "Cancelled");
     case "no_show":
-      return "已爽约";
+      return localeText(locale, "已爽约", "No-show");
   }
 }
 
-function activityStatusLabel(status: ActivityListItem["status"]) {
+function activityStatusLabel(status: ActivityListItem["status"], locale: "zh-CN" | "en") {
   switch (status) {
     case "draft":
-      return "草稿";
+      return localeText(locale, "草稿", "Draft");
     case "published":
-      return "已发布";
+      return localeText(locale, "已发布", "Published");
     case "closed":
-      return "已关闭";
+      return localeText(locale, "已关闭", "Closed");
     case "cancelled":
-      return "已取消";
+      return localeText(locale, "已取消", "Cancelled");
   }
 }

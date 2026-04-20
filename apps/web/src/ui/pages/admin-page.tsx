@@ -16,7 +16,9 @@ import {
   updateActivity
 } from "../../lib/api";
 import { addHours, formatDateTime, startOfNextHour, toDateTimeLocalValue } from "../../lib/date";
+import { localeText } from "../../lib/locale";
 import { queryClient } from "../../lib/query-client";
+import { useLocaleStore } from "../../store/locale-store";
 import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
 import {
@@ -52,6 +54,7 @@ type ActivityFormState = {
 type WorkspaceTab = "overview" | "resources" | "activities" | "rules";
 
 export function AdminPage() {
+  const locale = useLocaleStore((state) => state.locale);
   const resourcesQuery = useQuery({
     queryKey: ["admin", "resources"],
     queryFn: fetchAdminResources
@@ -251,43 +254,55 @@ export function AdminPage() {
     <>
       <PageHero
         eyebrow="Teacher Workspace"
-        title="教师工作台"
-        description="登录后直接进入工作台，围绕资源、活动和规则维护展开日常操作。这里不再混入学生端入口，而是聚焦今天需要处理的服务更新。"
+        title={localeText(locale, "教师工作台", "Teacher Workspace")}
+        description={localeText(
+          locale,
+          "登录后直接进入工作台，围绕资源、活动和规则维护展开日常操作。这里不再混入学生端入口，而是聚焦今天需要处理的服务更新。",
+          "After signing in, teachers land directly in the workspace for resources, activities, and rule operations. The page focuses on today’s updates instead of student-facing entries."
+        )}
         aside={
           <>
-            <p className="font-medium text-ink">当前工作区</p>
+            <p className="font-medium text-ink">{localeText(locale, "当前工作区", "Current Workspace")}</p>
             <p className="mt-3 text-2xl font-semibold text-ink">
-              {workspaceTabLabel(workspaceTab)}
+              {workspaceTabLabel(workspaceTab, locale)}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <StatusPill tone="brand">
-                资源 {resourceStats.resourceCount}
+                {localeText(locale, `资源 ${resourceStats.resourceCount}`, `Resources ${resourceStats.resourceCount}`)}
               </StatusPill>
               <StatusPill tone="success">
-                活动 {activityStats.total}
+                {localeText(locale, `活动 ${activityStats.total}`, `Activities ${activityStats.total}`)}
               </StatusPill>
-              <StatusPill>{`规则 ${ruleStats.total}`}</StatusPill>
+              <StatusPill>{localeText(locale, `规则 ${ruleStats.total}`, `Rules ${ruleStats.total}`)}</StatusPill>
             </div>
             <p className="mt-4 text-sm text-slate">
-              当前选中资源：{selectedResource?.name || "未选择"}。
+              {localeText(locale, "当前选中资源：", "Selected resource: ")}
+              {selectedResource?.name || localeText(locale, "未选择", "None")}
+              {localeText(locale, "。", ".")}
             </p>
             <p className="mt-1 text-sm text-slate">
-              当前选中活动：{selectedActivity?.title || "未选择"}。
+              {localeText(locale, "当前选中活动：", "Selected activity: ")}
+              {selectedActivity?.title || localeText(locale, "未选择", "None")}
+              {localeText(locale, "。", ".")}
             </p>
           </>
         }
       />
 
       <PageSection
-        title="工作区导航"
-        description="后台按任务切换工作区，而不是让管理员在一张超长页面里找表单。先选工作区，再进入对应的资源、活动或规则维护视图。"
+        title={localeText(locale, "工作区导航", "Workspace Navigation")}
+        description={localeText(
+          locale,
+          "后台按任务切换工作区，而不是让管理员在一张超长页面里找表单。先选工作区，再进入对应的资源、活动或规则维护视图。",
+          "Switch workspaces by task instead of searching for forms on one long page. Select a workspace first, then enter the related view for resources, activities, or rules."
+        )}
         action={
           <div className="flex flex-wrap gap-2">
             {([
-              ["overview", "总览"],
-              ["resources", "资源"],
-              ["activities", "活动"],
-              ["rules", "规则"]
+              ["overview", localeText(locale, "总览", "Overview")],
+              ["resources", localeText(locale, "资源", "Resources")],
+              ["activities", localeText(locale, "活动", "Activities")],
+              ["rules", localeText(locale, "规则", "Rules")]
             ] as const).map(([value, label]) => (
               <button
                 key={value}
@@ -308,29 +323,37 @@ export function AdminPage() {
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr),420px]">
           <HighlightPanel
             eyebrow="Admin Workspace"
-            title="围绕实际维护任务组织后台，而不是围绕接口字段组织页面"
-            description="资源维护会影响预约入口，活动维护会影响抢票体验，规则维护会影响资格和限制。工作台化的目标是让管理员更快定位当前任务、更少在页面间迷路。"
+            title={localeText(
+              locale,
+              "围绕实际维护任务组织后台，而不是围绕接口字段组织页面",
+              "Organize the admin side around real operations instead of raw interface fields"
+            )}
+            description={localeText(
+              locale,
+              "资源维护会影响预约入口，活动维护会影响抢票体验，规则维护会影响资格和限制。工作台化的目标是让管理员更快定位当前任务、更少在页面间迷路。",
+              "Resource updates affect booking entry points, activity updates affect ticket experiences, and rule updates affect eligibility. The workspace helps teachers locate tasks faster with less page wandering."
+            )}
           >
             <div className="grid gap-3 sm:grid-cols-3">
-              <WorkspaceBadge label="资源" value={`${resourceStats.resourceCount} 项`} />
-              <WorkspaceBadge label="活动" value={`${activityStats.published} 场已发布`} />
-              <WorkspaceBadge label="规则" value={`${ruleStats.active} 条启用`} />
+              <WorkspaceBadge label={localeText(locale, "资源", "Resources")} value={localeText(locale, `${resourceStats.resourceCount} 项`, `${resourceStats.resourceCount} items`)} />
+              <WorkspaceBadge label={localeText(locale, "活动", "Activities")} value={localeText(locale, `${activityStats.published} 场已发布`, `${activityStats.published} published`)} />
+              <WorkspaceBadge label={localeText(locale, "规则", "Rules")} value={localeText(locale, `${ruleStats.active} 条启用`, `${ruleStats.active} active`)} />
             </div>
           </HighlightPanel>
 
           <StepList
             items={[
               {
-                title: "先判断今天维护什么",
-                description: "先在总览、资源、活动和规则之间切换到当前工作区。"
+                title: localeText(locale, "先判断今天维护什么", "Identify today’s operation focus"),
+                description: localeText(locale, "先在总览、资源、活动和规则之间切换到当前工作区。", "Switch to the workspace you need first: overview, resources, activities, or rules.")
               },
               {
-                title: "再查看选中对象详情",
-                description: "先看当前资源、活动或规则的现状，再决定是新增、补充还是调整状态。"
+                title: localeText(locale, "再查看选中对象详情", "Review the selected object"),
+                description: localeText(locale, "先看当前资源、活动或规则的现状，再决定是新增、补充还是调整状态。", "Check the current resource, activity, or rule before deciding whether to add, extend, or change state.")
               },
               {
-                title: "最后再执行写操作",
-                description: "创建资源、补单元、加票种或切状态，都应在同一工作区内完成。"
+                title: localeText(locale, "最后再执行写操作", "Perform updates in the same workspace"),
+                description: localeText(locale, "创建资源、补单元、加票种或切状态，都应在同一工作区内完成。", "Create resources, add units, create tickets, or change states in the same workspace.")
               }
             ]}
           />
@@ -339,8 +362,12 @@ export function AdminPage() {
 
       {workspaceTab === "overview" ? (
         <PageSection
-          title="今日维护概览"
-          description="教师工作台首页优先展示今天最需要关注的维护范围、当前选中对象和快捷入口，不再把所有表单直接铺在第一屏。"
+          title={localeText(locale, "今日维护概览", "Today’s Operations Overview")}
+          description={localeText(
+            locale,
+            "教师工作台首页优先展示今天最需要关注的维护范围、当前选中对象和快捷入口，不再把所有表单直接铺在第一屏。",
+            "The teacher homepage prioritizes today’s maintenance focus, currently selected objects, and quick entries instead of placing every form on the first screen."
+          )}
         >
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr),360px]">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -1278,16 +1305,16 @@ function RuleSummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function workspaceTabLabel(tab: WorkspaceTab) {
+function workspaceTabLabel(tab: WorkspaceTab, locale: "zh-CN" | "en") {
   switch (tab) {
     case "overview":
-      return "运营总览";
+      return localeText(locale, "运营总览", "Operations Overview");
     case "resources":
-      return "资源工作区";
+      return localeText(locale, "资源工作区", "Resource Workspace");
     case "activities":
-      return "活动工作区";
+      return localeText(locale, "活动工作区", "Activity Workspace");
     case "rules":
-      return "规则工作区";
+      return localeText(locale, "规则工作区", "Rule Workspace");
   }
 }
 
