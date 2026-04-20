@@ -8,7 +8,11 @@ import { LoginPage } from "./ui/pages/login-page";
 import { OrdersPage } from "./ui/pages/orders-page";
 import { SpacesPage } from "./ui/pages/spaces-page";
 import { SportsPage } from "./ui/pages/sports-page";
-import { PublicOnlyRoute, RequireAdmin, RequireAuth } from "./ui/route-guards";
+import {
+  PublicOnlyRoute,
+  RequireAdmin,
+  RequireStudentPortal
+} from "./ui/route-guards";
 
 export const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
   {
@@ -20,16 +24,25 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
         element: <HomePage />
       },
       {
-        path: "spaces",
-        element: <SpacesPage />
-      },
-      {
-        path: "sports",
-        element: <SportsPage />
-      },
-      {
-        path: "activities",
-        element: <ActivitiesPage />
+        element: <RequireStudentPortal />,
+        children: [
+          {
+            path: "spaces",
+            element: <SpacesPage />
+          },
+          {
+            path: "sports",
+            element: <SportsPage />
+          },
+          {
+            path: "activities",
+            element: <ActivitiesPage />
+          },
+          {
+            path: "orders",
+            element: <OrdersPage />
+          }
+        ]
       },
       {
         element: <PublicOnlyRoute />,
@@ -37,15 +50,6 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
           {
             path: "login",
             element: <LoginPage />
-          }
-        ]
-      },
-      {
-        element: <RequireAuth />,
-        children: [
-          {
-            path: "orders",
-            element: <OrdersPage />
           }
         ]
       },

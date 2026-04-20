@@ -10,12 +10,13 @@ import {
   fetchResources
 } from "../../lib/api";
 import { formatDateTime } from "../../lib/date";
+import { isEnglishLocale } from "../../lib/locale";
+import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
 import { PageHero } from "../page-hero";
 import { PageSection } from "../page-section";
 import {
   EmptyPanel,
-  HighlightPanel,
   StatePanel,
   StatusPill
 } from "../user-experience-kit";
@@ -53,48 +54,76 @@ export function HomePage() {
 }
 
 function GuestHome() {
+  const locale = useLocaleStore((state) => state.locale);
+  const setLocale = useLocaleStore((state) => state.setLocale);
+  const isEnglish = isEnglishLocale(locale);
+
   return (
     <>
       <PageHero
-        eyebrow="Unified Access"
-        title="登录后进入对应的校园服务首页"
-        description="CampusBook 为学生提供统一预约与活动入口，为教师或管理身份提供工作台。未登录时不展示复杂说明，只保留最直接的身份入口。"
+        eyebrow={isEnglish ? "Unified Access" : "统一入口"}
+        title={
+          isEnglish
+            ? "Sign in to enter the right workspace"
+            : "登录后进入对应的校园服务首页"
+        }
+        description={
+          isEnglish
+            ? "Guests only see a simple sign-in entry here. Students enter the campus services portal after login, while teachers enter the workspace."
+            : "访客首页只保留最直接的登录入口。学生登录后进入校园服务首页，教师或管理身份登录后进入工作台。"
+        }
         aside={
           <>
-            <p className="font-medium text-ink">快速进入</p>
+            <p className="font-medium text-ink">
+              {isEnglish ? "Language" : "语言选择"}
+            </p>
+            <div className="mt-4 inline-flex rounded-full border border-navy/10 bg-sand p-1">
+              <button
+                type="button"
+                className={`rounded-full px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] transition ${
+                  locale === "zh-CN"
+                    ? "bg-ember text-white"
+                    : "text-slate hover:text-ink"
+                }`}
+                onClick={() => setLocale("zh-CN")}
+              >
+                中文
+              </button>
+              <button
+                type="button"
+                className={`rounded-full px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] transition ${
+                  locale === "en"
+                    ? "bg-ember text-white"
+                    : "text-slate hover:text-ink"
+                }`}
+                onClick={() => setLocale("en")}
+              >
+                English
+              </button>
+            </div>
             <div className="mt-4 grid gap-3">
               <Link
                 to="/login"
                 className="rounded-2xl bg-ember px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-ember/90"
               >
-                进入统一登录
+                {isEnglish ? "Go to Sign In" : "进入统一登录"}
               </Link>
               <div className="rounded-2xl border border-navy/10 bg-white px-4 py-4 text-xs leading-6 text-slate">
-                <p>学生入口：demo@campusbook.top / demo123456</p>
-                <p>教师入口：admin@campusbook.top / admin123456</p>
+                <p>
+                  {isEnglish
+                    ? "Student: demo@campusbook.top / demo123456"
+                    : "学生入口：demo@campusbook.top / demo123456"}
+                </p>
+                <p>
+                  {isEnglish
+                    ? "Teacher: admin@campusbook.top / admin123456"
+                    : "教师入口：admin@campusbook.top / admin123456"}
+                </p>
               </div>
             </div>
           </>
         }
       />
-
-      <PageSection
-        title="登录后你会看到什么"
-        description="学生和教师进入的是两套不同的首页结构，真实使用时不会在首页看到大段平台理念说明。"
-      >
-        <div className="grid gap-4 lg:grid-cols-2">
-          <HighlightPanel
-            eyebrow="Student Home"
-            title="学生登录后"
-            description="直接进入校园服务首页，只保留体育空间、校园活动和学术空间三个最常用入口，并能查看历史记录与近期通知。 "
-          />
-          <HighlightPanel
-            eyebrow="Teacher Workspace"
-            title="教师或管理登录后"
-            description="直接进入工作台，重点查看资源、活动、规则更新情况和快捷维护入口，不再先经过学生端首页。"
-          />
-        </div>
-      </PageSection>
     </>
   );
 }

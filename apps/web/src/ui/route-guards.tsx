@@ -43,6 +43,29 @@ export function RequireAuth() {
   return <Outlet />;
 }
 
+export function RequireStudentPortal() {
+  const location = useLocation();
+  const status = useSessionStore((state) => state.status);
+  const user = useSessionStore((state) => state.user);
+
+  if (status === "unknown") {
+    return <RouteGateMessage message="正在恢复登录态" />;
+  }
+
+  if (status !== "authenticated") {
+    const redirect = encodeURIComponent(
+      `${location.pathname}${location.search}${location.hash}`
+    );
+    return <Navigate to={`/login?redirect=${redirect}`} replace />;
+  }
+
+  if (user?.role === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <Outlet />;
+}
+
 export function RequireAdmin() {
   const status = useSessionStore((state) => state.status);
   const user = useSessionStore((state) => state.user);

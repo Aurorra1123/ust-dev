@@ -183,6 +183,35 @@
 
 ### 已完成
 
+- 开始执行 `PUX-007`，完成访客可见范围收口
+- `apps/web/src/routes.tsx` 已将以下学生端页面挂到新的学生门户守卫下：
+  - `/spaces`
+  - `/sports`
+  - `/activities`
+  - `/orders`
+- 新增 `RequireStudentPortal`：
+  - 未登录访问学生端页面时跳转到登录页
+  - 管理身份访问学生端页面时重定向到 `/admin`
+- `apps/web/src/ui/app-shell.tsx` 已收窄访客导航：
+  - 访客不再看到体育空间、校园活动、学术空间入口
+  - 访客导航仅保留登录入口
+- `apps/web/src/ui/pages/home-page.tsx` 已收口访客首页：
+  - 不再展示“登录后你会看到什么”等扩展说明区块
+  - 首页仅保留统一登录入口和语言切换
+- 新增语言切换底座：
+  - `apps/web/src/store/locale-store.ts`
+  - `apps/web/src/lib/locale.ts`
+  - 当前已支持访客首页与访客壳层的中英文切换和本地持久化
+- 新增验证证据：
+  - `docs/verification/2026-04-20/pux-007-guest-access-restrictions.md`
+- 本轮前端已通过：
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web lint`
+  - `pnpm --filter web build`
+- 已以低负载方式将新的 `apps/web/dist` 同步到 `infra-web-1`
+- 线上 `https://campusbook.top` 当前开始返回新的前端资源：
+  - `index-DHx9VHwb.js`
+  - `index-DBUOT101.css`
 - 根据新的产品需求，扩展 `docs/plans/feature-list.json`
 - 新增 4 个后续任务：
   - `PUX-007`
@@ -209,15 +238,15 @@
 
 ### 当前状态
 
+- `PUX-007` 已完成
 - 当前正式任务清单已覆盖最新提出的访客收口、双语、同行人签到、违约惩罚与管理员资源运营需求
-- 这些需求目前只是进入规划层，尚未开始代码实现
+- 双语功能当前已有访客首页与访客壳层的状态管理底座，但核心页面文案尚未切换
 
 ### 下一步建议
 
-1. 先实现 `PUX-007`，把访客可见范围真正收紧
-2. 再做 `PUX-008`，补中英文切换
-3. 然后进入 `APP-012` 和 `APP-013`，补预约同行人、签到和违约惩罚链路
-4. 最后推进 `APP-014` 和 `APP-015`，补管理员资源运营能力
+1. 继续推进 `PUX-008`，把中英文切换从访客首页扩展到核心页面
+2. 然后进入 `APP-012` 和 `APP-013`，补预约同行人、签到和违约惩罚链路
+3. 最后推进 `APP-014` 和 `APP-015`，补管理员资源运营能力
 
 ## 2026-04-18
 
