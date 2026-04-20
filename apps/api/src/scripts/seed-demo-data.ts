@@ -58,6 +58,42 @@ async function main() {
     }
   });
 
+  await prisma.user.upsert({
+    where: { email: "partner1@campusbook.top" },
+    update: {
+      name: "partner1",
+      role: UserRole.STUDENT,
+      status: UserStatus.ACTIVE,
+      creditScore: 100
+    },
+    create: {
+      id: "user_demo_partner_one",
+      email: "partner1@campusbook.top",
+      name: "partner1",
+      role: UserRole.STUDENT,
+      status: UserStatus.ACTIVE,
+      creditScore: 100
+    }
+  });
+
+  await prisma.user.upsert({
+    where: { email: "partner2@campusbook.top" },
+    update: {
+      name: "partner2",
+      role: UserRole.STUDENT,
+      status: UserStatus.ACTIVE,
+      creditScore: 100
+    },
+    create: {
+      id: "user_demo_partner_two",
+      email: "partner2@campusbook.top",
+      name: "partner2",
+      role: UserRole.STUDENT,
+      status: UserStatus.ACTIVE,
+      creditScore: 100
+    }
+  });
+
   await prisma.resource.upsert({
     where: { id: "res_academic_demo" },
     update: {
@@ -430,7 +466,12 @@ async function main() {
           "activity_demo_open_day",
           "activity_demo_workshop_draft"
         ],
-        seededUsers: ["demo@campusbook.top", "admin@campusbook.top"],
+        seededUsers: [
+          "demo@campusbook.top",
+          "admin@campusbook.top",
+          "partner1@campusbook.top",
+          "partner2@campusbook.top"
+        ],
         seededRules: [
           "rule_demo_academic_min_credit",
           "rule_demo_academic_max_duration",

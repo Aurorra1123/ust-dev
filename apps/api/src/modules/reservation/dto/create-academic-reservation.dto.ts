@@ -1,4 +1,10 @@
-import { IsDateString, IsString } from "class-validator";
+import {
+  IsArray,
+  IsDateString,
+  IsEmail,
+  IsOptional,
+  IsString
+} from "class-validator";
 
 export class CreateAcademicReservationDto {
   @IsString()
@@ -9,4 +15,9 @@ export class CreateAcademicReservationDto {
 
   @IsDateString()
   endTime!: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsEmail({}, { each: true })
+  companionEmails?: string[];
 }

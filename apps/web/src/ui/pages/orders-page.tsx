@@ -3,7 +3,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { OrderDetailResponse } from "@campusbook/shared-types";
 
-import { ApiError, cancelOrder, fetchOrders } from "../../lib/api";
+import {
+  ApiError,
+  cancelOrder,
+  checkInReservation,
+  fetchOrders
+} from "../../lib/api";
 import { formatDateTime } from "../../lib/date";
 import { queryClient } from "../../lib/query-client";
 import { useSessionStore } from "../../store/session-store";
@@ -53,6 +58,14 @@ export function OrdersPage() {
 
   const cancelMutation = useMutation({
     mutationFn: (orderId: string) => cancelOrder(orderId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["orders"]
+      });
+    }
+  });
+  const checkInMutation = useMutation({
+    mutationFn: (orderId: string) => checkInReservation(orderId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["orders"]
@@ -200,16 +213,28 @@ export function OrdersPage() {
                         <StatusPill>{bizTypeLabel(selectedOrder)}</StatusPill>
                       </div>
                     </div>
-                    {canCancel(selectedOrder) ? (
-                      <button
-                        type="button"
-                        className="rounded-full border border-danger/25 px-4 py-2 text-sm text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
-                        onClick={() => cancelMutation.mutate(selectedOrder.id)}
-                        disabled={cancelMutation.isPending}
-                      >
-                        {cancelMutation.isPending ? "取消中" : "取消订单"}
-                      </button>
-                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      {canCheckIn(selectedOrder, user?.id) ? (
+                        <button
+                          type="button"
+                          className="rounded-full border border-moss/25 px-4 py-2 text-sm text-moss transition hover:bg-moss/10 disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={() => checkInMutation.mutate(selectedOrder.id)}
+                          disabled={checkInMutation.isPending}
+                        >
+                          {checkInMutation.isPending ? "签到中" : "立即签到"}
+                        </button>
+                      ) : null}
+                      {canCancel(selectedOrder, user?.id, user?.role) ? (
+                        <button
+                          type="button"
+                          className="rounded-full border border-danger/25 px-4 py-2 text-sm text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={() => cancelMutation.mutate(selectedOrder.id)}
+                          disabled={cancelMutation.isPending}
+                        >
+                          {cancelMutation.isPending ? "取消中" : "取消订单"}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -263,6 +288,51 @@ export function OrdersPage() {
                   </div>
                 </div>
 
+                {selectedOrder.reservationCategory ? (
+                  <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
+                    <h3 className="text-lg font-semibold text-ink">签到与同行人</h3>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <InfoCard
+                        label="签到开放"
+                        value={formatDateTime(selectedOrder.checkInOpenAt)}
+                      />
+                      <InfoCard
+                        label="签到截止"
+                        value={formatDateTime(selectedOrder.checkInCloseAt)}
+                      />
+                    </div>
+                    <div className="mt-4 grid gap-3">
+                      {selectedOrder.reservationParticipants.map((participant) => (
+                        <div
+                          key={participant.userId}
+                          className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-medium text-ink">
+                                {participant.userEmail}
+                              </p>
+                              <p className="mt-1 text-xs uppercase tracking-[0.2em] text-ink/45">
+                                {participant.isHost ? "预约人" : "同行人"}
+                              </p>
+                            </div>
+                            <StatusPill
+                              tone={participant.checkedInAt ? "success" : "brand"}
+                            >
+                              {participant.checkedInAt ? "已签到" : "未签到"}
+                            </StatusPill>
+                          </div>
+                          <p className="mt-2 text-sm text-ink/70">
+                            {participant.checkedInAt
+                              ? `签到时间：${formatDateTime(participant.checkedInAt)}`
+                              : "尚未完成签到"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
                   <h3 className="text-lg font-semibold text-ink">状态日志</h3>
                   <div className="mt-4 grid gap-3">
@@ -290,6 +360,11 @@ export function OrdersPage() {
                 {cancelMutation.isError ? (
                   <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
                     {(cancelMutation.error as ApiError).message}
+                  </div>
+                ) : null}
+                {checkInMutation.isError ? (
+                  <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
+                    {(checkInMutation.error as ApiError).message}
                   </div>
                 ) : null}
               </div>
@@ -328,9 +403,38 @@ function DetailItem({ title, description }: { title: string; description: string
   );
 }
 
-function canCancel(order: OrderDetailResponse) {
+function canCancel(
+  order: OrderDetailResponse,
+  currentUserId?: string,
+  currentUserRole?: "student" | "admin"
+) {
   return (
-    order.status === "pending_confirmation" || order.status === "confirmed"
+    (currentUserRole === "admin" || order.userId === currentUserId) &&
+    (order.status === "pending_confirmation" || order.status === "confirmed")
+  );
+}
+
+function canCheckIn(order: OrderDetailResponse, currentUserId?: string) {
+  if (!currentUserId || order.status !== "confirmed") {
+    return false;
+  }
+
+  if (!order.reservationCategory || !order.checkInOpenAt || !order.checkInCloseAt) {
+    return false;
+  }
+
+  const participant = order.reservationParticipants.find(
+    (item) => item.userId === currentUserId
+  );
+
+  if (!participant || participant.checkedInAt) {
+    return false;
+  }
+
+  const now = Date.now();
+  return (
+    new Date(order.checkInOpenAt).getTime() <= now &&
+    now <= new Date(order.checkInCloseAt).getTime()
   );
 }
 

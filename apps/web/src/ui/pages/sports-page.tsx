@@ -27,6 +27,7 @@ export function SportsPage() {
   const [mode, setMode] = useState<"unit" | "group">("unit");
   const [targetId, setTargetId] = useState("");
   const [slotStarts, setSlotStarts] = useState<string[]>([]);
+  const [companionEmailsText, setCompanionEmailsText] = useState("");
   const resourcesQuery = useQuery({
     queryKey: ["resources", "sports_facility"],
     queryFn: () => fetchResources("sports_facility")
@@ -298,7 +299,8 @@ export function SportsPage() {
                   ...(mode === "group"
                     ? { resourceGroupId: targetId }
                     : { resourceUnitId: targetId }),
-                  slotStarts
+                  slotStarts,
+                  companionEmails: parseCompanionEmails(companionEmailsText)
                 });
               }}
             >
@@ -343,6 +345,7 @@ export function SportsPage() {
                   <p>模式：{mode === "group" ? "组合场地" : "单场地"}</p>
                   <p>目标数量：{availableTargets.length}</p>
                   <p>已选槽位：{slotStarts.length} 个</p>
+                  <p>同行人数：{parseCompanionEmails(companionEmailsText).length}</p>
                 </div>
               </div>
 
@@ -383,6 +386,16 @@ export function SportsPage() {
                   </label>
                 ))}
               </div>
+
+              <label className="grid gap-2 text-sm text-ink/75">
+                同行人邮箱
+                <textarea
+                  className="min-h-[88px] rounded-2xl border border-white/70 bg-white px-4 py-3 outline-none transition focus:border-moss"
+                  placeholder="输入已有学生账号邮箱，支持逗号或换行分隔"
+                  value={companionEmailsText}
+                  onChange={(event) => setCompanionEmailsText(event.target.value)}
+                />
+              </label>
 
               <GuidancePanel
                 title="预约说明"
@@ -440,5 +453,16 @@ function QuickFact({ label, value }: { label: string; value: string }) {
       <p className="text-xs uppercase tracking-[0.18em] text-white/65">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>
+  );
+}
+
+function parseCompanionEmails(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\n,;]+/)
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+    )
   );
 }

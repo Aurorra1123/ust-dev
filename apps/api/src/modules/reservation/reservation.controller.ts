@@ -1,7 +1,8 @@
-import { Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Param, Post, UseGuards } from "@nestjs/common";
 import type {
   AcademicReservationRequest,
   AcademicReservationResponse,
+  ReservationCheckInResponse,
   SportsReservationRequest,
   SportsReservationResponse
 } from "@campusbook/shared-types";
@@ -38,5 +39,13 @@ export class ReservationController {
       payload satisfies SportsReservationRequest,
       currentUser
     );
+  }
+
+  @Post(":orderId/check-in")
+  checkInReservation(
+    @Param("orderId") orderId: string,
+    @CurrentUser() currentUser: AuthenticatedUser
+  ): Promise<ReservationCheckInResponse> {
+    return this.reservationService.checkInReservation(orderId, currentUser);
   }
 }

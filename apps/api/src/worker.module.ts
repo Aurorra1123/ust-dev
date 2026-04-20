@@ -8,6 +8,7 @@ import { ActivityRegistrationWorkerService } from "./modules/activities/activity
 import { AuthModule } from "./modules/auth/auth.module";
 import { OrdersModule } from "./modules/orders/orders.module";
 import { OrderExpirationWorkerService } from "./modules/orders/order-expiration-worker.service";
+import { ReservationAttendanceWorkerService } from "./modules/orders/reservation-attendance-worker.service";
 
 @Module({
   imports: [
@@ -20,6 +21,10 @@ import { OrderExpirationWorkerService } from "./modules/orders/order-expiration-
     ActivitiesModule,
     OrdersModule
   ],
-  providers: [OrderExpirationWorkerService, ActivityRegistrationWorkerService]
+  providers: [
+    OrderExpirationWorkerService,
+    ReservationAttendanceWorkerService,
+    ActivityRegistrationWorkerService
+  ]
 })
 export class WorkerModule {}

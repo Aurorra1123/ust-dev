@@ -32,6 +32,11 @@ enum ResourceAvailabilityMode {
   DISCRETE_SLOT
 }
 
+enum ReservationCategory {
+  ACADEMIC_SPACE
+  SPORTS_FACILITY
+}
+
 enum ActivityStatus {
   DRAFT
   PUBLISHED
@@ -80,6 +85,8 @@ model User {
   activityRegistrations  ActivityRegistration[]
   orders                 Order[]
   sportsReservationSlots SportsReservationSlot[]
+  reservationParticipants ReservationParticipant[]
+  reservationRestrictions UserReservationRestriction[]
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
   userCreditLogs         UserCreditLog[]
@@ -205,6 +212,7 @@ model Order {
   activity               Activity?               @relation(fields: [activityId], references: [id], onDelete: SetNull)
   items                  OrderItem[]
   paymentRecords         PaymentRecord[]
+  reservationParticipants ReservationParticipant[]
   statusLogs             OrderStatusLog[]
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
@@ -274,6 +282,22 @@ model SportsReservationSlot {
   @@index([resourceUnitId, slotStart])
   @@index([userId, createdAt])
   @@index([orderId])
+}
+
+model ReservationParticipant {
+  id          String   @id @default(cuid())
+  orderId     String
+  userId      String
+  isHost      Boolean  @default(false)
+  checkedInAt DateTime?
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([orderId, userId])
+  @@index([userId, createdAt])
+  @@index([orderId, checkedInAt])
 }
 
 model OrderItem {
@@ -374,4 +398,19 @@ model UserCreditLog {
   createdAt  DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+model UserReservationRestriction {
+  id             String              @id @default(cuid())
+  userId         String
+  category       ReservationCategory
+  violationCount Int                 @default(0)
+  bannedUntil    DateTime?
+  lastViolatedAt DateTime?
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([userId, category])
+  @@index([category, bannedUntil])
 }

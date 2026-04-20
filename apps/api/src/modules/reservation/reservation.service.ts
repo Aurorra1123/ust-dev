@@ -6,10 +6,10 @@ import {
   NotFoundException,
   UnauthorizedException
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import {
   OrderBizType,
   OrderStatus,
+  ReservationCategory,
   ResourceAvailabilityMode,
   ResourceType,
   UserStatus
@@ -17,17 +17,19 @@ import {
 import type {
   AcademicReservationRequest,
   AcademicReservationResponse,
+  ReservationCheckInResponse,
   SportsReservationRequest,
   SportsReservationResponse
 } from "@campusbook/shared-types";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import type { AuthenticatedUser } from "../auth/auth.types";
-import { OrderExpirationQueueService } from "../orders/order-expiration-queue.service";
+import { ReservationAttendanceQueueService } from "../orders/reservation-attendance-queue.service";
 import { RulesService } from "../rules/rules.service";
 
 const ACADEMIC_BUFFER_MINUTES = 5;
-const DEFAULT_ORDER_EXPIRE_SECONDS = 15 * 60;
+const CHECK_IN_WINDOW_MINUTES = 10;
+const RESERVATION_BAN_DAYS = 7;
 const SPORTS_SLOT_MINUTES = 60;
 
 @Injectable()
@@ -36,8 +38,7 @@ export class ReservationService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly configService: ConfigService,
-    private readonly orderExpirationQueueService: OrderExpirationQueueService,
+    private readonly reservationAttendanceQueueService: ReservationAttendanceQueueService,
     private readonly rulesService: RulesService
   ) {}
 
@@ -46,6 +47,9 @@ export class ReservationService {
     currentUser: AuthenticatedUser
   ): Promise<AcademicReservationResponse> {
     const user = await this.getActiveReservationUser(currentUser.id);
+    const companionUsers = (await this.resolveCompanionUsers(payload.companionEmails)).filter(
+      (companion) => companion.id !== user.id
+    );
     const startTime = new Date(payload.startTime);
     const endTime = new Date(payload.endTime);
 
@@ -71,6 +75,11 @@ export class ReservationService {
     if (resourceUnit.resource.type !== ResourceType.ACADEMIC_SPACE) {
       throw new BadRequestException("resource-unit-is-not-academic-space");
     }
+
+    await this.assertReservationCategoryAvailable(
+      [user, ...companionUsers],
+      ReservationCategory.ACADEMIC_SPACE
+    );
 
     await this.rulesService.assertReservationRules({
       resourceId: resourceUnit.resourceId,
@@ -105,13 +114,11 @@ export class ReservationService {
 
     try {
       const created = await this.prismaService.$transaction(async (tx) => {
-        const expireAt = buildOrderExpireAt(this.configService);
         const order = await tx.order.create({
           data: {
             userId: user.id,
             bizType: OrderBizType.RESOURCE_RESERVATION,
-            status: OrderStatus.PENDING_CONFIRMATION,
-            expireAt,
+            status: OrderStatus.CONFIRMED,
             totalAmountCents: 0,
             items: {
               create: {
@@ -127,7 +134,7 @@ export class ReservationService {
             },
             statusLogs: {
               create: {
-                toStatus: OrderStatus.PENDING_CONFIRMATION,
+                toStatus: OrderStatus.CONFIRMED,
                 reason: "academic-reservation-created"
               }
             }
@@ -144,12 +151,26 @@ export class ReservationService {
             endTime,
             bufferBeforeMin: ACADEMIC_BUFFER_MINUTES,
             bufferAfterMin: ACADEMIC_BUFFER_MINUTES,
-            status: OrderStatus.PENDING_CONFIRMATION
+            status: OrderStatus.CONFIRMED
           }
         });
 
+        await tx.reservationParticipant.createMany({
+          data: [
+            {
+              orderId: order.id,
+              userId: user.id,
+              isHost: true
+            },
+            ...companionUsers.map((companion) => ({
+              orderId: order.id,
+              userId: companion.id,
+              isHost: false
+            }))
+          ]
+        });
+
         return {
-          expireAt,
           response: {
             reservationId: reservation.id,
             orderId: order.id,
@@ -161,12 +182,12 @@ export class ReservationService {
             endTime: reservation.endTime.toISOString(),
             bufferBeforeMin: reservation.bufferBeforeMin,
             bufferAfterMin: reservation.bufferAfterMin,
-            status: "pending_confirmation" as const
+            status: "confirmed" as const
           }
         };
       });
 
-      await this.scheduleOrderExpiration(created.response.orderId, created.expireAt);
+      await this.scheduleAttendanceEvaluation(created.response.orderId, startTime);
       return created.response;
     } catch (error) {
       if (
@@ -185,6 +206,9 @@ export class ReservationService {
     currentUser: AuthenticatedUser
   ): Promise<SportsReservationResponse> {
     const user = await this.getActiveReservationUser(currentUser.id);
+    const companionUsers = (await this.resolveCompanionUsers(payload.companionEmails)).filter(
+      (companion) => companion.id !== user.id
+    );
     const hasUnit = Boolean(payload.resourceUnitId);
     const hasGroup = Boolean(payload.resourceGroupId);
 
@@ -250,6 +274,11 @@ export class ReservationService {
       throw new BadRequestException("reservation-target-is-not-sports-facility");
     }
 
+    await this.assertReservationCategoryAvailable(
+      [user, ...companionUsers],
+      ReservationCategory.SPORTS_FACILITY
+    );
+
     for (const unit of resourceUnits) {
       if (unit.resource.type !== ResourceType.SPORTS_FACILITY) {
         throw new BadRequestException("resource-unit-is-not-sports-facility");
@@ -290,13 +319,11 @@ export class ReservationService {
 
     try {
       const created = await this.prismaService.$transaction(async (tx) => {
-        const expireAt = buildOrderExpireAt(this.configService);
         const order = await tx.order.create({
           data: {
             userId: user.id,
             bizType: OrderBizType.RESOURCE_RESERVATION,
-            status: OrderStatus.PENDING_CONFIRMATION,
-            expireAt,
+            status: OrderStatus.CONFIRMED,
             totalAmountCents: 0
           }
         });
@@ -323,7 +350,7 @@ export class ReservationService {
             resourceUnitId: unit.id,
             slotStart: slot.start,
             slotEnd: slot.end,
-            status: OrderStatus.PENDING_CONFIRMATION
+            status: OrderStatus.CONFIRMED
           }))
         );
 
@@ -334,7 +361,7 @@ export class ReservationService {
         await tx.orderStatusLog.create({
           data: {
             orderId: order.id,
-            toStatus: OrderStatus.PENDING_CONFIRMATION,
+            toStatus: OrderStatus.CONFIRMED,
             reason: hasGroup
               ? "sports-group-reservation-created"
               : "sports-reservation-created"
@@ -345,8 +372,22 @@ export class ReservationService {
           data: sportsSlots
         });
 
+        await tx.reservationParticipant.createMany({
+          data: [
+            {
+              orderId: order.id,
+              userId: user.id,
+              isHost: true
+            },
+            ...companionUsers.map((companion) => ({
+              orderId: order.id,
+              userId: companion.id,
+              isHost: false
+            }))
+          ]
+        });
+
         return {
-          expireAt,
           response: {
             orderId: order.id,
             orderNo: order.orderNo,
@@ -356,12 +397,15 @@ export class ReservationService {
             slotStarts: normalizedSlots.map((slot) => slot.start.toISOString()),
             slotEnds: normalizedSlots.map((slot) => slot.end.toISOString()),
             slotCount: sportsSlots.length,
-            status: "pending_confirmation" as const
+            status: "confirmed" as const
           }
         };
       });
 
-      await this.scheduleOrderExpiration(created.response.orderId, created.expireAt);
+      await this.scheduleAttendanceEvaluation(
+        created.response.orderId,
+        normalizedSlots[0]!.start
+      );
       return created.response;
     } catch (error) {
       if (isPrismaUniqueConstraintError(error, "sports_active_slot_unique")) {
@@ -370,6 +414,90 @@ export class ReservationService {
 
       throw error;
     }
+  }
+
+  async checkInReservation(
+    orderId: string,
+    currentUser: AuthenticatedUser
+  ): Promise<ReservationCheckInResponse> {
+    const order = await this.prismaService.order.findUnique({
+      where: { id: orderId },
+      include: {
+        academicReservation: true,
+        sportsReservationSlots: {
+          orderBy: {
+            slotStart: "asc"
+          }
+        },
+        reservationParticipants: {
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+
+    if (!order || order.bizType !== OrderBizType.RESOURCE_RESERVATION) {
+      throw new NotFoundException("reservation-order-not-found");
+    }
+
+    if (order.status !== OrderStatus.CONFIRMED) {
+      throw new BadRequestException("reservation-not-open-for-check-in");
+    }
+
+    const participant = order.reservationParticipants.find(
+      (item) => item.userId === currentUser.id
+    );
+
+    if (!participant) {
+      throw new UnauthorizedException("reservation-check-in-not-allowed");
+    }
+
+    const reservationCategory = getReservationCategoryFromOrder(order);
+    const reservationStartTime = getReservationStartTimeFromOrder(order);
+
+    if (!reservationCategory || !reservationStartTime) {
+      throw new BadRequestException("reservation-check-in-not-supported");
+    }
+
+    const { checkInOpenAt, checkInCloseAt } =
+      buildReservationCheckInWindow(reservationStartTime);
+    const now = new Date();
+
+    if (now < checkInOpenAt || now > checkInCloseAt) {
+      throw new BadRequestException("reservation-check-in-window-closed");
+    }
+
+    const checkedInAt =
+      participant.checkedInAt ??
+      (
+        await this.prismaService.reservationParticipant.update({
+          where: {
+            orderId_userId: {
+              orderId,
+              userId: currentUser.id
+            }
+          },
+          data: {
+            checkedInAt: now
+          }
+        })
+      ).checkedInAt;
+
+    if (!checkedInAt) {
+      throw new BadRequestException("reservation-check-in-failed");
+    }
+
+    return {
+      orderId,
+      participantUserId: participant.userId,
+      participantUserEmail: participant.user.email,
+      checkedInAt: checkedInAt.toISOString(),
+      reservationCategory: mapReservationCategory(reservationCategory),
+      checkInOpenAt: checkInOpenAt.toISOString(),
+      checkInCloseAt: checkInCloseAt.toISOString(),
+      orderStatus: "confirmed"
+    };
   }
 
   private async getActiveReservationUser(userId: string) {
@@ -384,12 +512,90 @@ export class ReservationService {
     return user;
   }
 
-  private async scheduleOrderExpiration(orderId: string, expireAt: Date) {
+  private async resolveCompanionUsers(companionEmails?: string[]) {
+    const normalizedEmails = Array.from(
+      new Set(
+        (companionEmails ?? [])
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean)
+      )
+    );
+
+    if (!normalizedEmails.length) {
+      return [];
+    }
+
+    const users = await this.prismaService.user.findMany({
+      where: {
+        email: {
+          in: normalizedEmails
+        },
+        status: UserStatus.ACTIVE
+      }
+    });
+
+    if (users.length !== normalizedEmails.length) {
+      const foundEmails = new Set(users.map((user) => user.email.toLowerCase()));
+      const missingEmails = normalizedEmails.filter((email) => !foundEmails.has(email));
+      throw new BadRequestException(
+        `companion-users-not-found:${missingEmails.join(",")}`
+      );
+    }
+
+    return users;
+  }
+
+  private async assertReservationCategoryAvailable(
+    users: Array<{ id: string }>,
+    category: ReservationCategory
+  ) {
+    const now = new Date();
+    const restrictions = await this.prismaService.userReservationRestriction.findMany({
+      where: {
+        userId: {
+          in: users.map((user) => user.id)
+        },
+        category,
+        bannedUntil: {
+          gt: now
+        }
+      },
+      include: {
+        user: {
+          select: {
+            email: true
+          }
+        }
+      }
+    });
+
+    if (!restrictions.length) {
+      return;
+    }
+
+    const firstRestriction = restrictions[0];
+
+    if (!firstRestriction) {
+      return;
+    }
+
+    throw new BadRequestException(
+      `reservation-category-disabled:${firstRestriction.user.email}:${
+        firstRestriction.bannedUntil?.toISOString() ??
+        addDays(now, RESERVATION_BAN_DAYS).toISOString()
+      }`
+    );
+  }
+
+  private async scheduleAttendanceEvaluation(orderId: string, reservationStartTime: Date) {
     try {
-      await this.orderExpirationQueueService.scheduleExpiration(orderId, expireAt);
+      await this.reservationAttendanceQueueService.scheduleAttendanceEvaluation(
+        orderId,
+        addMinutes(reservationStartTime, CHECK_IN_WINDOW_MINUTES)
+      );
     } catch (error) {
       this.logger.warn(
-        `Failed to schedule expiration for order ${orderId}: ${
+        `Failed to schedule attendance evaluation for order ${orderId}: ${
           error instanceof Error ? error.message : "unknown-error"
         }`
       );
@@ -401,12 +607,49 @@ function addMinutes(value: Date, minutes: number) {
   return new Date(value.getTime() + minutes * 60 * 1000);
 }
 
-function buildOrderExpireAt(configService: ConfigService) {
-  const seconds =
-    configService.get<number>("ORDER_PENDING_EXPIRE_SECONDS") ??
-    DEFAULT_ORDER_EXPIRE_SECONDS;
+function addDays(value: Date, days: number) {
+  return new Date(value.getTime() + days * 24 * 60 * 60 * 1000);
+}
 
-  return new Date(Date.now() + seconds * 1000);
+function buildReservationCheckInWindow(reservationStartTime: Date) {
+  return {
+    checkInOpenAt: addMinutes(reservationStartTime, -CHECK_IN_WINDOW_MINUTES),
+    checkInCloseAt: addMinutes(reservationStartTime, CHECK_IN_WINDOW_MINUTES)
+  };
+}
+
+function getReservationStartTimeFromOrder(order: {
+  academicReservation: { startTime: Date } | null;
+  sportsReservationSlots: Array<{ slotStart: Date }>;
+}) {
+  if (order.academicReservation) {
+    return order.academicReservation.startTime;
+  }
+
+  return order.sportsReservationSlots[0]?.slotStart ?? null;
+}
+
+function getReservationCategoryFromOrder(order: {
+  academicReservation: unknown;
+  sportsReservationSlots: unknown[];
+}) {
+  if (order.academicReservation) {
+    return ReservationCategory.ACADEMIC_SPACE;
+  }
+
+  if (order.sportsReservationSlots.length > 0) {
+    return ReservationCategory.SPORTS_FACILITY;
+  }
+
+  return null;
+}
+
+function mapReservationCategory(
+  category: ReservationCategory
+): ReservationCheckInResponse["reservationCategory"] {
+  return category === ReservationCategory.ACADEMIC_SPACE
+    ? "academic_space"
+    : "sports_facility";
 }
 
 function normalizeSportsSlots(slotStarts: string[]) {

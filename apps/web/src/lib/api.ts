@@ -10,6 +10,7 @@ import type {
   AuthSessionResponse,
   HealthStatus,
   OrderDetailResponse,
+  ReservationCheckInResponse,
   ResourceDetailResponse,
   ResourceListItem,
   ResourceType,
@@ -220,6 +221,12 @@ export function cancelOrder(orderId: string, reason?: string) {
     body: {
       reason
     }
+  });
+}
+
+export function checkInReservation(orderId: string) {
+  return requestJson<ReservationCheckInResponse>(`/reservations/${orderId}/check-in`, {
+    method: "POST"
   });
 }
 

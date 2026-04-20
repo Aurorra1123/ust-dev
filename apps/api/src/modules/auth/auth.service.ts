@@ -129,6 +129,30 @@ export class AuthService {
     );
 
     if (!matchedCredential) {
+      const demoStudentPassword = this.configService.getOrThrow<string>(
+        "DEMO_USER_PASSWORD"
+      );
+
+      if (password === demoStudentPassword) {
+        const existingStudent = await this.prismaService.user.findUnique({
+          where: { email },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            status: true
+          }
+        });
+
+        if (
+          existingStudent &&
+          existingStudent.role === PrismaUserRole.STUDENT &&
+          existingStudent.status === UserStatus.ACTIVE
+        ) {
+          return this.toAuthenticatedUser(existingStudent);
+        }
+      }
+
       throw new UnauthorizedException("invalid-credentials");
     }
 

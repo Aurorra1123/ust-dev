@@ -4,6 +4,7 @@ export type UserStatus = "active" | "inactive";
 export type ResourceType = "academic_space" | "sports_facility";
 export type ResourceStatus = "active" | "inactive";
 export type ResourceAvailabilityMode = "continuous" | "discrete_slot";
+export type ReservationCategory = "academic_space" | "sports_facility";
 
 export type ActivityStatus = "draft" | "published" | "closed" | "cancelled";
 export type ActivityTicketStatus = "active" | "inactive";
@@ -165,6 +166,13 @@ export interface AcademicReservationDetail {
   status: OrderStatus;
 }
 
+export interface ReservationParticipantDetail {
+  userId: string;
+  userEmail: string;
+  isHost: boolean;
+  checkedInAt: string | null;
+}
+
 export interface SportsReservationSlotDetail {
   id: string;
   resourceId: string;
@@ -189,8 +197,13 @@ export interface OrderDetailResponse extends AppOrder {
   userEmail: string;
   createdAt: string;
   updatedAt: string;
+  reservationCategory: ReservationCategory | null;
+  reservationStartTime: string | null;
+  checkInOpenAt: string | null;
+  checkInCloseAt: string | null;
   items: OrderItemDetail[];
   statusLogs: OrderStatusLogEntry[];
+  reservationParticipants: ReservationParticipantDetail[];
   academicReservation: AcademicReservationDetail | null;
   sportsReservationSlots: SportsReservationSlotDetail[];
   activityRegistration: ActivityRegistrationDetail | null;
@@ -200,6 +213,7 @@ export interface AcademicReservationRequest {
   resourceUnitId: string;
   startTime: string;
   endTime: string;
+  companionEmails?: string[];
 }
 
 export interface AcademicReservationResponse {
@@ -220,6 +234,7 @@ export interface SportsReservationRequest {
   resourceUnitId?: string;
   resourceGroupId?: string;
   slotStarts: string[];
+  companionEmails?: string[];
 }
 
 export interface SportsReservationResponse {
@@ -232,6 +247,17 @@ export interface SportsReservationResponse {
   slotEnds: string[];
   slotCount: number;
   status: OrderStatus;
+}
+
+export interface ReservationCheckInResponse {
+  orderId: string;
+  participantUserId: string;
+  participantUserEmail: string;
+  checkedInAt: string;
+  reservationCategory: ReservationCategory;
+  checkInOpenAt: string;
+  checkInCloseAt: string;
+  orderStatus: OrderStatus;
 }
 
 export interface ResourceListItem extends AppResource {

@@ -269,18 +269,79 @@
     - 管理员关闭某个或多个资源的预约通道
     - 管理员查看资源预约状态
     - 支持指定时间段关闭，或从当前时间开始不再接受预约
+- 完成 `APP-012`：为资源预约补齐同行人、签到和释放规则
+- `packages/shared-types/src/index.ts` 已扩展：
+  - 预约请求支持 `companionEmails`
+  - 订单详情增加 `reservationCategory`、签到窗口和同行人明细
+  - 新增签到响应类型
+- Prisma 已新增并完成迁移：
+  - `ReservationParticipant`
+  - `UserReservationRestriction`
+  - `ReservationCategory`
+  - `apps/api/prisma/migrations/20260420093446_reservation_attendance_and_restrictions`
+- `apps/api/src/modules/reservation/reservation.service.ts` 已完成：
+  - 学术空间与体育设施预约支持同行人邮箱列表
+  - 创建预约时同时写入主持人和同行人参与记录
+  - 新增 `POST /reservations/:orderId/check-in`
+  - 预约在开始前后 `10` 分钟内允许参与人签到
+- `apps/api/src/modules/orders/` 已新增预约签到评估队列与 worker：
+  - `reservation-attendance.constants.ts`
+  - `reservation-attendance-queue.service.ts`
+  - `reservation-attendance-worker.service.ts`
+- 预约开始后 `10` 分钟若全员未签到，系统会：
+  - 将预约订单标记为 `no_show`
+  - 释放学术空间或体育设施占用
+  - 记录对应类别的违约次数
+- 完成 `APP-013`：按类别累计违约并禁用预约一周
+- `UserReservationRestriction` 已按类别维护：
+  - `violationCount`
+  - `bannedUntil`
+  - `lastViolatedAt`
+- 当同一用户在同一类别累计违约超过 `2` 次时：
+  - 系统会禁用该类别预约 `7` 天
+  - 被禁用期间提交预约时会返回明确错误，例如 `reservation-category-disabled:<email>:<until>`
+- 为联调补充演示账号：
+  - `partner1@campusbook.top`
+  - `partner2@campusbook.top`
+  - 当前演示学生密码仍统一为 `demo123456`
+- 学生端预约表单已支持录入同行人邮箱：
+  - `apps/web/src/ui/pages/spaces-page.tsx`
+  - `apps/web/src/ui/pages/sports-page.tsx`
+- 订单页已新增签到与同行人面板：
+  - 展示签到开放/截止时间
+  - 展示主持人/同行人列表与签到状态
+  - 参与人可在有效窗口内直接签到
+- 本轮验证已通过：
+  - `pnpm --filter api typecheck`
+  - `pnpm --filter api lint`
+  - `pnpm --filter api build`
+  - `pnpm --filter api seed:demo`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web lint`
+  - `pnpm --filter web build`
+- 已完成联调验证：
+  - 同行人可在预约开始前后 `10` 分钟窗口内签到
+  - 任一同行人签到后，预约在签到评估任务执行后仍保持 `confirmed`
+  - 连续 `3` 次未签到会使该类别违约累计为 `3`
+  - 第 `4` 次提交同类别预约时被拦截，并返回禁用到期时间
+- 已新增验证证据：
+  - `docs/verification/2026-04-20/app-012-013-attendance-and-category-ban.md`
+- 为避免继续抬高宿主机负载，联调用的本机 `api/worker` 进程已在验证后关闭
 
 ### 当前状态
 
+- `APP-013` 已完成
+- `APP-012` 已完成
 - `PUX-008` 已完成
 - `PUX-007` 已完成
 - 当前正式任务清单已覆盖最新提出的访客收口、双语、同行人签到、违约惩罚与管理员资源运营需求
+- 资源预约当前已经支持同行人、签到窗口、自动爽约释放与按类别禁用
 - 双语功能当前已覆盖首页级核心页面，但更深层业务页和后台表单仍可继续扩展
 
 ### 下一步建议
 
-1. 进入 `APP-012` 和 `APP-013`，补预约同行人、签到和违约惩罚链路
-2. 然后推进 `APP-014` 和 `APP-015`，补管理员资源运营能力
+1. 进入 `APP-014` 和 `APP-015`，补管理员资源运营能力
+2. 为资源释放、预约关闭和管理员取消预约设计最低可行的数据模型与管理入口
 3. 后续可继续扩展更深层业务页和后台表单的英文文案覆盖
 
 ## 2026-04-18

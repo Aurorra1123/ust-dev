@@ -39,6 +39,7 @@ export function SpacesPage() {
   const [endTime, setEndTime] = useState(() =>
     toDateTimeLocalValue(addHours(startOfNextHour(), 1))
   );
+  const [companionEmailsText, setCompanionEmailsText] = useState("");
 
   useEffect(() => {
     const firstUnit = units[0];
@@ -237,7 +238,8 @@ export function SpacesPage() {
                 reservationMutation.mutate({
                   resourceUnitId,
                   startTime: new Date(startTime).toISOString(),
-                  endTime: new Date(endTime).toISOString()
+                  endTime: new Date(endTime).toISOString(),
+                  companionEmails: parseCompanionEmails(companionEmailsText)
                 });
               }}
             >
@@ -262,6 +264,7 @@ export function SpacesPage() {
                   <p>开始：{formatDateTime(new Date(startTime).toISOString())}</p>
                   <p>结束：{formatDateTime(new Date(endTime).toISOString())}</p>
                   <p>展示时长：{durationHours} 小时</p>
+                  <p>同行人数：{parseCompanionEmails(companionEmailsText).length}</p>
                 </div>
               </div>
 
@@ -283,6 +286,16 @@ export function SpacesPage() {
                     type="datetime-local"
                     value={endTime}
                     onChange={(event) => setEndTime(event.target.value)}
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm text-ink/75">
+                  同行人邮箱
+                  <textarea
+                    className="min-h-[88px] rounded-2xl border border-white/70 bg-white px-4 py-3 outline-none transition focus:border-moss"
+                    placeholder="输入已有学生账号邮箱，支持逗号或换行分隔"
+                    value={companionEmailsText}
+                    onChange={(event) => setCompanionEmailsText(event.target.value)}
                   />
                 </label>
               </div>
@@ -347,5 +360,16 @@ function QuickFact({ label, value }: { label: string; value: string }) {
       <p className="text-xs uppercase tracking-[0.18em] text-white/65">{label}</p>
       <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>
+  );
+}
+
+function parseCompanionEmails(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\n,;]+/)
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+    )
   );
 }
