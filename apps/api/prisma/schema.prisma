@@ -32,6 +32,12 @@ enum ResourceAvailabilityMode {
   DISCRETE_SLOT
 }
 
+enum ResourceReleaseFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 enum ReservationCategory {
   ACADEMIC_SPACE
   SPORTS_FACILITY
@@ -102,8 +108,10 @@ model Resource {
   location               String?
   status                 ResourceStatus          @default(ACTIVE)
   academicReservations   AcademicReservation[]
+  bookingClosures        ResourceBookingClosure[]
   units                  ResourceUnit[]
   groups                 ResourceGroup[]
+  releaseRules           ResourceReleaseRule[]
   ruleBindings           ResourceRuleBinding[]
   orderItems             OrderItem[]
   sportsReservationSlots SportsReservationSlot[]
@@ -155,6 +163,37 @@ model ResourceGroupItem {
 
   @@unique([groupId, resourceUnitId])
   @@index([resourceUnitId])
+}
+
+model ResourceReleaseRule {
+  id         String                   @id @default(cuid())
+  resourceId String
+  frequency  ResourceReleaseFrequency
+  dayOfWeek  Int?
+  dayOfMonth Int?
+  hour       Int
+  minute     Int
+  isActive   Boolean                  @default(true)
+  resource   Resource                 @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+
+  @@index([resourceId, isActive])
+}
+
+model ResourceBookingClosure {
+  id         String    @id @default(cuid())
+  resourceId String
+  startsAt   DateTime
+  endsAt     DateTime?
+  reason     String?
+  isActive   Boolean   @default(true)
+  resource   Resource  @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([resourceId, startsAt])
+  @@index([resourceId, isActive])
 }
 
 model Activity {

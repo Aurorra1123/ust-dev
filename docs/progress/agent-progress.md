@@ -367,21 +367,71 @@
 - 已新增验证证据：
   - `docs/verification/2026-04-20/app-012-013-attendance-and-category-ban.md`
 - 为避免继续抬高宿主机负载，联调用的本机 `api/worker` 进程已在验证后关闭
+- 完成 `APP-014`：为管理员端补齐资源列表与周期性资源释放配置
+- Prisma 已新增并完成迁移：
+  - `ResourceReleaseFrequency`
+  - `ResourceReleaseRule`
+  - `apps/api/prisma/migrations/20260420103020_admin_resource_release_and_closure`
+- `apps/api/src/modules/resource/` 已补齐：
+  - 放号规则 DTO
+  - 预约关闭 DTO
+  - 资源预约状态查询 DTO
+  - `resource-channel.ts` 通道状态计算
+- `AdminResourceController` 已新增：
+  - `POST /admin/resources/release-rules`
+  - `PATCH /admin/resources/release-rules/:id`
+- `ResourceService` 已扩展：
+  - 管理端资源详情返回放号规则、预约关闭规则和当前通道状态
+  - 支持按天、周、月配置某个或多个资源的放号时间
+  - 支持计算当前周期放号时间和下一次放号时间
+- 完成 `APP-015`：为管理员端补齐预约通道控制、学生预约取消与资源预约状态查看
+- `AdminResourceController` 已新增：
+  - `POST /admin/resources/closures`
+  - `PATCH /admin/resources/closures/:id`
+  - `GET /admin/resources/:id/reservation-status`
+- 预约创建流程已接入资源通道规则：
+  - 若资源尚未到达当前周期放号时间，则拦截预约
+  - 若资源存在与预约时间重叠的关闭规则，则拦截预约
+- 管理端资源工作区已扩展：
+  - 资源列表显示当前通道状态
+  - 可为一个或多个资源配置放号规则
+  - 可为一个或多个资源配置预约关闭规则
+  - 可查看某时间窗口内的预约状态和关闭记录
+  - 可直接取消学生预约
+- 本轮验证已通过：
+  - `pnpm --filter api typecheck`
+  - `pnpm --filter api lint`
+  - `pnpm --filter api build`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+- 已完成本机 API 联调验证：
+  - 管理员资源列表返回 `releaseRules`、`bookingClosures` 和 `channelStatus`
+  - 放号时间设为未来时，学生预约被 `resource-not-yet-released` 正确拦截
+  - 调整放号时间到过去后，学生预约可成功创建
+  - 配置关闭规则后，学生预约被 `resource-booking-closed` 正确拦截
+  - `GET /admin/resources/:id/reservation-status` 能返回预约记录和关闭记录
+  - 管理员通过 `POST /orders/:id/cancel` 可取消学生预约
+- 已新增验证证据：
+  - `docs/verification/2026-04-20/app-014-015-admin-resource-operations.md`
+- 本轮联调用的本机 `api:3001` 进程已在验证后关闭
 
 ### 当前状态
 
+- `APP-015` 已完成
+- `APP-014` 已完成
 - `APP-013` 已完成
 - `APP-012` 已完成
 - `PUX-008` 已完成
 - `PUX-007` 已完成
 - 当前正式任务清单已覆盖最新提出的访客收口、双语、同行人签到、违约惩罚与管理员资源运营需求
 - 资源预约当前已经支持同行人、签到窗口、自动爽约释放与按类别禁用
+- 管理员端当前已经支持资源列表、周期性放号、预约关闭、预约状态查询和管理员取消预约
 - 双语功能当前已覆盖首页级核心页面，但更深层业务页和后台表单仍可继续扩展
 
 ### 下一步建议
 
-1. 进入 `APP-014` 和 `APP-015`，补管理员资源运营能力
-2. 为资源释放、预约关闭和管理员取消预约设计最低可行的数据模型与管理入口
+1. 开始执行 `PUX-005`，补浏览器级真实回归和最终截图证据
+2. 低峰期再做一次正式镜像级部署收口，替代当前开发阶段的轻量热刷新
 3. 后续可继续扩展更深层业务页和后台表单的英文文案覆盖
 
 ## 2026-04-18

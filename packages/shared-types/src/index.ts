@@ -5,6 +5,8 @@ export type ResourceType = "academic_space" | "sports_facility";
 export type ResourceStatus = "active" | "inactive";
 export type ResourceAvailabilityMode = "continuous" | "discrete_slot";
 export type ReservationCategory = "academic_space" | "sports_facility";
+export type ResourceReleaseFrequency = "daily" | "weekly" | "monthly";
+export type ResourceChannelStatus = "open" | "closed" | "scheduled";
 
 export type ActivityStatus = "draft" | "published" | "closed" | "cancelled";
 export type ActivityTicketStatus = "active" | "inactive";
@@ -269,6 +271,107 @@ export interface ResourceListItem extends AppResource {
 export interface ResourceDetailResponse extends AppResource {
   units: AppResourceUnit[];
   groups: AppResourceGroup[];
+}
+
+export interface ResourceReleaseRuleDetail {
+  id: string;
+  resourceId: string;
+  frequency: ResourceReleaseFrequency;
+  dayOfWeek: number | null;
+  dayOfMonth: number | null;
+  hour: number;
+  minute: number;
+  isActive: boolean;
+  currentCycleReleaseAt: string;
+  nextReleaseAt: string;
+}
+
+export interface ResourceBookingClosureDetail {
+  id: string;
+  resourceId: string;
+  startsAt: string;
+  endsAt: string | null;
+  reason: string | null;
+  isActive: boolean;
+  isCurrentlyClosed: boolean;
+}
+
+export interface ResourceChannelSnapshot {
+  status: ResourceChannelStatus;
+  currentCycleReleaseAt: string | null;
+  nextReleaseAt: string | null;
+  activeClosureReason: string | null;
+  activeClosureEndsAt: string | null;
+}
+
+export interface AdminResourceDetailResponse extends ResourceDetailResponse {
+  releaseRules: ResourceReleaseRuleDetail[];
+  bookingClosures: ResourceBookingClosureDetail[];
+  channelStatus: ResourceChannelSnapshot;
+}
+
+export interface CreateResourceReleaseRulePayload {
+  resourceIds: string[];
+  frequency: ResourceReleaseFrequency;
+  dayOfWeek?: number;
+  dayOfMonth?: number;
+  hour: number;
+  minute: number;
+  isActive?: boolean;
+}
+
+export interface UpdateResourceReleaseRulePayload {
+  frequency?: ResourceReleaseFrequency;
+  dayOfWeek?: number | null;
+  dayOfMonth?: number | null;
+  hour?: number;
+  minute?: number;
+  isActive?: boolean;
+}
+
+export interface CreateResourceBookingClosurePayload {
+  resourceIds: string[];
+  startsAt: string;
+  endsAt?: string | null;
+  reason?: string;
+  isActive?: boolean;
+}
+
+export interface UpdateResourceBookingClosurePayload {
+  startsAt?: string;
+  endsAt?: string | null;
+  reason?: string | null;
+  isActive?: boolean;
+}
+
+export interface AdminBulkMutationResponse {
+  createdCount: number;
+}
+
+export interface AdminResourceReservationRecord {
+  orderId: string;
+  orderNo: string;
+  userId: string;
+  userEmail: string;
+  status: OrderStatus;
+  resourceUnitId: string;
+  resourceUnitName: string;
+  startTime: string;
+  endTime: string;
+  participantCount: number;
+  checkedInCount: number;
+}
+
+export interface AdminResourceReservationStatusResponse {
+  resourceId: string;
+  resourceName: string;
+  from: string;
+  to: string;
+  generatedAt: string;
+  channelStatus: ResourceChannelSnapshot;
+  closures: ResourceBookingClosureDetail[];
+  academicReservations: AdminResourceReservationRecord[];
+  sportsReservations: AdminResourceReservationRecord[];
 }
 
 export interface ActivityListItem extends AppActivity {

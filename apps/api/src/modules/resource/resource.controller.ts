@@ -1,6 +1,11 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import type {
+  AdminBulkMutationResponse,
+  AdminResourceDetailResponse,
+  AdminResourceReservationStatusResponse,
+  ResourceBookingClosureDetail,
   ResourceDetailResponse,
+  ResourceReleaseRuleDetail,
   ResourceListItem
 } from "@campusbook/shared-types";
 
@@ -9,9 +14,14 @@ import { Roles } from "../auth/roles.decorator";
 import { RolesGuard } from "../auth/roles.guard";
 import { CreateResourceDto } from "./dto/create-resource.dto";
 import { CreateResourceGroupDto } from "./dto/create-resource-group.dto";
+import { CreateResourceBookingClosureDto } from "./dto/create-resource-booking-closure.dto";
+import { CreateResourceReleaseRuleDto } from "./dto/create-resource-release-rule.dto";
 import { CreateResourceUnitDto } from "./dto/create-resource-unit.dto";
 import { ListResourcesQueryDto } from "./dto/list-resources-query.dto";
+import { ResourceReservationStatusQueryDto } from "./dto/resource-reservation-status-query.dto";
+import { UpdateResourceBookingClosureDto } from "./dto/update-resource-booking-closure.dto";
 import { UpdateResourceDto } from "./dto/update-resource.dto";
+import { UpdateResourceReleaseRuleDto } from "./dto/update-resource-release-rule.dto";
 import { ResourceService } from "./resource.service";
 
 @Controller("resources")
@@ -38,14 +48,14 @@ export class AdminResourceController {
   constructor(private readonly resourceService: ResourceService) {}
 
   @Get()
-  listResources(): Promise<ResourceDetailResponse[]> {
+  listResources(): Promise<AdminResourceDetailResponse[]> {
     return this.resourceService.listAdminResources();
   }
 
   @Post()
   createResource(
     @Body() payload: CreateResourceDto
-  ): Promise<ResourceDetailResponse> {
+  ): Promise<AdminResourceDetailResponse> {
     return this.resourceService.createResource(payload);
   }
 
@@ -53,7 +63,7 @@ export class AdminResourceController {
   updateResource(
     @Param("id") id: string,
     @Body() payload: UpdateResourceDto
-  ): Promise<ResourceDetailResponse> {
+  ): Promise<AdminResourceDetailResponse> {
     return this.resourceService.updateResource(id, payload);
   }
 
@@ -61,7 +71,7 @@ export class AdminResourceController {
   createResourceUnit(
     @Param("id") id: string,
     @Body() payload: CreateResourceUnitDto
-  ): Promise<ResourceDetailResponse> {
+  ): Promise<AdminResourceDetailResponse> {
     return this.resourceService.createResourceUnit(id, payload);
   }
 
@@ -69,7 +79,45 @@ export class AdminResourceController {
   createResourceGroup(
     @Param("id") id: string,
     @Body() payload: CreateResourceGroupDto
-  ): Promise<ResourceDetailResponse> {
+  ): Promise<AdminResourceDetailResponse> {
     return this.resourceService.createResourceGroup(id, payload);
+  }
+
+  @Post("release-rules")
+  createReleaseRules(
+    @Body() payload: CreateResourceReleaseRuleDto
+  ): Promise<AdminBulkMutationResponse> {
+    return this.resourceService.createReleaseRules(payload);
+  }
+
+  @Patch("release-rules/:id")
+  updateReleaseRule(
+    @Param("id") id: string,
+    @Body() payload: UpdateResourceReleaseRuleDto
+  ): Promise<ResourceReleaseRuleDetail> {
+    return this.resourceService.updateReleaseRule(id, payload);
+  }
+
+  @Post("closures")
+  createBookingClosures(
+    @Body() payload: CreateResourceBookingClosureDto
+  ): Promise<AdminBulkMutationResponse> {
+    return this.resourceService.createBookingClosures(payload);
+  }
+
+  @Patch("closures/:id")
+  updateBookingClosure(
+    @Param("id") id: string,
+    @Body() payload: UpdateResourceBookingClosureDto
+  ): Promise<ResourceBookingClosureDetail> {
+    return this.resourceService.updateBookingClosure(id, payload);
+  }
+
+  @Get(":id/reservation-status")
+  getReservationStatus(
+    @Param("id") id: string,
+    @Query() query: ResourceReservationStatusQueryDto
+  ): Promise<AdminResourceReservationStatusResponse> {
+    return this.resourceService.getReservationStatus(id, query.from, query.to);
   }
 }

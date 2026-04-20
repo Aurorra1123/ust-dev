@@ -25,6 +25,7 @@ import type {
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import type { AuthenticatedUser } from "../auth/auth.types";
 import { ReservationAttendanceQueueService } from "../orders/reservation-attendance-queue.service";
+import { getResourceChannelBlock } from "../resource/resource-channel";
 import { RulesService } from "../rules/rules.service";
 
 const ACADEMIC_BUFFER_MINUTES = 5;
@@ -64,7 +65,12 @@ export class ReservationService {
     const resourceUnit = await this.prismaService.resourceUnit.findUnique({
       where: { id: payload.resourceUnitId },
       include: {
-        resource: true
+        resource: {
+          include: {
+            releaseRules: true,
+            bookingClosures: true
+          }
+        }
       }
     });
 
@@ -75,6 +81,12 @@ export class ReservationService {
     if (resourceUnit.resource.type !== ResourceType.ACADEMIC_SPACE) {
       throw new BadRequestException("resource-unit-is-not-academic-space");
     }
+
+    this.assertResourceChannelOpen(
+      resourceUnit.resource,
+      startTime,
+      endTime
+    );
 
     await this.assertReservationCategoryAvailable(
       [user, ...companionUsers],
@@ -224,7 +236,12 @@ export class ReservationService {
       ? await this.prismaService.resourceUnit.findUnique({
           where: { id: payload.resourceUnitId },
           include: {
-            resource: true
+            resource: {
+              include: {
+                releaseRules: true,
+                bookingClosures: true
+              }
+            }
           }
         })
       : null;
@@ -232,8 +249,13 @@ export class ReservationService {
     const reservationGroup = hasGroup
       ? await this.prismaService.resourceGroup.findUnique({
           where: { id: payload.resourceGroupId },
-          include: {
-            resource: true,
+        include: {
+            resource: {
+              include: {
+                releaseRules: true,
+                bookingClosures: true
+              }
+            },
             items: {
               include: {
                 resourceUnit: {
@@ -273,6 +295,11 @@ export class ReservationService {
     if (parentResource.type !== ResourceType.SPORTS_FACILITY) {
       throw new BadRequestException("reservation-target-is-not-sports-facility");
     }
+
+    const firstSlotStart = normalizedSlots[0]!.start;
+    const lastSlotEnd = normalizedSlots[normalizedSlots.length - 1]!.end;
+
+    this.assertResourceChannelOpen(parentResource, firstSlotStart, lastSlotEnd);
 
     await this.assertReservationCategoryAvailable(
       [user, ...companionUsers],
@@ -600,6 +627,55 @@ export class ReservationService {
         }`
       );
     }
+  }
+
+  private assertResourceChannelOpen(
+    resource: {
+      id: string;
+      name: string;
+      releaseRules: Array<{
+        frequency: "DAILY" | "WEEKLY" | "MONTHLY";
+        dayOfWeek: number | null;
+        dayOfMonth: number | null;
+        hour: number;
+        minute: number;
+        isActive: boolean;
+      }>;
+      bookingClosures: Array<{
+        startsAt: Date;
+        endsAt: Date | null;
+        reason: string | null;
+        isActive: boolean;
+      }>;
+    },
+    reservationStart: Date,
+    reservationEnd: Date
+  ) {
+    const block = getResourceChannelBlock(
+      resource.releaseRules,
+      resource.bookingClosures,
+      reservationStart,
+      reservationEnd,
+      new Date()
+    );
+
+    if (!block) {
+      return;
+    }
+
+    if (block.type === "closure") {
+      throw new BadRequestException(
+        `resource-booking-closed:${resource.name}:${
+          block.startsAt?.toISOString() ?? "now"
+        }:${block.endsAt?.toISOString() ?? "open-ended"}`
+      );
+    }
+
+    throw new BadRequestException(
+      `resource-not-yet-released:${resource.name}:${
+        block.availableAt?.toISOString() ?? reservationStart.toISOString()
+      }`
+    );
   }
 }
 

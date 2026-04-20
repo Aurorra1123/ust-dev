@@ -6,8 +6,13 @@ import type {
   ActivityGrabResponse,
   ActivityListItem,
   ActivityRegistrationStatusResponse,
+  AdminBulkMutationResponse,
+  AdminResourceDetailResponse,
+  AdminResourceReservationStatusResponse,
   AppRule,
   AuthSessionResponse,
+  CreateResourceBookingClosurePayload,
+  CreateResourceReleaseRulePayload,
   HealthStatus,
   OrderDetailResponse,
   ReservationCheckInResponse,
@@ -18,7 +23,9 @@ import type {
   RuleStatus,
   RuleType,
   SportsReservationRequest,
-  SportsReservationResponse
+  SportsReservationResponse,
+  UpdateResourceBookingClosurePayload,
+  UpdateResourceReleaseRulePayload
 } from "@campusbook/shared-types";
 
 import { useSessionStore } from "../store/session-store";
@@ -231,11 +238,11 @@ export function checkInReservation(orderId: string) {
 }
 
 export function fetchAdminResources() {
-  return requestJson<ResourceDetailResponse[]>("/admin/resources");
+  return requestJson<AdminResourceDetailResponse[]>("/admin/resources");
 }
 
 export function createResource(payload: CreateResourcePayload) {
-  return requestJson<ResourceDetailResponse>("/admin/resources", {
+  return requestJson<AdminResourceDetailResponse>("/admin/resources", {
     method: "POST",
     body: payload
   });
@@ -245,7 +252,7 @@ export function createResourceUnit(
   resourceId: string,
   payload: CreateResourceUnitPayload
 ) {
-  return requestJson<ResourceDetailResponse>(
+  return requestJson<AdminResourceDetailResponse>(
     `/admin/resources/${resourceId}/units`,
     {
       method: "POST",
@@ -256,6 +263,61 @@ export function createResourceUnit(
 
 export function fetchAdminActivities() {
   return requestJson<ActivityDetailResponse[]>("/admin/activities");
+}
+
+export function createResourceReleaseRules(
+  payload: CreateResourceReleaseRulePayload
+) {
+  return requestJson<AdminBulkMutationResponse>("/admin/resources/release-rules", {
+    method: "POST",
+    body: payload
+  });
+}
+
+export function updateResourceReleaseRule(
+  ruleId: string,
+  payload: UpdateResourceReleaseRulePayload
+) {
+  return requestJson(`/admin/resources/release-rules/${ruleId}`, {
+    method: "PATCH",
+    body: payload
+  });
+}
+
+export function createResourceBookingClosures(
+  payload: CreateResourceBookingClosurePayload
+) {
+  return requestJson<AdminBulkMutationResponse>("/admin/resources/closures", {
+    method: "POST",
+    body: payload
+  });
+}
+
+export function updateResourceBookingClosure(
+  closureId: string,
+  payload: UpdateResourceBookingClosurePayload
+) {
+  return requestJson(`/admin/resources/closures/${closureId}`, {
+    method: "PATCH",
+    body: payload
+  });
+}
+
+export function fetchAdminResourceReservationStatus(
+  resourceId: string,
+  params?: { from?: string; to?: string }
+) {
+  const query = new URLSearchParams();
+  if (params?.from) {
+    query.set("from", params.from);
+  }
+  if (params?.to) {
+    query.set("to", params.to);
+  }
+  const suffix = query.size ? `?${query.toString()}` : "";
+  return requestJson<AdminResourceReservationStatusResponse>(
+    `/admin/resources/${resourceId}/reservation-status${suffix}`
+  );
 }
 
 export function createActivity(payload: CreateActivityPayload) {
