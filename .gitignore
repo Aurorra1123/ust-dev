@@ -12,6 +12,7 @@ build/
 .env
 .env.*
 !.env.example
+!.env.judge.example
 __pycache__/
 *.pyc
 *.pyo

@@ -24,10 +24,12 @@
 - `standards/agent-harness-rules.md`：长周期 agent 执行规则
 - `standards/business-rules-baseline.md`：当前正式业务规则入口
 - `standards/deployment-baseline.md`：部署环境、域名与 Nginx 分流基线
+- `standards/judge-quick-start.md`：评委验收与临时演示的一键启动入口
 - `standards/new-server-deployment-playbook.md`：新服务器首次部署最短路径
 - `standards/https-deployment-playbook.md`：HTTPS 升级与证书部署手册
 - `verification/README.md`：验证证据存放规范
 - `adr/0001-repo-as-agent-memory.md`：仓库作为 agent 主记忆体
+- `adr/0005-split-judge-and-production-deployment-paths.md`：区分评委验收与正式公网部署
 - `adr/0006-public-resource-reservation-status-for-student-schedule.md`：为学生端时段表开放脱敏预约状态接口
 - `adr/0004-single-node-typescript-platform-baseline.md`：当前技术基线决策
 - `architecture/product-baseline.md`：当前正式产品范围与用户路径

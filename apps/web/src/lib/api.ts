@@ -31,16 +31,50 @@ import type {
 
 import { useSessionStore } from "../store/session-store";
 
+declare global {
+  interface Window {
+    __CAMPUSBOOK_CONFIG__?: {
+      apiBaseUrl?: string;
+    };
+  }
+}
+
+function getRuntimeApiBaseUrl() {
+  const runtimeApiBaseUrl = window.__CAMPUSBOOK_CONFIG__?.apiBaseUrl?.trim();
+
+  if (!runtimeApiBaseUrl) {
+    return undefined;
+  }
+
+  return runtimeApiBaseUrl;
+}
+
 function inferDefaultApiBaseUrl() {
   if (typeof window === "undefined") {
     return "http://api.campusbook.top";
+  }
+
+  const { hostname, protocol } = window.location;
+
+  if (hostname === "campusbook.top" || hostname === "www.campusbook.top") {
+    return `${protocol}//api.campusbook.top`;
+  }
+
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)
+  ) {
+    return "/api";
   }
 
   return `${window.location.protocol}//api.campusbook.top`;
 }
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? inferDefaultApiBaseUrl();
+  (typeof window !== "undefined" ? getRuntimeApiBaseUrl() : undefined) ??
+  import.meta.env.VITE_API_BASE_URL ??
+  inferDefaultApiBaseUrl();
 
 export class ApiError extends Error {
   constructor(

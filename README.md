@@ -7,7 +7,29 @@
 
 当前推荐技术方案见 [technical-solution-v2.md](docs/architecture/technical-solution-v2.md)。
 
-## 快速开始
+## 评委验收最短路径
+
+如果你的目标是“一台新机器上尽快把完整应用拉起来”，直接使用 judge 模式：
+
+```bash
+cp .env.judge.example .env.judge
+bash scripts/judge-up.sh
+```
+
+启动成功后访问：
+
+```text
+http://服务器IP:8080
+```
+
+默认演示账号：
+
+- 学生：`demo@campusbook.top / demo123456`
+- 管理员：`admin@campusbook.top / admin123456`
+
+详细说明见 [judge-quick-start.md](docs/standards/judge-quick-start.md)。
+
+## 开发快速开始
 
 1. 阅读 [docs/README.md](docs/README.md)
 2. 查看 [docs/progress/agent-progress.md](docs/progress/agent-progress.md)
@@ -34,7 +56,9 @@
 - `pnpm lint`
 - `pnpm test`
 - `pnpm dev:stack`
+- `pnpm judge:up`
 - `pnpm seed:demo`
+- `pnpm smoke:judge`
 - `pnpm smoke:live`
 
 ## 协作与约束

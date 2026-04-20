@@ -10,6 +10,10 @@
 
 本文只覆盖最短可执行路径，不扩展为通用运维手册。
 
+如果你要的是评委验收或临时演示，请不要走本文，改看：
+
+- `docs/standards/judge-quick-start.md`
+
 ## 适用前提
 
 - 新服务器已安装 `git`、`docker`、`docker compose`
@@ -61,12 +65,14 @@ API_PORT=3000
 ORDER_PENDING_EXPIRE_SECONDS=900
 
 ALLOWED_ORIGINS=http://campusbook.top,http://www.campusbook.top,https://campusbook.top,https://www.campusbook.top
+CAMPUSBOOK_API_BASE_URL=
 ```
 
 注意：
 
 - `POSTGRES_PASSWORD` 必须与 `DATABASE_URL` 中的密码一致
 - `NODE_ENV=production` 不能省略
+- 正式环境建议保留 `CAMPUSBOOK_API_BASE_URL` 为空，让前端按当前站点协议推导 API 地址
 
 ### 3. 准备 HTTPS 运行时目录
 

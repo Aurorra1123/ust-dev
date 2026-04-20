@@ -14,6 +14,8 @@
     "dev:stack": "docker compose -f infra/docker-compose.yml up --build",
     "prisma:generate": "pnpm --filter api prisma:generate",
     "seed:demo": "pnpm --filter api seed:demo",
+    "judge:up": "bash scripts/judge-up.sh",
+    "smoke:judge": "node scripts/smoke-judge.mjs",
     "smoke:live": "node scripts/smoke-live.mjs",
     "tls:renew": "bash scripts/renew-https-certs.sh",
     "tls:renew:dry-run": "bash scripts/renew-https-certs.sh --dry-run"

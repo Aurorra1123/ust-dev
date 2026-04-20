@@ -1,0 +1,4 @@
+services:
+  nginx:
+    volumes:
+      - ./nginx/judge-conf.d:/etc/nginx/conf.d:ro

@@ -129,6 +129,70 @@
 
 ### 已完成
 
+- 将安装与部署入口拆分为两条路径：
+  - `Judge Mode`
+  - `Production Mode`
+- 新增评委验收手册 `docs/standards/judge-quick-start.md`
+- 新增 ADR `docs/adr/0005-split-judge-and-production-deployment-paths.md`
+- 根 README 已新增“评委验收最短路径”入口
+- 新增 `.env.judge.example`
+- 新增一键 judge 启动脚本 `scripts/judge-up.sh`
+- 新增 judge smoke 脚本 `scripts/smoke-judge.mjs`
+- 新增 `infra/docker-compose.judge.yml`
+- 新增 `infra/nginx/judge-conf.d/default.conf`
+- `web` 镜像已补运行时配置注入与 SPA 回退：
+  - `infra/docker/40-write-runtime-config.sh`
+  - `infra/docker/web-default.conf`
+  - `apps/web/public/config.js`
+- 前端 API 地址当前改为：
+  - 运行时配置优先
+  - 构建期变量次之
+  - 最后才使用默认推导
+- 当前 judge 模式通过 Nginx 将 API 统一挂到 `/api`
+- judge 模式已通过 `proxy_cookie_path` 将 refresh cookie 的 `Path` 从 `/auth` 重写到 `/api/auth`
+- `docker-compose.yml` 当前已改为显式传递 API/worker 所需环境变量，不再依赖容器内读取 `.env.example`
+- `postgres` 与 `redis` 已补健康检查，便于脚本按顺序等待依赖就绪
+- 新增验证证据：
+  - `docs/verification/2026-04-20/ops-judge-one-command-deploy.md`
+- 本轮已完成最小校验：
+  - `docker compose --env-file .env.example -f infra/docker-compose.yml config`
+  - `docker compose --env-file .env.judge.example -f infra/docker-compose.yml -f infra/docker-compose.judge.yml config`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - `docker compose --env-file .env.judge.example -f infra/docker-compose.yml -f infra/docker-compose.judge.yml build web`
+  - `bash scripts/judge-up.sh .env.judge.example`
+- judge 一键脚本本轮已完整通过：
+  - 镜像构建
+  - 数据库迁移
+  - demo seed
+  - judge smoke 校验
+  - 栈停止清理
+
+### 当前状态
+
+- 当前仓库已同时具备：
+  - 评委验收一键入口
+  - 正式公网部署手册
+  - HTTPS 升级与续期手册
+- 评委环境当前不再依赖真实域名与 HTTPS
+- 正式公网部署链路仍保持原有 `campusbook.top / www / api` 结构
+
+### 下一步建议
+
+1. 继续执行一次完整的 judge 模式容器联调，留一份验证证据到 `docs/verification/`
+2. 若后续需要关闭数据库与 Redis 的宿主机端口映射，可再单独补一轮编排收口
+3. 如果 judge 模式未来要支持自定义端口与多实例运行，可继续把更多端口与路径参数化
+
+### 注意事项
+
+- 本轮改动同时涉及部署编排、前端运行时配置和文档入口
+- judge 入口与 production 入口已经分离，后续不要再把证书申请写进评委验收路径
+- 当前工作区若存在其他业务开发改动，部署相关提交应继续独立维护
+
+## 2026-04-20
+
+### 已完成
+
 - 新增新服务器部署手册 `docs/standards/new-server-deployment-playbook.md`
 - 手册当前已收口为“首次上线最短路径”，覆盖：
   - 拉代码
