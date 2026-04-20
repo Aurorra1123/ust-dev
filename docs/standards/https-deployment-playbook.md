@@ -53,7 +53,6 @@ mkdir -p infra/nginx/.runtime/certbot/conf
 
 ```bash
 docker run --rm \
-  -p 80:80 \
   -v /data/ustdev/ust-dev/infra/nginx/.runtime/certbot/conf:/etc/letsencrypt \
   -v /data/ustdev/ust-dev/infra/nginx/.runtime/certbot/www:/var/www/certbot \
   certbot/certbot certonly \
@@ -63,6 +62,11 @@ docker run --rm \
   -d www.campusbook.top \
   -d api.campusbook.top
 ```
+
+说明：
+
+- 此时应保持 `nginx` 正在运行，由现有 `80` 端口继续对外提供 challenge 文件
+- 因为使用的是 `webroot` 模式，这里不需要额外挂载 `80:80`
 
 申请成功后，证书路径应存在：
 

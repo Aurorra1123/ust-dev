@@ -24,6 +24,7 @@
 - `standards/agent-harness-rules.md`：长周期 agent 执行规则
 - `standards/business-rules-baseline.md`：当前正式业务规则入口
 - `standards/deployment-baseline.md`：部署环境、域名与 Nginx 分流基线
+- `standards/new-server-deployment-playbook.md`：新服务器首次部署最短路径
 - `standards/https-deployment-playbook.md`：HTTPS 升级与证书部署手册
 - `verification/README.md`：验证证据存放规范
 - `adr/0001-repo-as-agent-memory.md`：仓库作为 agent 主记忆体
