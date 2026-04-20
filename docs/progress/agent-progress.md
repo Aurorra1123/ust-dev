@@ -2,6 +2,37 @@
 
 本文件用于跨会话交接，任何一次较完整的工作结束前都应更新。
 
+## 2026-04-21
+
+### 已完成
+
+- 修复 GitHub Actions `quality` 任务失败
+- 定位到真实失败原因为前端 lint 扫描 `apps/web/public/config.js` 时触发 `no-undef`
+- 已在 `apps/web/eslint.config.mjs` 中排除 `public/config.js`
+- 已将 CI 工作流中的 GitHub Actions 升级为 Node 24 兼容版本：
+  - `actions/checkout@v6`
+  - `pnpm/action-setup@v6`
+  - `actions/setup-node@v6`
+- 本轮本地校验已通过：
+  - `pnpm prisma:generate`
+  - `pnpm lint`
+  - `pnpm typecheck`
+  - `pnpm test`
+  - `pnpm build`
+
+### 当前状态
+
+- 当前 `quality` 工作流对应的本地命令链已全部通过
+- Node 20 actions 弃用警告对应的工作流版本已完成升级
+
+### 下一步建议
+
+1. 推送本次提交后重新触发 GitHub Actions，确认远端 runner 侧无额外环境差异
+
+### 注意事项
+
+- 本轮未改业务逻辑，只修复 CI 配置与 lint 范围
+
 ## 2026-04-20
 
 ### 已完成
