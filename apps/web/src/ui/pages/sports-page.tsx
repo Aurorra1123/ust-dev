@@ -78,6 +78,11 @@ export function SportsPage() {
     resourcesQuery.data?.find((resource) => resource.id === resourceId) ??
     resourcesQuery.data?.[0] ??
     null;
+  const hasGroupedBooking = (currentResource?.groups.length ?? 0) > 0;
+  const resourceUnitNameMap = useMemo(
+    () => new Map(currentResource?.units.map((unit) => [unit.id, unit.name]) ?? []),
+    [currentResource]
+  );
 
   const slotMoments = useMemo(
     () => Array.from({ length: SLOT_COUNT }, (_, index) => addHours(displayStart, index)),
@@ -93,10 +98,11 @@ export function SportsPage() {
       return currentResource.groups.map((group) => ({
         id: group.id,
         label: group.name,
-        detail: localeText(
-          locale,
-          `${group.items.length} 个场地单元`,
-          `${group.items.length} court units`
+        detail: summarizeNames(
+          group.items.map(
+            (item) => resourceUnitNameMap.get(item.resourceUnitId) ?? item.resourceUnitId
+          ),
+          locale
         )
       }));
     }
@@ -106,7 +112,7 @@ export function SportsPage() {
       label: unit.name,
       detail: unit.code
     }));
-  }, [currentResource, locale, mode]);
+  }, [currentResource, locale, mode, resourceUnitNameMap]);
 
   const selectedGroup = useMemo(
     () => currentResource?.groups.find((group) => group.id === targetId) ?? null,
@@ -115,6 +121,13 @@ export function SportsPage() {
   const selectedGroupUnitIds = useMemo(
     () => new Set(selectedGroup?.items.map((item) => item.resourceUnitId) ?? []),
     [selectedGroup]
+  );
+  const selectedGroupMemberNames = useMemo(
+    () =>
+      selectedGroup?.items.map(
+        (item) => resourceUnitNameMap.get(item.resourceUnitId) ?? item.resourceUnitId
+      ) ?? [],
+    [resourceUnitNameMap, selectedGroup]
   );
 
   useEffect(() => {
@@ -461,17 +474,33 @@ export function SportsPage() {
               >
                 {localeText(locale, "单场地", "Single Court")}
               </button>
-              <button
-                type="button"
-                className={`rounded-full px-4 py-2 text-sm transition ${
-                  mode === "group" ? "bg-ember text-white" : "bg-sand text-ink"
-                }`}
-                onClick={() => setMode("group")}
-                disabled={!currentResource?.groups.length}
-              >
-                {localeText(locale, "组合场地", "Grouped Courts")}
-              </button>
+              {hasGroupedBooking ? (
+                <button
+                  type="button"
+                  className={`rounded-full px-4 py-2 text-sm transition ${
+                    mode === "group" ? "bg-ember text-white" : "bg-sand text-ink"
+                  }`}
+                  onClick={() => setMode("group")}
+                >
+                  {localeText(locale, "组合预订", "Grouped Booking")}
+                </button>
+              ) : null}
             </div>
+            {hasGroupedBooking ? (
+              <p className="text-sm text-slate">
+                {mode === "group"
+                  ? localeText(
+                      locale,
+                      "当前按整组场地一起预订，提交后会同时锁定所有成员场地。",
+                      "This mode books the full court set together. Submitting will lock every included court."
+                    )
+                  : localeText(
+                      locale,
+                      "只有当你需要同时占用一组关联场地时，再切到组合预订。",
+                      "Switch to grouped booking only when you need to reserve a linked set of courts together."
+                    )}
+              </p>
+            ) : null}
 
             <label className="grid gap-2 text-sm text-ink/75">
               {localeText(locale, "目标", "Target")}
@@ -490,6 +519,40 @@ export function SportsPage() {
                 ))}
               </select>
             </label>
+
+            {mode === "group" && selectedGroup ? (
+              <div className="rounded-[22px] border border-ember/15 bg-[#fff7ef] px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
+                  {localeText(locale, "组合说明", "Grouped Booking")}
+                </p>
+                <p className="mt-3 text-sm font-semibold text-ink">{selectedGroup.name}</p>
+                <p className="mt-2 text-sm text-slate">
+                  {selectedGroup.description ||
+                    localeText(
+                      locale,
+                      "该组合用于一次性锁定一组关联场地。",
+                      "This set is used to reserve multiple linked courts in one booking."
+                    )}
+                </p>
+                <div className="mt-4 grid gap-3 text-sm text-slate">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
+                      {localeText(locale, "成员场地", "Included Courts")}
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-ink">
+                      {formatNameList(selectedGroupMemberNames, locale)}
+                    </p>
+                  </div>
+                  <p>
+                    {localeText(
+                      locale,
+                      "选择一个时段会同时占用整组场地；只要其中任一成员场地已占用、进行中或关闭，该时段就不能选。",
+                      "Selecting one slot reserves the entire set. If any included court is occupied, in progress, or closed, that slot cannot be chosen."
+                    )}
+                  </p>
+                </div>
+              </div>
+            ) : null}
 
             <div className="rounded-[22px] border border-navy/10 bg-sand px-4 py-4">
               <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
@@ -514,6 +577,21 @@ export function SportsPage() {
                 </p>
               )}
             </div>
+
+            {mode === "group" && selectedGroup ? (
+              <div className="rounded-[22px] border border-navy/10 bg-sand px-4 py-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
+                  {localeText(locale, "提交效果", "Booking Effect")}
+                </p>
+                <p className="mt-3 text-sm text-slate">
+                  {localeText(
+                    locale,
+                    `提交后会同时预约 ${formatNameList(selectedGroupMemberNames, locale)}。`,
+                    `Submitting will reserve ${formatNameList(selectedGroupMemberNames, locale)} together.`
+                  )}
+                </p>
+              </div>
+            ) : null}
 
             <div className="rounded-[22px] border border-navy/10 bg-sand px-4 py-4">
               <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
@@ -673,6 +751,26 @@ function parseCompanionEmails(value: string) {
         .filter(Boolean)
     )
   );
+}
+
+function formatNameList(names: string[], locale: "zh-CN" | "en") {
+  if (!names.length) {
+    return localeText(locale, "未设置", "Not set");
+  }
+
+  return names.join(locale === "zh-CN" ? "、" : ", ");
+}
+
+function summarizeNames(names: string[], locale: "zh-CN" | "en") {
+  const visibleNames = names.slice(0, 2);
+  const restCount = names.length - visibleNames.length;
+  const base = formatNameList(visibleNames, locale);
+
+  if (restCount <= 0) {
+    return base;
+  }
+
+  return `${base} +${restCount}`;
 }
 
 function isSlotClosed(
