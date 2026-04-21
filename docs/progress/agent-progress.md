@@ -6,6 +6,35 @@
 
 ### 已完成
 
+- 已将后台、前端 API 与资源预约后端边界拆分蓝图正式入库：
+  - `docs/architecture/admin-resource-reservation-boundary-refactor.md`
+- 已新增对应 ADR：
+  - `docs/adr/0007-admin-resource-reservation-boundary-refactor.md`
+- 已在任务清单中新增跟踪项：
+  - `APP-016`
+- 已补文档系统入口：
+  - `docs/architecture/README.md`
+  - `docs/README.md`
+
+### 当前状态
+
+- 当前仅完成方案文档化与任务立项
+- 业务代码尚未开始按该蓝图拆分
+
+### 下一步建议
+
+1. 以 `APP-016` 为主线，先拆前端 API 层，再拆后台页面与后端资源域
+2. 正式实施拆分前，先锁定最小回归集：登录恢复、管理员取消预约、订单详情签到、资源预约状态查询
+
+### 注意事项
+
+- 本轮未修改业务代码与接口语义
+- 本轮产出是后续重构的正式输入，而不是重构本身
+
+## 2026-04-21
+
+### 已完成
+
 - 已在服务器上将 CampusBook 切换到正式公网模式
 - 已补生产环境 `.env` 并生成新的生产演示账号口令与 JWT 相关密钥
 - 已按正式链路完成：

@@ -8,6 +8,7 @@
 - `productization-plan-v1.md`：当前产品化改造方案
 - `pux-009-student-frontend-prototype.md`：学生端前端原型专项需求稿
 - `domain-model-baseline.md`：当前正式领域模型入口
+- `admin-resource-reservation-boundary-refactor.md`：后台、前端 API 与资源预约后端边界拆分蓝图
 - `technical-solution-v1.md`：归档版首版技术方案
 - `technical-solution-v2.md`：修订后的推荐技术方案
 - `architecture-diagrams.md`：配套架构图与流程图
@@ -20,6 +21,7 @@
 3. `pux-009-student-frontend-prototype.md`
 4. `domain-model-baseline.md`
 5. `technical-solution-v2.md`
-6. `architecture-diagrams.md`
-7. `development-environment-audit-2026-04-16.md`
-8. `technical-solution-v1.md`
+6. `admin-resource-reservation-boundary-refactor.md`
+7. `architecture-diagrams.md`
+8. `development-environment-audit-2026-04-16.md`
+9. `technical-solution-v1.md`
