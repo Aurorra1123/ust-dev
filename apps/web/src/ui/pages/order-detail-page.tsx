@@ -1,7 +1,12 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { ApiError, cancelOrder, checkInReservation, fetchOrderDetail } from "../../lib/api";
+import {
+  cancelOrder,
+  checkInReservation,
+  fetchOrderDetail
+} from "../../lib/api/order-api";
+import { ApiError } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
 import { queryClient } from "../../lib/query-client";
 import { useSessionStore } from "../../store/session-store";

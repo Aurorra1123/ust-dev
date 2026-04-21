@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
-import { ApiError, createAcademicReservation, fetchResources } from "../../lib/api";
+import { createAcademicReservation, fetchResources } from "../../lib/api/resource-api";
+import { ApiError } from "../../lib/http/errors";
 import { addHours, startOfNextHour, toDateTimeLocalValue } from "../../lib/date";
 import { queryClient } from "../../lib/query-client";
 import { useSessionStore } from "../../store/session-store";

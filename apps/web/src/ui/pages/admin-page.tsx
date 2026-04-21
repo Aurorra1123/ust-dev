@@ -9,20 +9,22 @@ import type {
 } from "@campusbook/shared-types";
 
 import {
-  ApiError,
-  cancelOrder,
-  createResourceBookingClosures,
-  createResourceReleaseRules,
   createActivity,
   createActivityTicket,
-  createResource,
-  createResourceUnit,
   fetchAdminActivities,
-  fetchAdminResourceReservationStatus,
-  fetchAdminResources,
-  fetchAdminRules,
   updateActivity
-} from "../../lib/api";
+} from "../../lib/api/activity-api";
+import {
+  createResource,
+  createResourceBookingClosures,
+  createResourceReleaseRules,
+  createResourceUnit,
+  fetchAdminResourceReservationStatus,
+  fetchAdminResources
+} from "../../lib/api/resource-api";
+import { cancelOrder } from "../../lib/api/order-api";
+import { fetchAdminRules } from "../../lib/api/rule-api";
+import { ApiError } from "../../lib/http/errors";
 import { addHours, formatDateTime, startOfNextHour, toDateTimeLocalValue } from "../../lib/date";
 import { localeText } from "../../lib/locale";
 import { queryClient } from "../../lib/query-client";

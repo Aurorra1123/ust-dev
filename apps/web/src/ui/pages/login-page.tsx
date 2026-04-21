@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { ApiError, login } from "../../lib/api";
+import { login } from "../../lib/api/auth-api";
+import { ApiError } from "../../lib/http/errors";
 import { localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 
-import { logout, refreshSession } from "../lib/api";
+import { logout, refreshSession } from "../lib/api/auth-api";
 import { isEnglishLocale, localeText } from "../lib/locale";
 import { useLocaleStore } from "../store/locale-store";
 import { useSessionStore } from "../store/session-store";

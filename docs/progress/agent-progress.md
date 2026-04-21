@@ -6,6 +6,33 @@
 
 ### 已完成
 
+- 已完成前端请求层首轮边界拆分：
+  - 删除 `apps/web/src/lib/api.ts`
+  - 新增 `apps/web/src/lib/http/`
+  - 新增 `apps/web/src/lib/api/`
+  - 现有页面已按认证、资源、活动、订单、规则分域引入 API
+- 本轮前端校验已通过：
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+
+### 当前状态
+
+- 前端请求层已从“单文件业务 API + 刷新逻辑”拆为“通用 HTTP client + 分域 API 模块”
+- 管理端页面与后端服务边界尚未开始拆分
+
+### 下一步建议
+
+1. 继续拆 `AdminPage`，将 query、mutation 和表单状态下放到各 workspace
+2. 后续再拆后端 `resource.service.ts`，避免前后端同时大改造成排查困难
+
+### 注意事项
+
+- 本轮未变更任何接口语义，只调整前端请求边界与 import 组织
+
+## 2026-04-21
+
+### 已完成
+
 - 已将后台、前端 API 与资源预约后端边界拆分蓝图正式入库：
   - `docs/architecture/admin-resource-reservation-boundary-refactor.md`
 - 已新增对应 ADR：

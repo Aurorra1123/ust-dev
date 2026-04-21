@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
-import { ApiError, fetchOrders } from "../../lib/api";
+import { fetchOrders } from "../../lib/api/order-api";
+import { ApiError } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel, StatusPill } from "../user-experience-kit";

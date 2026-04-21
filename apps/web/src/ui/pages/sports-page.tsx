@@ -3,12 +3,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import {
-  ApiError,
   createSportsReservation,
   fetchResourceDetail,
   fetchResourceReservationStatus,
   fetchResources
-} from "../../lib/api";
+} from "../../lib/api/resource-api";
+import { ApiError } from "../../lib/http/errors";
 import {
   addHours,
   formatDate,

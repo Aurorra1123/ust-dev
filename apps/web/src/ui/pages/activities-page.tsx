@@ -5,12 +5,12 @@ import { Link } from "react-router-dom";
 import type { ActivityListItem } from "@campusbook/shared-types";
 
 import {
-  ApiError,
   fetchActivities,
   fetchActivityDetail,
   fetchActivityRegistrationStatus,
   grabActivity
-} from "../../lib/api";
+} from "../../lib/api/activity-api";
+import { ApiError } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
 import { useSessionStore } from "../../store/session-store";
 import { PageSection } from "../page-section";
