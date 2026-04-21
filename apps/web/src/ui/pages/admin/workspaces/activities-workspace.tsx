@@ -27,10 +27,44 @@ type ActivityFormState = {
   eventStartTime: string;
   eventEndTime: string;
   status: "draft" | "published";
-  ticketName: string;
-  ticketStock: number;
+};
+
+type FirstTicketFormState = {
+  name: string;
+  stock: number;
   priceCents: number;
 };
+
+function createDefaultActivityForm(): ActivityFormState {
+  const saleStart = startOfNextHour();
+  const saleEnd = addHours(saleStart, 24);
+  const eventStart = addHours(saleStart, 26);
+  const eventEnd = addHours(eventStart, 2);
+
+  return {
+    title: "",
+    description: "",
+    location: "",
+    totalQuota: 30,
+    saleStartTime: toDateTimeLocalValue(saleStart),
+    saleEndTime: toDateTimeLocalValue(saleEnd),
+    eventStartTime: toDateTimeLocalValue(eventStart),
+    eventEndTime: toDateTimeLocalValue(eventEnd),
+    status: "draft"
+  };
+}
+
+function defaultFirstTicketName(locale: Locale) {
+  return localeText(locale, "普通票", "General Ticket");
+}
+
+function createDefaultFirstTicketForm(totalQuota: number, locale: Locale): FirstTicketFormState {
+  return {
+    name: defaultFirstTicketName(locale),
+    stock: totalQuota,
+    priceCents: 0
+  };
+}
 
 export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
   const activitiesQuery = useQuery({
@@ -38,27 +72,12 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
     queryFn: fetchAdminActivities
   });
   const [activityId, setActivityId] = useState("");
-  const [activityForm, setActivityForm] = useState<ActivityFormState>(() => {
-    const saleStart = startOfNextHour();
-    const saleEnd = addHours(saleStart, 24);
-    const eventStart = addHours(saleStart, 26);
-    const eventEnd = addHours(eventStart, 2);
-
-    return {
-      title: "",
-      description: "",
-      location: "",
-      totalQuota: 30,
-      saleStartTime: toDateTimeLocalValue(saleStart),
-      saleEndTime: toDateTimeLocalValue(saleEnd),
-      eventStartTime: toDateTimeLocalValue(eventStart),
-      eventEndTime: toDateTimeLocalValue(eventEnd),
-      status: "published",
-      ticketName: "",
-      ticketStock: 20,
-      priceCents: 0
-    };
-  });
+  const [activityForm, setActivityForm] = useState<ActivityFormState>(createDefaultActivityForm);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [customizeFirstTicket, setCustomizeFirstTicket] = useState(false);
+  const [firstTicketForm, setFirstTicketForm] = useState<FirstTicketFormState>(() =>
+    createDefaultFirstTicketForm(createDefaultActivityForm().totalQuota, locale)
+  );
   const [ticketForm, setTicketForm] = useState({
     name: "",
     stock: 10,
@@ -77,12 +96,15 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
     activitiesQuery.data?.find((activity) => activity.id === activityId) ??
     activitiesQuery.data?.[0] ??
     null;
+  const effectiveFirstTicket = customizeFirstTicket
+    ? firstTicketForm
+    : createDefaultFirstTicketForm(activityForm.totalQuota, locale);
   const isCreateActivityValid =
     activityForm.title.trim().length > 0 &&
-    activityForm.ticketName.trim().length > 0 &&
     activityForm.totalQuota > 0 &&
-    activityForm.ticketStock > 0 &&
-    activityForm.priceCents >= 0;
+    effectiveFirstTicket.name.trim().length > 0 &&
+    effectiveFirstTicket.stock > 0 &&
+    effectiveFirstTicket.priceCents >= 0;
   const isCreateTicketValid =
     Boolean(selectedActivity) &&
     ticketForm.name.trim().length > 0 &&
@@ -92,7 +114,13 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
   const createActivityMutation = useMutation({
     mutationFn: createActivity,
     onSuccess: async (activity) => {
+      const defaultActivityForm = createDefaultActivityForm();
+
       setActivityId(activity.id);
+      setActivityForm(defaultActivityForm);
+      setShowAdvancedSettings(false);
+      setCustomizeFirstTicket(false);
+      setFirstTicketForm(createDefaultFirstTicketForm(defaultActivityForm.totalQuota, locale));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "activities"] }),
         queryClient.invalidateQueries({ queryKey: ["activities"] })
@@ -264,8 +292,8 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
               event.preventDefault();
               createActivityMutation.mutate({
                 title: activityForm.title,
-                description: activityForm.description,
-                location: activityForm.location,
+                description: activityForm.description.trim() || undefined,
+                location: activityForm.location.trim() || undefined,
                 totalQuota: activityForm.totalQuota,
                 saleStartTime: new Date(activityForm.saleStartTime).toISOString(),
                 saleEndTime: new Date(activityForm.saleEndTime).toISOString(),
@@ -274,9 +302,9 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
                 status: activityForm.status,
                 tickets: [
                   {
-                    name: activityForm.ticketName,
-                    stock: activityForm.ticketStock,
-                    priceCents: activityForm.priceCents
+                    name: effectiveFirstTicket.name.trim(),
+                    stock: effectiveFirstTicket.stock,
+                    priceCents: effectiveFirstTicket.priceCents
                   }
                 ]
               });
@@ -285,6 +313,13 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
             <h3 className="text-lg font-semibold text-ink">
               {localeText(locale, "新增活动", "Create Activity")}
             </h3>
+            <p className="mt-2 text-sm leading-7 text-slate">
+              {localeText(
+                locale,
+                "先填写标题和总额度即可创建常见免费单票活动。系统会默认生成一张免费票，库存跟随总额度。",
+                "Start with the title and quota to create a common free single-ticket activity. The system will generate one free ticket and match its stock to the total quota."
+              )}
+            </p>
             <div className="mt-4 grid gap-3">
               <input
                 className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -308,131 +343,200 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
                 }
                 placeholder={localeText(locale, "活动地点", "Location")}
               />
-              <textarea
-                className="min-h-[96px] rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                value={activityForm.description}
+              <input
+                className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
+                type="number"
+                min={1}
+                value={activityForm.totalQuota}
                 onChange={(event) =>
                   setActivityForm((current) => ({
                     ...current,
-                    description: event.target.value
+                    totalQuota: Number(event.target.value)
                   }))
                 }
-                placeholder={localeText(locale, "活动描述", "Description")}
+                placeholder={localeText(locale, "总额度", "Total quota")}
               />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="number"
-                  min={1}
-                  value={activityForm.totalQuota}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      totalQuota: Number(event.target.value)
-                    }))
-                  }
-                  placeholder={localeText(locale, "总额度", "Total quota")}
-                />
-                <select
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={activityForm.status}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      status: event.target.value as "draft" | "published"
-                    }))
-                  }
-                >
-                  <option value="draft">{localeText(locale, "草稿", "Draft")}</option>
-                  <option value="published">{localeText(locale, "已发布", "Published")}</option>
-                </select>
+              <div className="rounded-[22px] border border-navy/10 bg-white px-4 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-ink">
+                      {localeText(locale, "默认首个票种", "Default First Ticket")}
+                    </p>
+                    <p className="mt-2 text-sm text-slate">
+                      {localeText(
+                        locale,
+                        `${effectiveFirstTicket.name} · 库存 ${effectiveFirstTicket.stock} · 免费`,
+                        `${effectiveFirstTicket.name} · Stock ${effectiveFirstTicket.stock} · Free`
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
+                    onClick={() => {
+                      setCustomizeFirstTicket((current) => {
+                        const next = !current;
+
+                        if (next) {
+                          setFirstTicketForm(
+                            createDefaultFirstTicketForm(activityForm.totalQuota, locale)
+                          );
+                        }
+
+                        return next;
+                      });
+                    }}
+                  >
+                    {customizeFirstTicket
+                      ? localeText(locale, "恢复默认票种", "Use Default Ticket")
+                      : localeText(locale, "自定义首个票种", "Customize First Ticket")}
+                  </button>
+                </div>
+
+                {customizeFirstTicket ? (
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <input
+                      className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                      value={firstTicketForm.name}
+                      onChange={(event) =>
+                        setFirstTicketForm((current) => ({
+                          ...current,
+                          name: event.target.value
+                        }))
+                      }
+                      placeholder={localeText(locale, "首个票种名称", "First ticket type")}
+                    />
+                    <input
+                      className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                      type="number"
+                      min={1}
+                      value={firstTicketForm.stock}
+                      onChange={(event) =>
+                        setFirstTicketForm((current) => ({
+                          ...current,
+                          stock: Number(event.target.value)
+                        }))
+                      }
+                      placeholder={localeText(locale, "票数", "Ticket stock")}
+                    />
+                    <input
+                      className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                      type="number"
+                      min={0}
+                      value={firstTicketForm.priceCents}
+                      onChange={(event) =>
+                        setFirstTicketForm((current) => ({
+                          ...current,
+                          priceCents: Number(event.target.value)
+                        }))
+                      }
+                      placeholder={localeText(locale, "价格分", "Price in cents")}
+                    />
+                  </div>
+                ) : null}
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="datetime-local"
-                  value={activityForm.saleStartTime}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      saleStartTime: event.target.value
-                    }))
-                  }
-                />
-                <input
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="datetime-local"
-                  value={activityForm.saleEndTime}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      saleEndTime: event.target.value
-                    }))
-                  }
-                />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="datetime-local"
-                  value={activityForm.eventStartTime}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      eventStartTime: event.target.value
-                    }))
-                  }
-                />
-                <input
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="datetime-local"
-                  value={activityForm.eventEndTime}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      eventEndTime: event.target.value
-                    }))
-                  }
-                />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <input
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={activityForm.ticketName}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      ticketName: event.target.value
-                    }))
-                  }
-                  placeholder={localeText(locale, "首个票种名称", "First ticket type")}
-                />
-                <input
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="number"
-                  min={1}
-                  value={activityForm.ticketStock}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      ticketStock: Number(event.target.value)
-                    }))
-                  }
-                  placeholder={localeText(locale, "票数", "Ticket stock")}
-                />
-                <input
-                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="number"
-                  min={0}
-                  value={activityForm.priceCents}
-                  onChange={(event) =>
-                    setActivityForm((current) => ({
-                      ...current,
-                      priceCents: Number(event.target.value)
-                    }))
-                  }
-                  placeholder={localeText(locale, "价格分", "Price in cents")}
-                />
+              <div className="rounded-[22px] border border-navy/10 bg-white px-4 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-ink">
+                      {localeText(locale, "进阶设置", "Advanced Settings")}
+                    </p>
+                    <p className="mt-2 text-sm text-slate">
+                      {localeText(
+                        locale,
+                        "描述、售卖时间、活动时间和发布状态都放在这里，默认状态为草稿，不会占满首屏。",
+                        "Description, schedule, event time, and publish status stay here. The default status is draft, so they do not crowd the first screen."
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
+                    onClick={() => setShowAdvancedSettings((current) => !current)}
+                    aria-expanded={showAdvancedSettings}
+                  >
+                    {showAdvancedSettings
+                      ? localeText(locale, "收起进阶设置", "Hide Advanced Settings")
+                      : localeText(locale, "展开进阶设置", "Show Advanced Settings")}
+                  </button>
+                </div>
+
+                {showAdvancedSettings ? (
+                  <div className="mt-4 grid gap-3">
+                    <textarea
+                      className="min-h-[96px] rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                      value={activityForm.description}
+                      onChange={(event) =>
+                        setActivityForm((current) => ({
+                          ...current,
+                          description: event.target.value
+                        }))
+                      }
+                      placeholder={localeText(locale, "活动描述", "Description")}
+                    />
+                    <select
+                      className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                      value={activityForm.status}
+                      onChange={(event) =>
+                        setActivityForm((current) => ({
+                          ...current,
+                          status: event.target.value as "draft" | "published"
+                        }))
+                      }
+                    >
+                      <option value="draft">{localeText(locale, "草稿", "Draft")}</option>
+                      <option value="published">{localeText(locale, "已发布", "Published")}</option>
+                    </select>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                        type="datetime-local"
+                        value={activityForm.saleStartTime}
+                        onChange={(event) =>
+                          setActivityForm((current) => ({
+                            ...current,
+                            saleStartTime: event.target.value
+                          }))
+                        }
+                      />
+                      <input
+                        className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                        type="datetime-local"
+                        value={activityForm.saleEndTime}
+                        onChange={(event) =>
+                          setActivityForm((current) => ({
+                            ...current,
+                            saleEndTime: event.target.value
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                        type="datetime-local"
+                        value={activityForm.eventStartTime}
+                        onChange={(event) =>
+                          setActivityForm((current) => ({
+                            ...current,
+                            eventStartTime: event.target.value
+                          }))
+                        }
+                      />
+                      <input
+                        className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                        type="datetime-local"
+                        value={activityForm.eventEndTime}
+                        onChange={(event) =>
+                          setActivityForm((current) => ({
+                            ...current,
+                            eventEndTime: event.target.value
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
             <MutationState
