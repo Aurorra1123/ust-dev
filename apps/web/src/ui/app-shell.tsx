@@ -76,7 +76,7 @@ export function AppShell() {
       <header className="border-b border-navy/10 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <Link to="/" className="text-lg font-semibold text-ink">
-            CampusBook 智约校园
+            {localeText(locale, "CampusBook 智约校园", "CampusBook")}
           </Link>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -87,8 +87,13 @@ export function AppShell() {
                   locale === "zh-CN" ? "bg-ember text-white" : "text-slate"
                 }`}
                 onClick={() => setLocale("zh-CN")}
+                aria-label={localeText(
+                  locale,
+                  "切换到中文界面",
+                  "Switch to Chinese interface"
+                )}
               >
-                中文
+                {localeText(locale, "中文", "Chinese")}
               </button>
               <button
                 type="button"
@@ -96,8 +101,13 @@ export function AppShell() {
                   locale === "en" ? "bg-ember text-white" : "text-slate"
                 }`}
                 onClick={() => setLocale("en")}
+                aria-label={localeText(
+                  locale,
+                  "切换到英文界面",
+                  "Switch to English interface"
+                )}
               >
-                EN
+                {localeText(locale, "英文", "English")}
               </button>
             </div>
 
