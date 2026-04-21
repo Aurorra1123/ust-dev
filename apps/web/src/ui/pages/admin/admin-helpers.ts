@@ -53,11 +53,11 @@ export function releaseFrequencyLabel(
 ) {
   switch (frequency) {
     case "daily":
-      return localeText(locale, "每日放号", "Daily release");
+      return localeText(locale, "每日开放", "Daily Opening");
     case "weekly":
-      return localeText(locale, "每周放号", "Weekly release");
+      return localeText(locale, "每周开放", "Weekly Opening");
     case "monthly":
-      return localeText(locale, "每月放号", "Monthly release");
+      return localeText(locale, "每月开放", "Monthly Opening");
   }
 }
 
@@ -75,18 +75,18 @@ export function describeReleaseRule(
 
   switch (rule.frequency) {
     case "daily":
-      return localeText(locale, `每天 ${time} 放号`, `Release daily at ${time}`);
+      return localeText(locale, `每天 ${time} 开放预约`, `Booking opens daily at ${time}`);
     case "weekly":
       return localeText(
         locale,
-        `${weekDayOptions(locale).find((item) => item.value === rule.dayOfWeek)?.label ?? "每周"} ${time} 放号`,
-        `Release on ${weekDayOptions(locale).find((item) => item.value === rule.dayOfWeek)?.label ?? "weekly"} at ${time}`
+        `${weekDayOptions(locale).find((item) => item.value === rule.dayOfWeek)?.label ?? "每周"} ${time} 开放预约`,
+        `Booking opens on ${weekDayOptions(locale).find((item) => item.value === rule.dayOfWeek)?.label ?? "weekly"} at ${time}`
       );
     case "monthly":
       return localeText(
         locale,
-        `每月 ${rule.dayOfMonth ?? 1} 日 ${time} 放号`,
-        `Release on day ${rule.dayOfMonth ?? 1} at ${time}`
+        `每月 ${rule.dayOfMonth ?? 1} 日 ${time} 开放预约`,
+        `Booking opens on day ${rule.dayOfMonth ?? 1} at ${time}`
       );
   }
 }
@@ -112,7 +112,7 @@ export function channelStatusLabel(
     case "closed":
       return localeText(locale, "已关闭", "Closed");
     case "scheduled":
-      return localeText(locale, "待放号", "Scheduled");
+      return localeText(locale, "待开放", "Opens Later");
   }
 }
 

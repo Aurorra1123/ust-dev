@@ -370,8 +370,8 @@ export function SpacesPage() {
                       scheduleQuery.data?.channelStatus.activeClosureReason ||
                       localeText(
                         locale,
-                        "当前资源存在关闭或待放号状态，请结合时间视图判断是否需要改期。",
-                        "This resource is currently closed or waiting for release. Use the timeline to decide whether to choose another time."
+                        "当前资源存在关闭或待开放状态，请结合时间视图判断是否需要改期。",
+                        "This resource is currently closed or not yet open. Use the timeline to decide whether to choose another time."
                       )
                     }
                   />

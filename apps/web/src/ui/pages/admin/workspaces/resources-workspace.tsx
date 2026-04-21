@@ -78,6 +78,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
     capacity: 8
   });
   const [resourceOperationTargets, setResourceOperationTargets] = useState<string[]>([]);
+  const [showAdvancedScheduling, setShowAdvancedScheduling] = useState(false);
   const [releaseRuleForm, setReleaseRuleForm] = useState<ReleaseRuleFormState>({
     frequency: "daily",
     dayOfWeek: 1,
@@ -118,6 +119,8 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
     resourcesQuery.data?.find((resource) => resource.id === resourceId) ??
     resourcesQuery.data?.[0] ??
     null;
+  const hasReleaseStrategy = (selectedResource?.releaseRules.length ?? 0) > 0;
+  const showSchedulingSettings = hasReleaseStrategy || showAdvancedScheduling;
   const isCreateResourceValid =
     resourceForm.code.trim().length > 0 && resourceForm.name.trim().length > 0;
   const isCreateResourceUnitValid =
@@ -148,6 +151,10 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
       current.length > 0 ? current : [selectedResource.id]
     );
   }, [selectedResource]);
+
+  useEffect(() => {
+    setShowAdvancedScheduling(false);
+  }, [selectedResource?.id]);
 
   const createResourceMutation = useMutation({
     mutationFn: createResource,
@@ -220,7 +227,10 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
   const createReleaseRuleMutation = useMutation({
     mutationFn: createResourceReleaseRules,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["admin", "resources"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
+      ]);
     }
   });
 
@@ -266,8 +276,8 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
       title={localeText(locale, "资源工作区", "Resource Workspace")}
       description={localeText(
         locale,
-        "这里集中处理资源列表、周期性放号、预约通道关闭和预约状态查看。左侧先选资源，中间看当前状态，右侧执行新增和配置操作。",
-        "This workspace manages the resource list, recurring release schedules, booking closures, and reservation status. Select a resource on the left, review its current status in the center, and configure updates on the right."
+        "这里集中处理资源列表、预约开放策略、预约通道关闭和预约状态查看。左侧先选资源，中间看当前状态，右侧执行新增和配置操作。",
+        "This workspace manages the resource list, booking opening strategy, booking closures, and reservation status. Select a resource on the left, review its current status in the center, and configure updates on the right."
       )}
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),340px]">
@@ -278,8 +288,8 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
               title={localeText(locale, "正在载入资源工作区", "Loading resource workspace")}
               description={localeText(
                 locale,
-                "页面正在整理当前可维护的资源、放号规则和预约状态。",
-                "The page is loading current resources, release schedules, and reservation status."
+                "页面正在整理当前可维护的资源、开放策略和预约状态。",
+                "The page is loading current resources, opening strategies, and reservation status."
               )}
             />
           ) : resourcesQuery.isError ? (
@@ -333,8 +343,8 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                   resource.channelStatus.nextReleaseAt
                     ? localeText(
                         locale,
-                        `下次放号 ${formatDateTime(resource.channelStatus.nextReleaseAt)}`,
-                        `Next release ${formatDateTime(resource.channelStatus.nextReleaseAt)}`
+                        `下次开放 ${formatDateTime(resource.channelStatus.nextReleaseAt)}`,
+                        `Next open ${formatDateTime(resource.channelStatus.nextReleaseAt)}`
                       )
                     : resource.channelStatus.status === "closed"
                       ? localeText(
@@ -417,10 +427,10 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                       if (
                         !window.confirm(
                           localeText(
-                            locale,
-                            "仅当该资源没有资源单元、规则绑定、关闭规则、放号规则和历史预约记录时，才允许彻底删除。确认继续吗？",
-                            "The resource can only be deleted when it has no units, bindings, channel rules, or reservation history. Continue?"
-                          )
+                          locale,
+                          "仅当该资源没有资源单元、规则绑定、关闭规则、开放策略和历史预约记录时，才允许彻底删除。确认继续吗？",
+                          "The resource can only be deleted when it has no units, bindings, closure rules, opening strategies, or reservation history. Continue?"
+                        )
                         )
                       ) {
                         return;
@@ -482,7 +492,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     )}
                   />
                   <AdminInfoCard
-                    label={localeText(locale, "放号规则", "Release Rules")}
+                    label={localeText(locale, "开放策略", "Opening Strategy")}
                     value={localeText(
                       locale,
                       `${selectedResource.releaseRules.length} 条`,
@@ -566,15 +576,19 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-semibold text-ink">
-                        {localeText(locale, "通道与规则概况", "Channel and Scheduling")}
+                        {localeText(
+                          locale,
+                          "预约开放概况",
+                          "Booking Availability Overview"
+                        )}
                       </h3>
                       <p className="mt-2 text-sm text-slate">
                         {selectedResource.channelStatus.status === "scheduled" &&
                         selectedResource.channelStatus.nextReleaseAt
                           ? localeText(
                               locale,
-                              `当前等待放号，最近一次放号时间为 ${formatDateTime(selectedResource.channelStatus.nextReleaseAt)}。`,
-                              `The resource is waiting for release. The next release time is ${formatDateTime(selectedResource.channelStatus.nextReleaseAt)}.`
+                              `当前等待开放，下次开放时间为 ${formatDateTime(selectedResource.channelStatus.nextReleaseAt)}。`,
+                              `This resource is not open yet. The next opening time is ${formatDateTime(selectedResource.channelStatus.nextReleaseAt)}.`
                             )
                           : selectedResource.channelStatus.status === "closed"
                             ? localeText(
@@ -601,7 +615,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                   <div className="mt-5 grid gap-4 lg:grid-cols-2">
                     <div>
                       <p className="text-sm font-medium text-ink">
-                        {localeText(locale, "放号规则", "Release Rules")}
+                        {localeText(locale, "预约开放策略", "Opening Strategy")}
                       </p>
                       <div className="mt-3 grid gap-3">
                         {selectedResource.releaseRules.length ? (
@@ -624,14 +638,18 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                                 {describeReleaseRule(rule, locale)}
                               </p>
                               <p className="mt-2 text-xs text-ink/50">
-                                {localeText(locale, "下次放号：", "Next release: ")}
+                                {localeText(locale, "下次开放：", "Next open: ")}
                                 {formatDateTime(rule.nextReleaseAt)}
                               </p>
                             </div>
                           ))
                         ) : (
                           <div className="rounded-2xl border border-dashed border-ink/12 px-4 py-4 text-sm text-slate">
-                            {localeText(locale, "当前还没有配置放号规则。", "No release rules configured yet.")}
+                            {localeText(
+                              locale,
+                              "当前按默认开放策略运行，没有额外的延迟开放设置。",
+                              "This resource follows the default open strategy and has no delayed opening configuration."
+                            )}
                           </div>
                         )}
                       </div>
@@ -679,13 +697,13 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
 
                 <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
                   <h3 className="text-lg font-semibold text-ink">
-                    {localeText(locale, "作用资源", "Target Resources")}
+                    {localeText(locale, "批量作用资源", "Batch Targets")}
                   </h3>
                   <p className="mt-2 text-sm text-slate">
                     {localeText(
                       locale,
-                      "放号规则和关闭规则都支持一次作用到多个资源。",
-                      "Release rules and booking closures can target multiple resources at once."
+                      "开放策略和关闭规则都支持一次作用到多个资源。",
+                      "Opening strategies and booking closures can target multiple resources at once."
                     )}
                   </p>
                   <div className="mt-4 grid gap-2">
@@ -1011,138 +1029,6 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                 return;
               }
 
-              createReleaseRuleMutation.mutate({
-                resourceIds: resourceOperationTargets,
-                frequency: releaseRuleForm.frequency,
-                dayOfWeek:
-                  releaseRuleForm.frequency === "weekly"
-                    ? releaseRuleForm.dayOfWeek
-                    : undefined,
-                dayOfMonth:
-                  releaseRuleForm.frequency === "monthly"
-                    ? releaseRuleForm.dayOfMonth
-                    : undefined,
-                hour: releaseRuleForm.hour,
-                minute: releaseRuleForm.minute
-              });
-            }}
-          >
-            <h3 className="text-lg font-semibold text-ink">
-              {localeText(locale, "新增放号规则", "Create release rule")}
-            </h3>
-            <p className="mt-2 text-sm text-ink/70">
-              {localeText(
-                locale,
-                "可为一个或多个资源配置每天、每周、每月的统一放号时间。",
-                "Configure daily, weekly, or monthly release times for one or multiple resources."
-              )}
-            </p>
-            <div className="mt-4 grid gap-3">
-              <select
-                className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                value={releaseRuleForm.frequency}
-                onChange={(event) =>
-                  setReleaseRuleForm((current) => ({
-                    ...current,
-                    frequency: event.target.value as ResourceReleaseFrequency
-                  }))
-                }
-              >
-                <option value="daily">{localeText(locale, "每天", "Daily")}</option>
-                <option value="weekly">{localeText(locale, "每周", "Weekly")}</option>
-                <option value="monthly">{localeText(locale, "每月", "Monthly")}</option>
-              </select>
-
-              {releaseRuleForm.frequency === "weekly" ? (
-                <select
-                  className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={releaseRuleForm.dayOfWeek}
-                  onChange={(event) =>
-                    setReleaseRuleForm((current) => ({
-                      ...current,
-                      dayOfWeek: Number(event.target.value)
-                    }))
-                  }
-                >
-                  {weekDayOptions(locale).map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              ) : null}
-
-              {releaseRuleForm.frequency === "monthly" ? (
-                <input
-                  type="number"
-                  min={1}
-                  max={31}
-                  className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={releaseRuleForm.dayOfMonth}
-                  onChange={(event) =>
-                    setReleaseRuleForm((current) => ({
-                      ...current,
-                      dayOfMonth: Number(event.target.value)
-                    }))
-                  }
-                  placeholder={localeText(locale, "每月日期", "Day of month")}
-                />
-              ) : null}
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input
-                  type="number"
-                  min={0}
-                  max={23}
-                  className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={releaseRuleForm.hour}
-                  onChange={(event) =>
-                    setReleaseRuleForm((current) => ({
-                      ...current,
-                      hour: Number(event.target.value)
-                    }))
-                  }
-                  placeholder={localeText(locale, "小时", "Hour")}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  max={59}
-                  className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={releaseRuleForm.minute}
-                  onChange={(event) =>
-                    setReleaseRuleForm((current) => ({
-                      ...current,
-                      minute: Number(event.target.value)
-                    }))
-                  }
-                  placeholder={localeText(locale, "分钟", "Minute")}
-                />
-              </div>
-            </div>
-            <MutationState
-              mutation={createReleaseRuleMutation}
-              success={localeText(locale, "放号规则已保存。", "Release rules saved.")}
-            />
-            <button
-              type="submit"
-              className="mt-4 w-full rounded-full bg-navy px-5 py-3 text-sm font-medium text-white transition hover:bg-navy/90 disabled:cursor-not-allowed disabled:bg-navy/50"
-              disabled={!resourceOperationTargets.length || createReleaseRuleMutation.isPending}
-            >
-              {createReleaseRuleMutation.isPending
-                ? localeText(locale, "保存中", "Saving")
-                : localeText(locale, "保存放号规则", "Save release rule")}
-            </button>
-          </form>
-
-          <form
-            className="rounded-[24px] border border-ink/10 bg-white px-5 py-5"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!resourceOperationTargets.length) {
-                return;
-              }
-
               createBookingClosureMutation.mutate({
                 resourceIds: resourceOperationTargets,
                 startsAt: new Date(bookingClosureForm.startsAt).toISOString(),
@@ -1227,6 +1113,196 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                 : localeText(locale, "保存关闭规则", "Save booking closure")}
             </button>
           </form>
+
+          {showSchedulingSettings ? (
+            <form
+              className="rounded-[24px] border border-ink/10 bg-white px-5 py-5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!resourceOperationTargets.length) {
+                  return;
+                }
+
+                createReleaseRuleMutation.mutate({
+                  resourceIds: resourceOperationTargets,
+                  frequency: releaseRuleForm.frequency,
+                  dayOfWeek:
+                    releaseRuleForm.frequency === "weekly"
+                      ? releaseRuleForm.dayOfWeek
+                      : undefined,
+                  dayOfMonth:
+                    releaseRuleForm.frequency === "monthly"
+                      ? releaseRuleForm.dayOfMonth
+                      : undefined,
+                  hour: releaseRuleForm.hour,
+                  minute: releaseRuleForm.minute
+                });
+              }}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-ink">
+                    {localeText(locale, "高级调度设置", "Advanced Scheduling")}
+                  </h3>
+                  <p className="mt-2 text-sm text-ink/70">
+                    {localeText(
+                      locale,
+                      "只有资源需要延迟开放时，才建议配置预约开放策略。",
+                      "Only configure an opening strategy when bookings should open on a delayed schedule."
+                    )}
+                  </p>
+                </div>
+                {hasReleaseStrategy ? (
+                  <StatusPill tone="brand">
+                    {localeText(
+                      locale,
+                      `${selectedResource?.releaseRules.length ?? 0} 条策略`,
+                      `${selectedResource?.releaseRules.length ?? 0} strategies`
+                    )}
+                  </StatusPill>
+                ) : (
+                  <button
+                    type="button"
+                    className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
+                    onClick={() => setShowAdvancedScheduling(false)}
+                  >
+                    {localeText(locale, "收起高级设置", "Hide Advanced Settings")}
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-navy/10 bg-sand px-4 py-4">
+                <p className="text-sm font-medium text-ink">
+                  {localeText(locale, "预约开放策略", "Opening Strategy")}
+                </p>
+                <p className="mt-2 text-sm text-slate">
+                  {localeText(
+                    locale,
+                    "如果某类资源需要到每天、每周或每月的固定时刻才开放预约，可以在这里设置；没有这类需求时，保持默认开放即可。",
+                    "Use this only when a resource should open for booking at a fixed daily, weekly, or monthly time. Otherwise, keep the default open behavior."
+                  )}
+                </p>
+              </div>
+
+              <div className="mt-4 grid gap-3">
+                <select
+                  className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                  value={releaseRuleForm.frequency}
+                  onChange={(event) =>
+                    setReleaseRuleForm((current) => ({
+                      ...current,
+                      frequency: event.target.value as ResourceReleaseFrequency
+                    }))
+                  }
+                >
+                  <option value="daily">{releaseFrequencyLabel("daily", locale)}</option>
+                  <option value="weekly">{releaseFrequencyLabel("weekly", locale)}</option>
+                  <option value="monthly">{releaseFrequencyLabel("monthly", locale)}</option>
+                </select>
+
+                {releaseRuleForm.frequency === "weekly" ? (
+                  <select
+                    className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                    value={releaseRuleForm.dayOfWeek}
+                    onChange={(event) =>
+                      setReleaseRuleForm((current) => ({
+                        ...current,
+                        dayOfWeek: Number(event.target.value)
+                      }))
+                    }
+                  >
+                    {weekDayOptions(locale).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+
+                {releaseRuleForm.frequency === "monthly" ? (
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                    value={releaseRuleForm.dayOfMonth}
+                    onChange={(event) =>
+                      setReleaseRuleForm((current) => ({
+                        ...current,
+                        dayOfMonth: Number(event.target.value)
+                      }))
+                    }
+                    placeholder={localeText(locale, "每月开放日期", "Day of month")}
+                  />
+                ) : null}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                    value={releaseRuleForm.hour}
+                    onChange={(event) =>
+                      setReleaseRuleForm((current) => ({
+                        ...current,
+                        hour: Number(event.target.value)
+                      }))
+                    }
+                    placeholder={localeText(locale, "开放小时", "Open hour")}
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                    value={releaseRuleForm.minute}
+                    onChange={(event) =>
+                      setReleaseRuleForm((current) => ({
+                        ...current,
+                        minute: Number(event.target.value)
+                      }))
+                    }
+                    placeholder={localeText(locale, "开放分钟", "Open minute")}
+                  />
+                </div>
+              </div>
+
+              <MutationState
+                mutation={createReleaseRuleMutation}
+                success={localeText(locale, "预约开放策略已保存。", "Opening strategy saved.")}
+              />
+              <button
+                type="submit"
+                className="mt-4 w-full rounded-full bg-navy px-5 py-3 text-sm font-medium text-white transition hover:bg-navy/90 disabled:cursor-not-allowed disabled:bg-navy/50"
+                disabled={!resourceOperationTargets.length || createReleaseRuleMutation.isPending}
+              >
+                {createReleaseRuleMutation.isPending
+                  ? localeText(locale, "保存中", "Saving")
+                  : localeText(locale, "保存开放策略", "Save Opening Strategy")}
+              </button>
+            </form>
+          ) : (
+            <div className="rounded-[24px] border border-dashed border-ink/15 bg-white px-5 py-5">
+              <h3 className="text-lg font-semibold text-ink">
+                {localeText(locale, "高级调度设置", "Advanced Scheduling")}
+              </h3>
+              <p className="mt-2 text-sm text-slate">
+                {localeText(
+                  locale,
+                  "默认演示路径不要求配置预约开放策略。只有资源需要延迟开放时，再展开这部分设置。",
+                  "The default demo flow does not require an opening strategy. Expand this section only when bookings should open later."
+                )}
+              </p>
+              <button
+                type="button"
+                className="mt-4 rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
+                onClick={() => setShowAdvancedScheduling(true)}
+              >
+                {localeText(locale, "展开高级调度设置", "Show Advanced Scheduling")}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </PageSection>
