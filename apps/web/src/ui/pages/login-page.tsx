@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -6,47 +6,34 @@ import { login } from "../../lib/api/auth-api";
 import { ApiError } from "../../lib/http/errors";
 import { localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
+import {
+  quickRoleEntries,
+  resolveDemoAccount,
+  studentDemoAccount
+} from "../demo-accounts";
 
 type LoginFormState = {
   email: string;
   password: string;
 };
 
-const defaultAccount = {
-  email: "demo@campusbook.top",
-  password: "demo123456"
-};
-
-const adminAccount = {
-  email: "admin@campusbook.top",
-  password: "admin123456"
-};
-
-const quickAccounts = [
-  {
-    id: "student",
-    labelZh: "学生入口",
-    labelEn: "Student Access",
-    hintZh: "点击后带入学生 demo 账号",
-    hintEn: "Fill the student demo account",
-    account: defaultAccount
-  },
-  {
-    id: "teacher",
-    labelZh: "教师入口",
-    labelEn: "Teacher Access",
-    hintZh: "点击后带入管理员 demo 账号",
-    hintEn: "Fill the admin demo account",
-    account: adminAccount
-  }
-] as const;
-
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const locale = useLocaleStore((state) => state.locale);
   const redirectTo = useMemo(() => searchParams.get("redirect"), [searchParams]);
-  const [form, setForm] = useState<LoginFormState>(defaultAccount);
+  const quickRole = useMemo(() => searchParams.get("role"), [searchParams]);
+  const [form, setForm] = useState<LoginFormState>(
+    () => resolveDemoAccount(quickRole) ?? studentDemoAccount
+  );
+
+  useEffect(() => {
+    const quickAccount = resolveDemoAccount(quickRole);
+
+    if (quickAccount) {
+      setForm(quickAccount);
+    }
+  }, [quickRole]);
 
   const loginMutation = useMutation({
     mutationFn: login,
@@ -87,13 +74,13 @@ export function LoginPage() {
               {localeText(locale, "快捷身份带入", "Quick Role Access")}
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
-              {quickAccounts.map((entry) => {
+              {quickRoleEntries.map((entry) => {
                 const isActive =
                   form.email === entry.account.email && form.password === entry.account.password;
 
                 return (
                   <button
-                    key={entry.id}
+                    key={entry.role}
                     type="button"
                     className={`rounded-[22px] border px-4 py-4 text-left transition ${
                       isActive

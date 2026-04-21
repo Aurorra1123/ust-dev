@@ -6,6 +6,7 @@ import { formatDateTime } from "../../lib/date";
 import { localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
+import { buildDemoLoginPath, quickRoleEntries } from "../demo-accounts";
 import { EmptyPanel, StatePanel } from "../user-experience-kit";
 
 const serviceCards = [
@@ -40,7 +41,7 @@ export function HomePage() {
   }
 
   if (status === "anonymous") {
-    return <Navigate to="/login" replace />;
+    return <PublicHome />;
   }
 
   if (status !== "authenticated") {
@@ -48,6 +49,189 @@ export function HomePage() {
   }
 
   return <StudentHome />;
+}
+
+function PublicHome() {
+  const locale = useLocaleStore((state) => state.locale);
+  const notificationsQuery = useQuery({
+    queryKey: ["notifications", "published"],
+    queryFn: fetchPublishedNotifications
+  });
+
+  return (
+    <div className="grid gap-6">
+      <section className="rounded-[30px] border border-navy/10 bg-white px-6 py-6 shadow-panel lg:px-8">
+        <p className="text-xs uppercase tracking-[0.28em] text-moss">
+          {localeText(locale, "系统入口", "Portal")}
+        </p>
+        <h2 className="mt-3 text-3xl font-semibold text-ink">
+          {localeText(locale, "校园预约平台", "Campus Booking Platform")}
+        </h2>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate">
+          {localeText(
+            locale,
+            "从主页面直接选择学生或教师入口，系统会自动带入对应 demo 账号，便于课堂演示与联调。",
+            "Choose the student or teacher entry from the landing page to fill the matching demo credentials for class demos and integration."
+          )}
+        </p>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {quickRoleEntries.map((entry) => (
+            <Link
+              key={entry.role}
+              to={buildDemoLoginPath(
+                entry.role,
+                entry.role === "teacher" ? "/admin" : "/"
+              )}
+              className="rounded-[24px] border border-navy/10 bg-sand px-5 py-5 transition hover:border-moss"
+            >
+              <p className="text-xs uppercase tracking-[0.22em] text-moss">
+                {localeText(locale, "快捷登录", "Quick Access")}
+              </p>
+              <h3 className="mt-3 text-2xl font-semibold text-ink">
+                {localeText(locale, entry.labelZh, entry.labelEn)}
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-slate">
+                {localeText(locale, entry.hintZh, entry.hintEn)}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-navy/10 bg-white px-6 py-6 shadow-panel lg:px-8">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Link
+            to={buildDemoLoginPath("student", "/sports")}
+            className="rounded-[24px] bg-gradient-to-br from-navy via-[#0d3f82] to-moss px-6 py-6 text-white"
+          >
+            <p className="text-xs uppercase tracking-[0.24em] text-white/70">
+              {localeText(locale, "学生演示", "Student Demo")}
+            </p>
+            <h3 className="mt-3 text-3xl font-semibold">
+              {localeText(locale, "直接体验预约", "Start Student Flow")}
+            </h3>
+          </Link>
+
+          <Link
+            to={buildDemoLoginPath("teacher", "/admin")}
+            className="rounded-[24px] border border-navy/10 bg-sand px-6 py-6"
+          >
+            <p className="text-xs uppercase tracking-[0.24em] text-moss">
+              {localeText(locale, "教师工作台", "Teacher Workspace")}
+            </p>
+            <h3 className="mt-3 text-3xl font-semibold text-ink">
+              {localeText(locale, "进入后台管理", "Open Admin Flow")}
+            </h3>
+          </Link>
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-navy/10 bg-white px-6 py-6 shadow-panel lg:px-8">
+        <div className="grid gap-4 lg:grid-cols-4">
+          {serviceCards.map((card) => (
+            <Link
+              key={card.href}
+              to={buildDemoLoginPath("student", card.href)}
+              className="rounded-[24px] border border-navy/10 bg-sand px-5 py-5 transition hover:border-moss"
+            >
+              <h3 className="text-2xl font-semibold text-ink">
+                {localeText(
+                  locale,
+                  card.title,
+                  card.title === "体育"
+                    ? "Sports"
+                    : card.title === "学术"
+                      ? "Study"
+                      : card.title === "活动"
+                        ? "Activities"
+                        : "Repairs"
+                )}
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-slate">
+                {localeText(
+                  locale,
+                  card.description,
+                  card.title === "体育"
+                    ? "Open the sports booking page."
+                    : card.title === "学术"
+                      ? "Open the study-space booking page."
+                      : card.title === "活动"
+                        ? "Open the activity registration page."
+                        : "Submit a repair ticket and track the admin response."
+                )}
+              </p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-navy/10 bg-white px-6 py-6 shadow-panel lg:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-moss">
+              {localeText(locale, "首页通知", "Home Notices")}
+            </p>
+            <h3 className="mt-3 text-2xl font-semibold text-ink">
+              {localeText(locale, "最新通知", "Latest Notices")}
+            </h3>
+          </div>
+          <Link
+            to={buildDemoLoginPath("student", "/")}
+            className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
+          >
+            {localeText(locale, "带入学生 demo 查看首页", "Use Student Demo")}
+          </Link>
+        </div>
+
+        <div className="mt-5">
+          {notificationsQuery.isLoading ? (
+            <StatePanel
+              tone="loading"
+              title={localeText(locale, "正在载入通知", "Loading notices")}
+              description={localeText(locale, "请稍候。", "Please wait.")}
+            />
+          ) : notificationsQuery.isError ? (
+            <StatePanel
+              tone="danger"
+              title={localeText(locale, "通知暂时无法加载", "Notices are unavailable")}
+              description={(notificationsQuery.error as Error).message}
+            />
+          ) : !notificationsQuery.data?.length ? (
+            <EmptyPanel
+              title={localeText(locale, "当前没有通知", "No notices yet")}
+              description={localeText(
+                locale,
+                "管理员发布后的通知会显示在这里。",
+                "Published admin notices will appear here."
+              )}
+            />
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-3">
+              {notificationsQuery.data.slice(0, 3).map((notification) => (
+                <article
+                  key={notification.id}
+                  className="rounded-[24px] border border-navy/10 bg-sand px-5 py-5"
+                >
+                  <p className="text-xs uppercase tracking-[0.2em] text-moss">
+                    {notification.publishedAt
+                      ? formatDateTime(notification.publishedAt)
+                      : localeText(locale, "待发布", "Draft")}
+                  </p>
+                  <h4 className="mt-3 text-lg font-semibold text-ink">
+                    {notification.title}
+                  </h4>
+                  <p className="mt-3 text-sm leading-7 text-slate">
+                    {notification.summary || notification.content}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
 }
 
 function StudentHome() {
