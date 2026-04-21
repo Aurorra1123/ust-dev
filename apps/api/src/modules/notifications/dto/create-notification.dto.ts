@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, MaxLength } from "class-validator";
+import { IsIn, IsOptional, IsString, IsUrl, MaxLength, ValidateIf } from "class-validator";
 import type { NotificationStatus } from "@campusbook/shared-types";
 
 export class CreateNotificationDto {
@@ -10,6 +10,15 @@ export class CreateNotificationDto {
   @IsString()
   @MaxLength(180)
   summary?: string;
+
+  @IsOptional()
+  @ValidateIf((_object, value) => typeof value === "string" && value.trim().length > 0)
+  @IsString()
+  @MaxLength(500)
+  @IsUrl({
+    require_protocol: true
+  })
+  imageUrl?: string;
 
   @IsString()
   @MaxLength(2000)

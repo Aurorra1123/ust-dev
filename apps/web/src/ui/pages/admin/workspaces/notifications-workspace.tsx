@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {
@@ -15,21 +16,32 @@ import { EmptyPanel, StatePanel, StatusPill } from "../../../user-experience-kit
 import { notificationStatusLabel } from "../admin-helpers";
 import { MutationState } from "../components/mutation-state";
 
+type NotificationFormState = {
+  title: string;
+  summary: string;
+  imageUrl: string;
+  content: string;
+  status: "draft" | "published";
+};
+
 export function NotificationsWorkspace({ locale }: { locale: Locale }) {
   const notificationsQuery = useQuery({
     queryKey: ["admin", "notifications"],
     queryFn: fetchAdminNotifications
   });
   const [selectedId, setSelectedId] = useState("");
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<NotificationFormState>({
     title: "",
     summary: "",
+    imageUrl: "",
     content: "",
     status: "draft" as "draft" | "published"
   });
-  const [createForm, setCreateForm] = useState({
+  const [createForm, setCreateForm] = useState<NotificationFormState>({
     title: "场馆服务提醒",
     summary: "补充一条新的学生首页通知。",
+    imageUrl:
+      "https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80",
     content: "这条通知会在发布后同步出现在学生首页通知区。",
     status: "draft" as "draft" | "published"
   });
@@ -55,6 +67,7 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
     setEditForm({
       title: selectedNotification.title,
       summary: selectedNotification.summary ?? "",
+      imageUrl: selectedNotification.imageUrl ?? "",
       content: selectedNotification.content,
       status: selectedNotification.status
     });
@@ -76,12 +89,14 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
       notificationId: string;
       title: string;
       summary: string;
+      imageUrl: string;
       content: string;
       status: "draft" | "published";
     }) =>
       updateNotification(payload.notificationId, {
         title: payload.title,
         summary: payload.summary,
+        imageUrl: payload.imageUrl,
         content: payload.content,
         status: payload.status
       }),
@@ -155,6 +170,11 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
                     ? formatDateTime(notification.publishedAt)
                     : localeText(locale, "待发布", "Draft")}
                 </p>
+                {notification.imageUrl ? (
+                  <p className="mt-2 text-xs uppercase tracking-[0.2em] text-moss">
+                    {localeText(locale, "含图片", "With image")}
+                  </p>
+                ) : null}
               </button>
             ))
           )}
@@ -184,51 +204,12 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
                 </StatusPill>
               </div>
 
-              <div className="mt-4 grid gap-3">
-                <input
-                  className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={editForm.title}
-                  onChange={(event) =>
-                    setEditForm((current) => ({
-                      ...current,
-                      title: event.target.value
-                    }))
-                  }
-                />
-                <input
-                  className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={editForm.summary}
-                  onChange={(event) =>
-                    setEditForm((current) => ({
-                      ...current,
-                      summary: event.target.value
-                    }))
-                  }
-                />
-                <textarea
-                  className="min-h-[160px] rounded-2xl border border-navy/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={editForm.content}
-                  onChange={(event) =>
-                    setEditForm((current) => ({
-                      ...current,
-                      content: event.target.value
-                    }))
-                  }
-                />
-                <select
-                  className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  value={editForm.status}
-                  onChange={(event) =>
-                    setEditForm((current) => ({
-                      ...current,
-                      status: event.target.value as "draft" | "published"
-                    }))
-                  }
-                >
-                  <option value="draft">{localeText(locale, "草稿", "Draft")}</option>
-                  <option value="published">{localeText(locale, "发布", "Publish")}</option>
-                </select>
-              </div>
+              <NotificationFormFields
+                locale={locale}
+                form={editForm}
+                tone="sand"
+                onChange={setEditForm}
+              />
 
               <MutationState
                 mutation={updateMutation}
@@ -262,52 +243,13 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
           <h3 className="text-lg font-semibold text-ink">
             {localeText(locale, "新建通知", "Create Notification")}
           </h3>
-          <input
-            className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-            value={createForm.title}
-            onChange={(event) =>
-              setCreateForm((current) => ({
-                ...current,
-                title: event.target.value
-              }))
-            }
-            placeholder={localeText(locale, "通知标题", "Title")}
+          <NotificationFormFields
+            locale={locale}
+            form={createForm}
+            tone="white"
+            publishLabel={localeText(locale, "直接发布", "Publish Now")}
+            onChange={setCreateForm}
           />
-          <input
-            className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-            value={createForm.summary}
-            onChange={(event) =>
-              setCreateForm((current) => ({
-                ...current,
-                summary: event.target.value
-              }))
-            }
-            placeholder={localeText(locale, "通知摘要", "Summary")}
-          />
-          <textarea
-            className="min-h-[160px] rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-            value={createForm.content}
-            onChange={(event) =>
-              setCreateForm((current) => ({
-                ...current,
-                content: event.target.value
-              }))
-            }
-            placeholder={localeText(locale, "通知正文", "Content")}
-          />
-          <select
-            className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-            value={createForm.status}
-            onChange={(event) =>
-              setCreateForm((current) => ({
-                ...current,
-                status: event.target.value as "draft" | "published"
-              }))
-            }
-          >
-            <option value="draft">{localeText(locale, "草稿", "Draft")}</option>
-            <option value="published">{localeText(locale, "直接发布", "Publish Now")}</option>
-          </select>
 
           <MutationState
             mutation={createMutation}
@@ -330,5 +272,98 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
         </form>
       </div>
     </PageSection>
+  );
+}
+
+function NotificationFormFields({
+  form,
+  locale,
+  onChange,
+  publishLabel,
+  tone
+}: {
+  form: NotificationFormState;
+  locale: Locale;
+  onChange: Dispatch<SetStateAction<NotificationFormState>>;
+  publishLabel?: string;
+  tone: "sand" | "white";
+}) {
+  const fieldClassName =
+    tone === "sand"
+      ? "rounded-2xl border border-navy/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+      : "rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss";
+
+  return (
+    <div className="mt-4 grid gap-3">
+      <input
+        className={fieldClassName}
+        value={form.title}
+        onChange={(event) =>
+          onChange((current) => ({
+            ...current,
+            title: event.target.value
+          }))
+        }
+        placeholder={localeText(locale, "通知标题", "Title")}
+      />
+      <input
+        className={fieldClassName}
+        value={form.summary}
+        onChange={(event) =>
+          onChange((current) => ({
+            ...current,
+            summary: event.target.value
+          }))
+        }
+        placeholder={localeText(locale, "通知摘要", "Summary")}
+      />
+      <input
+        className={fieldClassName}
+        value={form.imageUrl}
+        onChange={(event) =>
+          onChange((current) => ({
+            ...current,
+            imageUrl: event.target.value
+          }))
+        }
+        placeholder={localeText(locale, "图片链接（可选）", "Image URL (optional)")}
+      />
+      {form.imageUrl.trim() ? (
+        <div className="overflow-hidden rounded-[20px] border border-navy/10 bg-white">
+          <img
+            src={form.imageUrl}
+            alt={form.title || localeText(locale, "通知图片预览", "Notice image preview")}
+            className="h-40 w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      ) : null}
+      <textarea
+        className={`min-h-[160px] ${fieldClassName}`}
+        value={form.content}
+        onChange={(event) =>
+          onChange((current) => ({
+            ...current,
+            content: event.target.value
+          }))
+        }
+        placeholder={localeText(locale, "通知正文", "Content")}
+      />
+      <select
+        className={fieldClassName}
+        value={form.status}
+        onChange={(event) =>
+          onChange((current) => ({
+            ...current,
+            status: event.target.value as "draft" | "published"
+          }))
+        }
+      >
+        <option value="draft">{localeText(locale, "草稿", "Draft")}</option>
+        <option value="published">
+          {publishLabel ?? localeText(locale, "发布", "Publish")}
+        </option>
+      </select>
+    </div>
   );
 }

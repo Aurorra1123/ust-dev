@@ -42,6 +42,7 @@ export class NotificationsService {
       data: {
         title: payload.title.trim(),
         summary: normalizeOptionalText(payload.summary),
+        imageUrl: normalizeOptionalUrl(payload.imageUrl),
         content: payload.content.trim(),
         status: mapSharedNotificationStatus(status),
         publishedAt: status === "published" ? new Date() : null,
@@ -76,6 +77,9 @@ export class NotificationsService {
         ...(payload.summary !== undefined
           ? { summary: normalizeOptionalText(payload.summary) }
           : {}),
+        ...(payload.imageUrl !== undefined
+          ? { imageUrl: normalizeOptionalUrl(payload.imageUrl) }
+          : {}),
         ...(payload.content !== undefined ? { content: payload.content.trim() } : {}),
         ...(payload.status !== undefined
           ? {
@@ -99,6 +103,7 @@ function toAppNotification(notification: {
   id: string;
   title: string;
   summary: string | null;
+  imageUrl: string | null;
   content: string;
   status: PrismaNotificationStatus;
   publishedAt: Date | null;
@@ -109,6 +114,7 @@ function toAppNotification(notification: {
     id: notification.id,
     title: notification.title,
     summary: notification.summary,
+    imageUrl: notification.imageUrl,
     content: notification.content,
     status: mapPrismaNotificationStatus(notification.status),
     publishedAt: notification.publishedAt?.toISOString() ?? null,
@@ -118,6 +124,11 @@ function toAppNotification(notification: {
 }
 
 function normalizeOptionalText(value?: string) {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
+}
+
+function normalizeOptionalUrl(value?: string | null) {
   const normalized = value?.trim();
   return normalized ? normalized : null;
 }

@@ -368,6 +368,8 @@ async function main() {
     update: {
       title: "体育馆周三晚间维护提醒",
       summary: "Sports Hall A 本周三 20:00 后暂停开放预约。",
+      imageUrl:
+        "https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80",
       content:
         "Sports Hall A 将于本周三 20:00 后进行地板维护，相关时段的预约会陆续调整，请同学优先选择周四后的场次。",
       status: NotificationStatus.PUBLISHED,
@@ -378,6 +380,8 @@ async function main() {
       id: "notification_demo_sports_maintenance",
       title: "体育馆周三晚间维护提醒",
       summary: "Sports Hall A 本周三 20:00 后暂停开放预约。",
+      imageUrl:
+        "https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80",
       content:
         "Sports Hall A 将于本周三 20:00 后进行地板维护，相关时段的预约会陆续调整，请同学优先选择周四后的场次。",
       status: NotificationStatus.PUBLISHED,
@@ -391,6 +395,8 @@ async function main() {
     update: {
       title: "开放日报名已开放",
       summary: "Campus Open Day 2026 已开放普通票与优先票报名。",
+      imageUrl:
+        "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80",
       content:
         "开放日活动已经开放报名，学生可在活动页查看票种与余量。若需要带同学入场，请优先选择同一时段完成报名。",
       status: NotificationStatus.PUBLISHED,
@@ -401,6 +407,8 @@ async function main() {
       id: "notification_demo_open_day",
       title: "开放日报名已开放",
       summary: "Campus Open Day 2026 已开放普通票与优先票报名。",
+      imageUrl:
+        "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80",
       content:
         "开放日活动已经开放报名，学生可在活动页查看票种与余量。若需要带同学入场，请优先选择同一时段完成报名。",
       status: NotificationStatus.PUBLISHED,
@@ -414,6 +422,7 @@ async function main() {
     update: {
       title: "设计冲刺工作坊预热文案",
       summary: "管理员可在后台继续补充后发布。",
+      imageUrl: null,
       content:
         "这是一条草稿通知，用于验证管理员编辑、保存与发布流程。发布后应同步出现在学生首页通知区。",
       status: NotificationStatus.DRAFT,
@@ -424,6 +433,7 @@ async function main() {
       id: "notification_demo_draft_workshop",
       title: "设计冲刺工作坊预热文案",
       summary: "管理员可在后台继续补充后发布。",
+      imageUrl: null,
       content:
         "这是一条草稿通知，用于验证管理员编辑、保存与发布流程。发布后应同步出现在学生首页通知区。",
       status: NotificationStatus.DRAFT,

@@ -132,6 +132,7 @@ export interface AppNotification {
   id: string;
   title: string;
   summary?: string | null;
+  imageUrl?: string | null;
   content: string;
   status: NotificationStatus;
   publishedAt: string | null;
@@ -449,6 +450,7 @@ export interface ActivityRegistrationStatusResponse {
 export interface CreateNotificationPayload {
   title: string;
   summary?: string;
+  imageUrl?: string;
   content: string;
   status?: NotificationStatus;
 }
@@ -456,6 +458,7 @@ export interface CreateNotificationPayload {
 export interface UpdateNotificationPayload {
   title?: string;
   summary?: string | null;
+  imageUrl?: string | null;
   content?: string;
   status?: NotificationStatus;
 }
