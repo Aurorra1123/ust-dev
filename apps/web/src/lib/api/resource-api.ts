@@ -86,6 +86,16 @@ export function createResource(payload: CreateResourcePayload) {
   });
 }
 
+export function updateResource(
+  resourceId: string,
+  payload: Partial<CreateResourcePayload>
+) {
+  return requestJson<AdminResourceDetailResponse>(`/admin/resources/${resourceId}`, {
+    method: "PATCH",
+    body: payload
+  });
+}
+
 export function createResourceUnit(
   resourceId: string,
   payload: CreateResourceUnitPayload
@@ -95,6 +105,21 @@ export function createResourceUnit(
     {
       method: "POST",
       body: payload
+    }
+  );
+}
+
+export function deleteResource(resourceId: string) {
+  return requestJson<{ id: string }>(`/admin/resources/${resourceId}`, {
+    method: "DELETE"
+  });
+}
+
+export function deleteResourceUnit(resourceId: string, unitId: string) {
+  return requestJson<AdminResourceDetailResponse>(
+    `/admin/resources/${resourceId}/units/${unitId}`,
+    {
+      method: "DELETE"
     }
   );
 }

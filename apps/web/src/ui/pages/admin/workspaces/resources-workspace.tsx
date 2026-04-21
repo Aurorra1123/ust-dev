@@ -3,13 +3,17 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { ResourceReleaseFrequency, ResourceType } from "@campusbook/shared-types";
 
 import { cancelOrder } from "../../../../lib/api/order-api";
+import { ApiError } from "../../../../lib/http/errors";
 import {
   createResource,
   createResourceBookingClosures,
   createResourceReleaseRules,
   createResourceUnit,
+  deleteResource,
+  deleteResourceUnit,
   fetchAdminResourceReservationStatus,
-  fetchAdminResources
+  fetchAdminResources,
+  updateResource
 } from "../../../../lib/api/resource-api";
 import { addHours, formatDateTime, startOfNextHour, toDateTimeLocalValue } from "../../../../lib/date";
 import { localeText } from "../../../../lib/locale";
@@ -162,6 +166,46 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
         queryClient.invalidateQueries({ queryKey: ["resources"] })
+      ]);
+    }
+  });
+
+  const updateResourceStatusMutation = useMutation({
+    mutationFn: (payload: {
+      resourceId: string;
+      status: "active" | "inactive";
+    }) => updateResource(payload.resourceId, { status: payload.status }),
+    onSuccess: async (resource) => {
+      setResourceId(resource.id);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
+      ]);
+    }
+  });
+
+  const deleteResourceMutation = useMutation({
+    mutationFn: (currentResourceId: string) => deleteResource(currentResourceId),
+    onSuccess: async () => {
+      setResourceId("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
+      ]);
+    }
+  });
+
+  const deleteResourceUnitMutation = useMutation({
+    mutationFn: (payload: { resourceId: string; unitId: string }) =>
+      deleteResourceUnit(payload.resourceId, payload.unitId),
+    onSuccess: async (resource) => {
+      setResourceId(resource.id);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
       ]);
     }
   });
@@ -327,6 +371,73 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     </StatusPill>
                   </div>
                 </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="rounded-full border border-moss/25 px-4 py-2 text-sm text-moss transition hover:bg-moss/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() =>
+                      updateResourceStatusMutation.mutate({
+                        resourceId: selectedResource.id,
+                        status:
+                          selectedResource.status === "active" ? "inactive" : "active"
+                      })
+                    }
+                    disabled={updateResourceStatusMutation.isPending}
+                  >
+                    {selectedResource.status === "active"
+                      ? localeText(locale, "停用资源", "Deactivate Resource")
+                      : localeText(locale, "重新启用", "Reactivate Resource")}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full border border-danger/25 px-4 py-2 text-sm text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => {
+                      if (
+                        !window.confirm(
+                          localeText(
+                            locale,
+                            "仅当该资源没有资源单元、规则绑定、关闭规则、放号规则和历史预约记录时，才允许彻底删除。确认继续吗？",
+                            "The resource can only be deleted when it has no units, bindings, channel rules, or reservation history. Continue?"
+                          )
+                        )
+                      ) {
+                        return;
+                      }
+
+                      deleteResourceMutation.mutate(selectedResource.id);
+                    }}
+                    disabled={deleteResourceMutation.isPending}
+                  >
+                    {localeText(locale, "删除资源", "Delete Resource")}
+                  </button>
+                </div>
+                <MutationState
+                  mutation={updateResourceStatusMutation}
+                  pending={localeText(
+                    locale,
+                    "正在更新资源状态。",
+                    "Updating resource status."
+                  )}
+                  success={localeText(
+                    locale,
+                    "资源状态已更新。",
+                    "Resource status updated."
+                  )}
+                />
+                <MutationState
+                  mutation={deleteResourceMutation}
+                  pending={localeText(
+                    locale,
+                    "正在删除资源。",
+                    "Deleting resource."
+                  )}
+                  success={localeText(
+                    locale,
+                    "资源已删除。",
+                    "Resource deleted."
+                  )}
+                  formatError={(error) => formatResourceMutationError(error, locale)}
+                />
                 <p className="mt-4 text-sm leading-7 text-slate">
                   {selectedResource.description ||
                     localeText(
@@ -371,13 +482,61 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                       key={unit.id}
                       className="rounded-2xl border border-navy/10 bg-white px-4 py-4"
                     >
-                      <p className="font-medium text-ink">{unit.name}</p>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="font-medium text-ink">{unit.name}</p>
+                        <button
+                          type="button"
+                          className="rounded-full border border-danger/20 px-3 py-1 text-xs text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => {
+                            if (
+                              !window.confirm(
+                                localeText(
+                                  locale,
+                                  "仅当该资源单元没有历史预约、订单记录或组合场地绑定时，才允许删除。确认继续吗？",
+                                  "The unit can only be deleted when it has no reservation history, order records, or group bindings. Continue?"
+                                )
+                              )
+                            ) {
+                              return;
+                            }
+
+                            deleteResourceUnitMutation.mutate({
+                              resourceId: selectedResource.id,
+                              unitId: unit.id
+                            });
+                          }}
+                          disabled={deleteResourceUnitMutation.isPending}
+                        >
+                          {localeText(locale, "删除", "Delete")}
+                        </button>
+                      </div>
                       <p className="mt-2 text-xs uppercase tracking-[0.2em] text-ink/45">
                         {unit.code}
+                      </p>
+                      <p className="mt-2 text-sm text-slate">
+                        {localeText(
+                          locale,
+                          `类型：${unit.unitType}`,
+                          `Type: ${unit.unitType}`
+                        )}
                       </p>
                     </div>
                   ))}
                 </div>
+                <MutationState
+                  mutation={deleteResourceUnitMutation}
+                  pending={localeText(
+                    locale,
+                    "正在删除资源单元。",
+                    "Deleting resource unit."
+                  )}
+                  success={localeText(
+                    locale,
+                    "资源单元已删除。",
+                    "Resource unit deleted."
+                  )}
+                  formatError={(error) => formatResourceMutationError(error, locale)}
+                />
               </div>
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),360px]">
@@ -1030,4 +1189,25 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
       </div>
     </PageSection>
   );
+}
+
+function formatResourceMutationError(error: unknown, locale: Locale) {
+  const message = (error as ApiError).message;
+
+  switch (message) {
+    case "resource-delete-blocked-existing-records":
+      return localeText(
+        locale,
+        "该资源仍有关联的资源单元、规则、通道配置或历史预约记录，不能直接删除。请先停用资源，或先清理未被引用的配置。",
+        "This resource still has linked units, channel rules, or reservation history. Deactivate it first, or remove unused configuration before deleting."
+      );
+    case "resource-unit-delete-blocked-existing-records":
+      return localeText(
+        locale,
+        "该资源单元已被预约记录、订单记录或组合场地绑定引用，不能直接删除。",
+        "This unit is referenced by reservations, orders, or a grouped sports configuration and cannot be deleted."
+      );
+    default:
+      return message;
+  }
 }

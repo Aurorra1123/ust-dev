@@ -5,7 +5,7 @@ import { useSessionStore } from "../../store/session-store";
 import { buildApiError } from "./errors";
 
 export interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
   allowRefresh?: boolean;
 }

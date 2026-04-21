@@ -24,3 +24,31 @@ export function createRule(payload: CreateRulePayload) {
     body: payload
   });
 }
+
+export function updateRule(
+  ruleId: string,
+  payload: Partial<CreateRulePayload>
+) {
+  return requestJson<AppRule>(`/admin/rules/${ruleId}`, {
+    method: "PATCH",
+    body: payload
+  });
+}
+
+export function bindRuleToResource(ruleId: string, resourceId: string) {
+  return requestJson<AppRule>(`/admin/rules/${ruleId}/bindings/resources/${resourceId}`, {
+    method: "POST"
+  });
+}
+
+export function unbindRuleFromResource(ruleId: string, resourceId: string) {
+  return requestJson<AppRule>(`/admin/rules/${ruleId}/bindings/resources/${resourceId}`, {
+    method: "DELETE"
+  });
+}
+
+export function deleteRule(ruleId: string) {
+  return requestJson<{ id: string }>(`/admin/rules/${ruleId}`, {
+    method: "DELETE"
+  });
+}

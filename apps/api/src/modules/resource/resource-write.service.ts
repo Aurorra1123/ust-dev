@@ -125,6 +125,99 @@ export class ResourceWriteService {
     return this.resourceReadService.getAdminResourceDetail(resourceId);
   }
 
+  async deleteResource(id: string): Promise<{ id: string }> {
+    const resource = await this.prismaService.resource.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            units: true,
+            groups: true,
+            releaseRules: true,
+            bookingClosures: true,
+            ruleBindings: true,
+            orderItems: true,
+            academicReservations: true,
+            sportsReservationSlots: true
+          }
+        }
+      }
+    });
+
+    if (!resource) {
+      throw new NotFoundException("resource-not-found");
+    }
+
+    const blockingCount =
+      resource._count.units +
+      resource._count.groups +
+      resource._count.releaseRules +
+      resource._count.bookingClosures +
+      resource._count.ruleBindings +
+      resource._count.orderItems +
+      resource._count.academicReservations +
+      resource._count.sportsReservationSlots;
+
+    if (blockingCount > 0) {
+      throw new ConflictException("resource-delete-blocked-existing-records");
+    }
+
+    await this.prismaService.resource.delete({
+      where: { id }
+    });
+
+    return {
+      id
+    };
+  }
+
+  async deleteResourceUnit(
+    resourceId: string,
+    unitId: string
+  ): Promise<AdminResourceDetailResponse> {
+    const resource = await this.ensureResourceExists(resourceId);
+    const unit = await this.prismaService.resourceUnit.findFirst({
+      where: {
+        id: unitId,
+        resourceId
+      },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            academicReservations: true,
+            sportsReservationSlots: true,
+            orderItems: true,
+            groupItems: true
+          }
+        }
+      }
+    });
+
+    if (!unit) {
+      throw new NotFoundException("resource-unit-not-found");
+    }
+
+    const blockingCount =
+      unit._count.academicReservations +
+      unit._count.sportsReservationSlots +
+      unit._count.orderItems +
+      unit._count.groupItems;
+
+    if (blockingCount > 0) {
+      throw new ConflictException("resource-unit-delete-blocked-existing-records");
+    }
+
+    await this.prismaService.resourceUnit.delete({
+      where: {
+        id: unitId
+      }
+    });
+
+    return this.resourceReadService.getAdminResourceDetail(resource.id);
+  }
+
   async createResourceGroup(
     resourceId: string,
     payload: CreateResourceGroupDto

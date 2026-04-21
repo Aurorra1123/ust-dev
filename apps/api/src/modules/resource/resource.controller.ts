@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards
+} from "@nestjs/common";
 import type {
   AdminBulkMutationResponse,
   AdminResourceDetailResponse,
@@ -95,6 +105,19 @@ export class AdminResourceController {
     @Body() payload: CreateResourceUnitDto
   ): Promise<AdminResourceDetailResponse> {
     return this.resourceWriteService.createResourceUnit(id, payload);
+  }
+
+  @Delete(":id")
+  deleteResource(@Param("id") id: string): Promise<{ id: string }> {
+    return this.resourceWriteService.deleteResource(id);
+  }
+
+  @Delete(":resourceId/units/:unitId")
+  deleteResourceUnit(
+    @Param("resourceId") resourceId: string,
+    @Param("unitId") unitId: string
+  ): Promise<AdminResourceDetailResponse> {
+    return this.resourceWriteService.deleteResourceUnit(resourceId, unitId);
   }
 
   @Post(":id/groups")

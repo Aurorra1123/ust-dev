@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards
+} from "@nestjs/common";
 import type { AppRule } from "@campusbook/shared-types";
 
 import { AccessTokenGuard } from "../auth/access-token.guard";
@@ -38,5 +47,18 @@ export class AdminRulesController {
     @Param("resourceId") resourceId: string
   ): Promise<AppRule> {
     return this.rulesService.bindRuleToResource(id, resourceId);
+  }
+
+  @Delete(":id/bindings/resources/:resourceId")
+  unbindRuleFromResource(
+    @Param("id") id: string,
+    @Param("resourceId") resourceId: string
+  ): Promise<AppRule> {
+    return this.rulesService.unbindRuleFromResource(id, resourceId);
+  }
+
+  @Delete(":id")
+  deleteRule(@Param("id") id: string): Promise<{ id: string }> {
+    return this.rulesService.deleteRule(id);
   }
 }

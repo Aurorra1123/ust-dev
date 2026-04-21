@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException
 } from "@nestjs/common";
@@ -107,6 +108,62 @@ export class RulesService {
     }
 
     return toAppRule(rule);
+  }
+
+  async unbindRuleFromResource(ruleId: string, resourceId: string): Promise<AppRule> {
+    await this.ensureRuleExists(ruleId);
+    await this.ensureResourceExists(resourceId);
+
+    await this.prismaService.resourceRuleBinding.deleteMany({
+      where: {
+        ruleId,
+        resourceId
+      }
+    });
+
+    const rule = await this.prismaService.rule.findUnique({
+      where: { id: ruleId },
+      include: {
+        resourceBindings: true
+      }
+    });
+
+    if (!rule) {
+      throw new NotFoundException("rule-not-found");
+    }
+
+    return toAppRule(rule);
+  }
+
+  async deleteRule(id: string): Promise<{ id: string }> {
+    const rule = await this.prismaService.rule.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            resourceBindings: true,
+            userProfiles: true
+          }
+        }
+      }
+    });
+
+    if (!rule) {
+      throw new NotFoundException("rule-not-found");
+    }
+
+    if (rule._count.resourceBindings > 0 || rule._count.userProfiles > 0) {
+      throw new ConflictException("rule-delete-blocked-existing-bindings");
+    }
+
+    await this.prismaService.rule.delete({
+      where: { id }
+    });
+
+    return {
+      id
+    };
   }
 
   async assertReservationRules(params: {
