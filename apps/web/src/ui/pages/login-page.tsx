@@ -50,7 +50,7 @@ export function LoginPage() {
             {localeText(locale, "系统入口", "Portal")}
           </p>
           <h2 className="mt-4 font-serif text-4xl leading-tight sm:text-[3.2rem]">
-            CampusBook 智约校园
+            {localeText(locale, "CampusBook 智约校园", "CampusBook")}
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-white/82">
             {localeText(

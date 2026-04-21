@@ -38,7 +38,7 @@ type RuleEditorState = {
 
 function createDefaultRuleEditorState(): RuleEditorState {
   return {
-    name: "最长预约时长 60 分钟",
+    name: "",
     ruleType: "max_duration_minutes",
     minCreditScore: 80,
     maxDurationMinutes: 60,

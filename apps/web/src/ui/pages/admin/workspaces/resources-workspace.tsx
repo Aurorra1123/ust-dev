@@ -64,15 +64,15 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
   const [resourceId, setResourceId] = useState("");
   const [resourceForm, setResourceForm] = useState({
     type: "academic_space" as ResourceType,
-    code: "res_admin_demo_new",
-    name: "创新协作室",
-    description: "由管理后台新增的学术空间资源。",
-    location: "A 栋 4 楼",
+    code: "",
+    name: "",
+    description: "",
+    location: "",
     status: "active" as const
   });
   const [resourceUnitForm, setResourceUnitForm] = useState<ResourceUnitFormState>({
-    code: "unit_admin_demo_new",
-    name: "协作席位 A",
+    code: "",
+    name: "",
     unitType: "room",
     availabilityMode: "continuous",
     capacity: 8
@@ -92,7 +92,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
     return {
       startsAt: toDateTimeLocalValue(startsAt),
       endsAt: toDateTimeLocalValue(endsAt),
-      reason: "场地维护",
+      reason: "",
       indefinite: false
     };
   });
@@ -118,6 +118,13 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
     resourcesQuery.data?.find((resource) => resource.id === resourceId) ??
     resourcesQuery.data?.[0] ??
     null;
+  const isCreateResourceValid =
+    resourceForm.code.trim().length > 0 && resourceForm.name.trim().length > 0;
+  const isCreateResourceUnitValid =
+    Boolean(selectedResource) &&
+    resourceUnitForm.code.trim().length > 0 &&
+    resourceUnitForm.name.trim().length > 0 &&
+    resourceUnitForm.unitType.trim().length > 0;
 
   useEffect(() => {
     if (!selectedResource) {
@@ -296,7 +303,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                      {resource.type === "academic_space" ? "Academic" : "Sports"}
+                      {resourceTypeLabel(resource.type, locale)}
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-ink">
                       {resource.name}
@@ -843,7 +850,9 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
               createResourceMutation.mutate(resourceForm);
             }}
           >
-            <h3 className="text-lg font-semibold text-ink">新增资源</h3>
+            <h3 className="text-lg font-semibold text-ink">
+              {localeText(locale, "新增资源", "Create Resource")}
+            </h3>
             <div className="mt-4 grid gap-3">
               <select
                 className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -855,8 +864,12 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                   }))
                 }
               >
-                <option value="academic_space">学术空间</option>
-                <option value="sports_facility">体育设施</option>
+                <option value="academic_space">
+                  {localeText(locale, "学术空间", "Study Space")}
+                </option>
+                <option value="sports_facility">
+                  {localeText(locale, "体育设施", "Sports Facility")}
+                </option>
               </select>
               <input
                 className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -867,7 +880,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     code: event.target.value
                   }))
                 }
-                placeholder="资源编码"
+                placeholder={localeText(locale, "资源编码", "Resource code")}
               />
               <input
                 className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -878,7 +891,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     name: event.target.value
                   }))
                 }
-                placeholder="资源名称"
+                placeholder={localeText(locale, "资源名称", "Resource name")}
               />
               <input
                 className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -889,7 +902,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     location: event.target.value
                   }))
                 }
-                placeholder="位置"
+                placeholder={localeText(locale, "位置", "Location")}
               />
               <textarea
                 className="min-h-[96px] rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -900,16 +913,21 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     description: event.target.value
                   }))
                 }
-                placeholder="描述"
+                placeholder={localeText(locale, "描述", "Description")}
               />
             </div>
-            <MutationState mutation={createResourceMutation} success="资源已创建。" />
+            <MutationState
+              mutation={createResourceMutation}
+              success={localeText(locale, "资源已创建。", "Resource created.")}
+            />
             <button
               type="submit"
               className="mt-4 w-full rounded-full bg-ember px-5 py-3 text-sm font-medium text-white transition hover:bg-ember/90 disabled:cursor-not-allowed disabled:bg-ember/50"
-              disabled={createResourceMutation.isPending}
+              disabled={!isCreateResourceValid || createResourceMutation.isPending}
             >
-              {createResourceMutation.isPending ? "创建中" : "创建资源"}
+              {createResourceMutation.isPending
+                ? localeText(locale, "创建中", "Creating")
+                : localeText(locale, "创建资源", "Create Resource")}
             </button>
           </form>
 
@@ -927,9 +945,13 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
               });
             }}
           >
-            <h3 className="text-lg font-semibold text-ink">新增资源单元</h3>
+            <h3 className="text-lg font-semibold text-ink">
+              {localeText(locale, "新增资源单元", "Create Resource Unit")}
+            </h3>
             <p className="mt-2 text-sm text-ink/70">
-              当前资源：{selectedResource?.name || "请先选择左侧资源"}
+              {localeText(locale, "当前资源：", "Current resource: ")}
+              {selectedResource?.name ||
+                localeText(locale, "请先选择左侧资源", "Select a resource from the left")}
             </p>
             <div className="mt-4 grid gap-3">
               <input
@@ -941,7 +963,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     code: event.target.value
                   }))
                 }
-                placeholder="单元编码"
+                placeholder={localeText(locale, "单元编码", "Unit code")}
               />
               <input
                 className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -952,7 +974,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     name: event.target.value
                   }))
                 }
-                placeholder="单元名称"
+                placeholder={localeText(locale, "单元名称", "Unit name")}
               />
               <input
                 className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -963,16 +985,21 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     unitType: event.target.value
                   }))
                 }
-                placeholder="单元类型"
+                placeholder={localeText(locale, "单元类型", "Unit type")}
               />
             </div>
-            <MutationState mutation={createResourceUnitMutation} success="资源单元已创建。" />
+            <MutationState
+              mutation={createResourceUnitMutation}
+              success={localeText(locale, "资源单元已创建。", "Resource unit created.")}
+            />
             <button
               type="submit"
               className="mt-4 w-full rounded-full bg-moss px-5 py-3 text-sm font-medium text-white transition hover:bg-moss/90 disabled:cursor-not-allowed disabled:bg-moss/50"
-              disabled={!selectedResource || createResourceUnitMutation.isPending}
+              disabled={!isCreateResourceUnitValid || createResourceUnitMutation.isPending}
             >
-              {createResourceUnitMutation.isPending ? "创建中" : "创建资源单元"}
+              {createResourceUnitMutation.isPending
+                ? localeText(locale, "创建中", "Creating")
+                : localeText(locale, "创建资源单元", "Create Resource Unit")}
             </button>
           </form>
 
@@ -1075,7 +1102,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                       hour: Number(event.target.value)
                     }))
                   }
-                  placeholder="Hour"
+                  placeholder={localeText(locale, "小时", "Hour")}
                 />
                 <input
                   type="number"
@@ -1089,7 +1116,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                       minute: Number(event.target.value)
                     }))
                   }
-                  placeholder="Minute"
+                  placeholder={localeText(locale, "分钟", "Minute")}
                 />
               </div>
             </div>

@@ -24,27 +24,24 @@ type NotificationFormState = {
   status: "draft" | "published";
 };
 
+function createEmptyNotificationForm(): NotificationFormState {
+  return {
+    title: "",
+    summary: "",
+    imageUrl: "",
+    content: "",
+    status: "draft"
+  };
+}
+
 export function NotificationsWorkspace({ locale }: { locale: Locale }) {
   const notificationsQuery = useQuery({
     queryKey: ["admin", "notifications"],
     queryFn: fetchAdminNotifications
   });
   const [selectedId, setSelectedId] = useState("");
-  const [editForm, setEditForm] = useState<NotificationFormState>({
-    title: "",
-    summary: "",
-    imageUrl: "",
-    content: "",
-    status: "draft" as "draft" | "published"
-  });
-  const [createForm, setCreateForm] = useState<NotificationFormState>({
-    title: "场馆服务提醒",
-    summary: "补充一条新的学生首页通知。",
-    imageUrl:
-      "https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80",
-    content: "这条通知会在发布后同步出现在学生首页通知区。",
-    status: "draft" as "draft" | "published"
-  });
+  const [editForm, setEditForm] = useState<NotificationFormState>(createEmptyNotificationForm);
+  const [createForm, setCreateForm] = useState<NotificationFormState>(createEmptyNotificationForm);
 
   useEffect(() => {
     const firstNotification = notificationsQuery.data?.[0];

@@ -45,26 +45,22 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
     const eventEnd = addHours(eventStart, 2);
 
     return {
-      title: localeText(locale, "CampusBook 校园服务说明会", "CampusBook Service Briefing"),
-      description: localeText(
-        locale,
-        "由管理后台创建的活动示例，用于验证票种和状态流转。",
-        "An admin-created demo activity used to verify ticket and status flows."
-      ),
-      location: localeText(locale, "学生活动中心", "Student Activity Center"),
+      title: "",
+      description: "",
+      location: "",
       totalQuota: 30,
       saleStartTime: toDateTimeLocalValue(saleStart),
       saleEndTime: toDateTimeLocalValue(saleEnd),
       eventStartTime: toDateTimeLocalValue(eventStart),
       eventEndTime: toDateTimeLocalValue(eventEnd),
       status: "published",
-      ticketName: localeText(locale, "普通票", "General Ticket"),
+      ticketName: "",
       ticketStock: 20,
       priceCents: 0
     };
   });
   const [ticketForm, setTicketForm] = useState({
-    name: localeText(locale, "候补票", "Waitlist Ticket"),
+    name: "",
     stock: 10,
     priceCents: 0
   });
@@ -81,6 +77,17 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
     activitiesQuery.data?.find((activity) => activity.id === activityId) ??
     activitiesQuery.data?.[0] ??
     null;
+  const isCreateActivityValid =
+    activityForm.title.trim().length > 0 &&
+    activityForm.ticketName.trim().length > 0 &&
+    activityForm.totalQuota > 0 &&
+    activityForm.ticketStock > 0 &&
+    activityForm.priceCents >= 0;
+  const isCreateTicketValid =
+    Boolean(selectedActivity) &&
+    ticketForm.name.trim().length > 0 &&
+    ticketForm.stock > 0 &&
+    ticketForm.priceCents >= 0;
 
   const createActivityMutation = useMutation({
     mutationFn: createActivity,
@@ -435,7 +442,7 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
             <button
               type="submit"
               className="mt-4 w-full rounded-full bg-ember px-5 py-3 text-sm font-medium text-white transition hover:bg-ember/90 disabled:cursor-not-allowed disabled:bg-ember/50"
-              disabled={createActivityMutation.isPending}
+              disabled={!isCreateActivityValid || createActivityMutation.isPending}
             >
               {createActivityMutation.isPending
                 ? localeText(locale, "创建中", "Creating")
@@ -520,7 +527,7 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
               <button
                 type="submit"
                 className="flex-1 rounded-full bg-moss px-5 py-3 text-sm font-medium text-white transition hover:bg-moss/90 disabled:cursor-not-allowed disabled:bg-moss/50"
-                disabled={!selectedActivity || createTicketMutation.isPending}
+                disabled={!isCreateTicketValid || createTicketMutation.isPending}
               >
                 {createTicketMutation.isPending
                   ? localeText(locale, "提交中", "Submitting")
