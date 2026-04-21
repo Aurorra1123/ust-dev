@@ -9,7 +9,10 @@ import { useLocaleStore } from "../../store/locale-store";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel, StatusPill } from "../user-experience-kit";
 import {
+  getCancellationReason,
+  getCancelledAt,
   getOrderProgressState,
+  getOrderTimelineAt,
   orderCategoryLabel,
   orderProgressLabel,
   orderProgressTone,
@@ -23,29 +26,20 @@ export function OrdersPage() {
     queryFn: fetchOrders
   });
 
-  const orders = [...(ordersQuery.data ?? [])]
-    .filter((order) => order.status !== "cancelled")
-    .sort(
-      (left, right) =>
-        new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
-    );
+  const orders = [...(ordersQuery.data ?? [])].sort(
+    (left, right) =>
+      new Date(getOrderTimelineAt(right)).getTime() -
+      new Date(getOrderTimelineAt(left)).getTime()
+  );
 
   return (
     <PageSection
       title={localeText(locale, "我的订单", "My Orders")}
       description={localeText(
         locale,
-        "列表集中展示日期、类别、资源和状态，已取消历史单独归入取消记录页。",
-        "The list shows active and historical order details. Cancelled history is separated into the cancellation page."
+        "列表集中展示进行中、已结束与已取消的预约记录；已取消订单也会保留取消时间与原因。",
+        "The list combines active, finished, and cancelled orders. Cancelled items keep their cancellation time and reason."
       )}
-      action={
-        <Link
-          to="/orders/cancellations"
-          className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
-        >
-          {localeText(locale, "查看取消记录", "View Cancelled")}
-        </Link>
-      }
     >
       {ordersQuery.isLoading ? (
         <StatePanel
@@ -73,6 +67,9 @@ export function OrdersPage() {
           {orders.map((order) => {
             const progressState = getOrderProgressState(order);
             const progress = orderProgressLabel(progressState, locale);
+            const isCancelled = order.status === "cancelled";
+            const timelineAt = isCancelled ? getCancelledAt(order) : order.createdAt;
+            const cancellationReason = getCancellationReason(order);
 
             return (
               <Link
@@ -86,7 +83,7 @@ export function OrdersPage() {
                       {orderResourceLabel(order, locale)}
                     </p>
                     <p className="mt-2 text-sm text-slate">
-                      {formatDateTime(order.createdAt)}
+                      {formatDateTime(timelineAt)}
                     </p>
                   </div>
                   <StatusPill tone={orderProgressTone(progressState)}>{progress}</StatusPill>
@@ -94,8 +91,12 @@ export function OrdersPage() {
 
                 <div className="mt-4 grid gap-3 text-sm text-slate md:grid-cols-4">
                   <RecordItem
-                    label={localeText(locale, "日期", "Date")}
-                    value={formatDateTime(order.createdAt)}
+                    label={
+                      isCancelled
+                        ? localeText(locale, "取消时间", "Cancelled At")
+                        : localeText(locale, "下单时间", "Created At")
+                    }
+                    value={formatDateTime(timelineAt)}
                   />
                   <RecordItem
                     label={localeText(locale, "类别", "Category")}
@@ -107,6 +108,18 @@ export function OrdersPage() {
                   />
                   <RecordItem label={localeText(locale, "状态", "Status")} value={progress} />
                 </div>
+
+                {isCancelled ? (
+                  <div className="mt-4 rounded-2xl border border-danger/15 bg-danger/5 px-4 py-4 text-sm text-ink/75">
+                    <p className="text-xs uppercase tracking-[0.2em] text-danger/70">
+                      {localeText(locale, "取消原因", "Cancellation Reason")}
+                    </p>
+                    <p className="mt-2 leading-7">
+                      {cancellationReason ||
+                        localeText(locale, "未记录取消原因", "No cancellation reason recorded")}
+                    </p>
+                  </div>
+                ) : null}
               </Link>
             );
           })}

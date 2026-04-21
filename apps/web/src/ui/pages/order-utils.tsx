@@ -224,6 +224,10 @@ export function getCancellationReason(order: OrderDetailResponse) {
   return cancelledLog?.reason ?? null;
 }
 
+export function getOrderTimelineAt(order: OrderDetailResponse) {
+  return order.status === "cancelled" ? getCancelledAt(order) : order.createdAt;
+}
+
 export function buildRebookPath(order: OrderDetailResponse) {
   if (order.reservationCategory === "sports_facility") {
     return "/sports";

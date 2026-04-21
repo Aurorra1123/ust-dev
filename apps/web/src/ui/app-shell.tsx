@@ -56,8 +56,7 @@ export function AppShell() {
         label: localeText(locale, "报修工单", "Service Requests"),
         to: "/service-requests"
       },
-      { label: localeText(locale, "我的订单", "Orders"), to: "/orders" },
-      { label: localeText(locale, "取消记录", "Cancelled"), to: "/orders/cancellations" }
+      { label: localeText(locale, "我的订单", "Orders"), to: "/orders" }
     ];
   }, [isEnglish, locale, sessionStatus, user?.role]);
 
@@ -131,9 +130,7 @@ export function AppShell() {
                 key={item.to}
                 to={item.to}
                 end={
-                  item.to === "/" ||
-                  item.to === "/orders" ||
-                  item.to === "/orders/cancellations"
+                  item.to === "/" || item.to === "/orders"
                 }
                 className={({ isActive }) =>
                   [
