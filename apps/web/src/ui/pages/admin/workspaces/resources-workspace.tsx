@@ -175,7 +175,11 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
       unitType: string;
       availabilityMode: "continuous" | "discrete_slot";
       capacity: number;
-    }) => createResourceUnit(payload.resourceId, payload),
+    }) => {
+      const { resourceId: targetResourceId, ...unitPayload } = payload;
+
+      return createResourceUnit(targetResourceId, unitPayload);
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
