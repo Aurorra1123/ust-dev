@@ -14,6 +14,16 @@ function getRuntimeApiBaseUrl() {
   return typeof window !== "undefined" ? getRuntimeApiBaseUrlFromConfig() : undefined;
 }
 
+function getEnvApiBaseUrl() {
+  const envApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+
+  if (!envApiBaseUrl) {
+    return undefined;
+  }
+
+  return envApiBaseUrl;
+}
+
 function inferDefaultApiBaseUrl() {
   if (typeof window === "undefined") {
     return "http://api.campusbook.top";
@@ -36,13 +46,12 @@ function inferDefaultApiBaseUrl() {
   return `${window.location.protocol}//api.campusbook.top`;
 }
 
-export const API_BASE_URL =
-  (typeof window !== "undefined" ? getRuntimeApiBaseUrl() : undefined) ??
-  import.meta.env.VITE_API_BASE_URL ??
-  inferDefaultApiBaseUrl();
+export function getApiBaseUrl() {
+  return getRuntimeApiBaseUrl() ?? getEnvApiBaseUrl() ?? inferDefaultApiBaseUrl();
+}
 
 export async function refreshSessionRequest() {
-  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+  const response = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
     method: "POST",
     credentials: "include"
   });
@@ -59,7 +68,7 @@ export async function refreshSessionRequest() {
 export async function requestJson<T>(path: string, options: RequestOptions = {}) {
   const { method = "GET", body, allowRefresh = true } = options;
   const accessToken = useSessionStore.getState().accessToken;
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method,
     credentials: "include",
     headers: {

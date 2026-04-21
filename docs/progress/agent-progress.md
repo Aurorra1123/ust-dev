@@ -6,6 +6,35 @@
 
 ### 已完成
 
+- 已修复正式站点登录页 `request failed 405` 问题：
+  - 根因是前端把空字符串 `apiBaseUrl` / `VITE_API_BASE_URL` 误当成有效配置
+  - 登录请求因此被发到当前站点相对路径 `/auth/login`，而不是 `api.campusbook.top`
+  - 当前已将空字符串统一视为“未配置”，恢复自动回退到正式 API 域名
+- 已完成前端校验与上线：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - `docker compose --env-file .env -f infra/docker-compose.yml up -d --build --no-deps web`
+- 已新增验证记录：
+  - `docs/verification/2026-04-21/web-login-405-api-base-url-fallback.md`
+
+### 当前状态
+
+- 正式站点 `https://campusbook.top/login` 当前已切换到包含修复的新前端 bundle
+- 即使运行时 `config.js` 中的 `apiBaseUrl` 为空字符串，前端也不会再退化为请求当前站点自身
+
+### 下一步建议
+
+1. 若后续继续演进运行时配置，统一保持“空字符串等于未配置”的语义，避免再次短路默认回退
+
+### 注意事项
+
+- 这次问题说明：只检查“配置字段是否存在”不够，前端运行时配置还必须区分“存在但为空”和“有效值”
+
+## 2026-04-21
+
+### 已完成
+
 - 已把“前端 demo 凭据与后端运行时值错位”的问题沉淀为长期规则：
   - 新增 ADR：`docs/adr/0009-runtime-config-for-frontend-demo-credentials.md`
   - 发布基线已补充运行时配置类改动的强制验证项

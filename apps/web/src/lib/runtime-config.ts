@@ -24,7 +24,13 @@ function getRuntimeConfig() {
 }
 
 export function getRuntimeApiBaseUrl() {
-  return getRuntimeConfig()?.apiBaseUrl?.trim();
+  const apiBaseUrl = getRuntimeConfig()?.apiBaseUrl?.trim();
+
+  if (!apiBaseUrl) {
+    return undefined;
+  }
+
+  return apiBaseUrl;
 }
 
 export function getRuntimeDemoAccount(role: "student" | "admin") {

@@ -1,7 +1,7 @@
 import type { AuthSessionResponse } from "@campusbook/shared-types";
 
 import { useSessionStore } from "../../store/session-store";
-import { API_BASE_URL, refreshSessionRequest, requestJson } from "../http/client";
+import { getApiBaseUrl, refreshSessionRequest, requestJson } from "../http/client";
 
 export interface LoginPayload {
   email: string;
@@ -24,7 +24,7 @@ export function refreshSession() {
 }
 
 export async function logout() {
-  await fetch(`${API_BASE_URL}/auth/logout`, {
+  await fetch(`${getApiBaseUrl()}/auth/logout`, {
     method: "POST",
     credentials: "include"
   });
