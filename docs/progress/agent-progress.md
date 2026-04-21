@@ -6,6 +6,35 @@
 
 ### 已完成
 
+- 已完成代码质量重构第三阶段的后台工作区拆分：
+  - `resources-workspace.tsx` 已收口为 query / mutation / 页面级确认与状态联动，资源列表、详情、批量目标和右侧操作表单已下沉到 `workspaces/resources/`
+  - `rules-workspace.tsx` 已收口为 query / mutation / 编辑状态编排，规则列表、编辑与绑定、概览说明已下沉到 `workspaces/rules/`
+  - 两个后台工作区主文件都不再直接堆放格式化 helper 和大段 JSX
+- 已完成本地校验并留证：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - 新增验证记录：`docs/verification/2026-04-21/code-quality-third-phase-admin-workspace-split.md`
+
+### 当前状态
+
+- 代码质量基线文档中“拆学生端预约页 + 拆后台资源/规则工作区”的职责拆分项已经全部落地
+- 当前剩余的主要收口事项只剩前端错误契约统一与 HTTP fallback 清理
+
+### 下一步建议
+
+1. 进入下一阶段，统一 `ApiError` 的稳定读取入口，减少页面直接依赖字符串 message
+2. 在错误契约收口后，清理 `http/client.ts` 中的猜测性 API base URL fallback，并完成最终验证
+
+### 注意事项
+
+- 本轮没有新增 ADR，因为拆分边界仍完全落在 `docs/adr/0009-code-quality-refactor-boundaries.md` 已确认范围内
+- 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成代码质量重构第二阶段的学生端页面拆分：
   - `spaces-page.tsx` 已收口为查询、状态与提交编排，时间轴 segment / 冲突判断 / 可用性面板 / 提交面板已下沉到 `ui/pages/spaces/`
   - `sports-page.tsx` 已收口为查询、目标切换与提交编排，slot state 推导 / 时间表面板 / 提交面板已下沉到 `ui/pages/sports/`
