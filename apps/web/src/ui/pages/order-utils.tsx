@@ -1,4 +1,8 @@
-import type { OrderDetailResponse, OrderStatus } from "@campusbook/shared-types";
+import type {
+  OrderDetailResponse,
+  OrderStatus,
+  SportsReservationSlotDetail
+} from "@campusbook/shared-types";
 
 import { formatDateTime } from "../../lib/date";
 import { localeText } from "../../lib/locale";
@@ -54,9 +58,7 @@ export function describeOrder(order: OrderDetailResponse, locale: Locale) {
     if (!firstSlot) {
       return localeText(locale, "体育预约", "Sports Reservation");
     }
-    return `${firstSlot.resourceName} · ${order.sportsReservationSlots
-      .map((slot) => slot.resourceUnitName)
-      .join(" / ")}`;
+    return `${firstSlot.resourceName} · ${getSportsUnitNames(order).join(" / ")}`;
   }
 
   if (order.activityRegistration) {
@@ -92,10 +94,7 @@ export function orderResourceLabel(order: OrderDetailResponse, locale: Locale) {
     if (!firstSlot) {
       return localeText(locale, "体育预约", "Sports Reservation");
     }
-    const unitNames = Array.from(
-      new Set(order.sportsReservationSlots.map((slot) => slot.resourceUnitName))
-    );
-    return `${firstSlot.resourceName} · ${unitNames.join(" / ")}`;
+    return `${firstSlot.resourceName} · ${getSportsUnitNames(order).join(" / ")}`;
   }
 
   if (order.activityRegistration) {
@@ -130,13 +129,7 @@ export function orderTimeLabel(order: OrderDetailResponse, locale: Locale) {
   }
 
   if (order.sportsReservationSlots.length > 0) {
-    const sortedSlots = [...order.sportsReservationSlots].sort(
-      (left, right) =>
-        new Date(left.slotStart).getTime() - new Date(right.slotStart).getTime()
-    );
-    return `${formatDateTime(sortedSlots[0]?.slotStart)} - ${formatDateTime(
-      sortedSlots[sortedSlots.length - 1]?.slotEnd
-    )}`;
+    return getSportsReservationTimeLabel(order.sportsReservationSlots, locale);
   }
 
   if (order.activityRegistration) {
@@ -161,6 +154,28 @@ export function getOrderProgressState(order: OrderDetailResponse, now = new Date
 
   if (order.status === "no_show") {
     return "finished" as const;
+  }
+
+  if (order.sportsReservationSlots.length > 0) {
+    const segments = getSportsReservationSegments(order.sportsReservationSlots);
+    const currentTime = now.getTime();
+
+    if (
+      segments.some(
+        (segment) =>
+          segment.startTime.getTime() <= currentTime &&
+          segment.endTime.getTime() >= currentTime
+      )
+    ) {
+      return "in_progress" as const;
+    }
+
+    const lastSegment = segments.at(-1);
+    if (lastSegment && lastSegment.endTime.getTime() < currentTime) {
+      return "finished" as const;
+    }
+
+    return "confirmed" as const;
   }
 
   const startTime = order.reservationStartTime
@@ -279,14 +294,80 @@ function getReservationEndTime(order: OrderDetailResponse) {
   }
 
   if (order.sportsReservationSlots.length > 0) {
-    return [...order.sportsReservationSlots]
-      .sort(
-        (left, right) =>
-          new Date(left.slotEnd).getTime() - new Date(right.slotEnd).getTime()
-      )
-      .map((slot) => new Date(slot.slotEnd))
-      .pop() ?? null;
+    return getSportsReservationSegments(order.sportsReservationSlots).at(-1)?.endTime ?? null;
   }
 
   return null;
+}
+
+function getSportsUnitNames(order: OrderDetailResponse) {
+  return Array.from(
+    new Set(order.sportsReservationSlots.map((slot) => slot.resourceUnitName))
+  );
+}
+
+function getSportsReservationTimeLabel(
+  slots: SportsReservationSlotDetail[],
+  locale: Locale
+) {
+  const separator = localeText(locale, "； ", "; ");
+  const segments = getSportsReservationSegments(slots);
+
+  if (!segments.length) {
+    return localeText(locale, "未设置", "Not set");
+  }
+
+  return segments
+    .map(
+      (segment) =>
+        `${formatDateTime(segment.start)} - ${formatDateTime(segment.end)}`
+    )
+    .join(separator);
+}
+
+function getSportsReservationSegments(slots: SportsReservationSlotDetail[]) {
+  const uniqueSlots = [...slots]
+    .sort(
+      (left, right) =>
+        new Date(left.slotStart).getTime() - new Date(right.slotStart).getTime()
+    )
+    .filter(
+      (slot, index, current) =>
+        index === 0 ||
+        slot.slotStart !== current[index - 1]?.slotStart ||
+        slot.slotEnd !== current[index - 1]?.slotEnd
+    );
+
+  const segments: Array<{
+    start: string;
+    end: string;
+    startTime: Date;
+    endTime: Date;
+  }> = [];
+
+  for (const slot of uniqueSlots) {
+    const slotStart = new Date(slot.slotStart);
+    const slotEnd = new Date(slot.slotEnd);
+    const lastSegment = segments.at(-1);
+
+    if (
+      lastSegment &&
+      slotStart.getTime() <= lastSegment.endTime.getTime()
+    ) {
+      if (slotEnd.getTime() > lastSegment.endTime.getTime()) {
+        lastSegment.end = slot.slotEnd;
+        lastSegment.endTime = slotEnd;
+      }
+      continue;
+    }
+
+    segments.push({
+      start: slot.slotStart,
+      end: slot.slotEnd,
+      startTime: slotStart,
+      endTime: slotEnd
+    });
+  }
+
+  return segments;
 }

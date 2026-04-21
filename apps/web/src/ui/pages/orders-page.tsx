@@ -16,7 +16,8 @@ import {
   orderCategoryLabel,
   orderProgressLabel,
   orderProgressTone,
-  orderResourceLabel
+  orderResourceLabel,
+  orderTimeLabel
 } from "./order-utils";
 
 export function OrdersPage() {
@@ -82,8 +83,14 @@ export function OrdersPage() {
                     <p className="text-sm font-semibold text-ink">
                       {orderResourceLabel(order, locale)}
                     </p>
-                    <p className="mt-2 text-sm text-slate">
-                      {formatDateTime(timelineAt)}
+                    <p className="mt-2 text-sm leading-6 text-slate">
+                      {orderTimeLabel(order, locale)}
+                    </p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.18em] text-ink/45">
+                      {isCancelled
+                        ? localeText(locale, "取消时间", "Cancelled At")
+                        : localeText(locale, "下单时间", "Created At")}{" "}
+                      · {formatDateTime(timelineAt)}
                     </p>
                   </div>
                   <StatusPill tone={orderProgressTone(progressState)}>{progress}</StatusPill>
