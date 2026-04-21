@@ -6,6 +6,34 @@
 
 ### 已完成
 
+- 已完成 `APP-016` 改动后的回归校验收口：
+  - 运行 `pnpm lint`
+  - 运行 `pnpm typecheck`
+  - 运行 `pnpm test`
+  - 运行 `pnpm build`
+- 已修复回归校验中发现的唯一问题：
+  - `apps/web/src/ui/pages/admin/workspaces/overview-workspace.tsx`
+  - 拆分后遗留未使用的 `locale` 参数，导致 `web lint` 失败
+
+### 当前状态
+
+- 当前代码已通过仓库级 `lint / typecheck / build`
+- 当前仓库未提供实际单元测试或集成测试任务，`pnpm test` 仅完成工作区扫描，没有执行业务测试用例
+
+### 下一步建议
+
+1. 若要更有把握回答“是否影响其他功能”，应补至少一组资源预约、管理员取消预约和签到窗口的自动化集成测试
+2. 后续做边界拆分时，优先在同一提交内跑一次仓库级 lint，避免把这类静态回归留到后面收口
+
+### 注意事项
+
+- 本轮没有发现新的功能性构建错误
+- 当前“无其他影响”的结论基于静态校验与构建通过，不等于真实业务流已被自动化用例完整覆盖
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成 `APP-016` 后端边界拆分收口：
   - 删除 `apps/api/src/modules/resource/resource.service.ts`
   - 新增 `resource-read.service.ts`、`resource-write.service.ts`、`resource-status.service.ts`

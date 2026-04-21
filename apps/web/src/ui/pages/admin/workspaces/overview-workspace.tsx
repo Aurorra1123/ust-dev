@@ -25,7 +25,7 @@ import { QuickWorkspaceCard } from "../components/quick-workspace-card";
 import { WorkspaceBadge } from "../components/workspace-badge";
 
 export function OverviewWorkspace({
-  locale,
+  locale: _locale,
   onSelectWorkspace
 }: {
   locale: Locale;
