@@ -6,6 +6,35 @@
 
 ### 已完成
 
+- 已完成代码质量重构第五阶段的 HTTP fallback 清理：
+  - `apps/web/src/lib/http/client.ts` 已移除对未知 hostname 默认猜到 `api.campusbook.top` 的分支
+  - 当前只保留正式域名与本地开发环境的已确认默认推导，其他环境必须显式配置 API 地址
+  - 已在 `docs/standards/deployment-baseline.md` 补充长期规则，避免后续重新引入猜测性 fallback
+- 已完成本地校验并留证：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - 新增验证记录：`docs/verification/2026-04-21/code-quality-fifth-phase-http-fallback-cleanup.md`
+
+### 当前状态
+
+- 基线文档中本轮代码质量重构的五个主要方向已经全部落地
+- 当前前端代码不再继续扩散大页面职责混杂、错误契约字符串化与未知 host 猜测性 fallback
+
+### 下一步建议
+
+1. 若后续继续做质量回访，可针对 `order-utils.tsx` 中 `no_show` 的语义漂移单独做产品决策
+2. 若要补演示证据，可增加学生端预约页与后台工作区的浏览器级截图或录屏
+
+### 注意事项
+
+- 本轮没有新增 ADR，因为实现仍完全沿用 `docs/adr/0009-code-quality-refactor-boundaries.md` 已确认的长期边界
+- 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成代码质量重构第四阶段中的前端错误契约收口：
   - `apps/web/src/lib/http/errors.ts` 已新增统一的 `getErrorMessage / getErrorStatus / getErrorCode`
   - `ApiError` 现在会在前端侧统一推导稳定 `code`，页面不再自己猜测 message 是否可当机器码

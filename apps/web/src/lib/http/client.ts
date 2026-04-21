@@ -26,7 +26,7 @@ function getEnvApiBaseUrl() {
 
 function inferDefaultApiBaseUrl() {
   if (typeof window === "undefined") {
-    return "http://api.campusbook.top";
+    return undefined;
   }
 
   const { hostname, protocol } = window.location;
@@ -43,11 +43,18 @@ function inferDefaultApiBaseUrl() {
     return "/api";
   }
 
-  return `${window.location.protocol}//api.campusbook.top`;
+  return undefined;
 }
 
 export function getApiBaseUrl() {
-  return getRuntimeApiBaseUrl() ?? getEnvApiBaseUrl() ?? inferDefaultApiBaseUrl();
+  const apiBaseUrl =
+    getRuntimeApiBaseUrl() ?? getEnvApiBaseUrl() ?? inferDefaultApiBaseUrl();
+
+  if (!apiBaseUrl) {
+    throw new Error("api-base-url-not-configured");
+  }
+
+  return apiBaseUrl;
 }
 
 export async function refreshSessionRequest() {

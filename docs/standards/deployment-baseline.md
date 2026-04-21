@@ -70,6 +70,7 @@
   - `https://campusbook.top`
   - `https://www.campusbook.top`
 - 前端默认 API 地址不得硬编码为单一协议；应优先跟随当前页面协议推导 `api.campusbook.top`
+- 未知 hostname 不得默认猜测生产 API 域名；若运行环境不是正式域名或本地开发环境，必须通过运行时配置或环境变量显式提供 API 地址
 - 切换到正式 HTTPS 时，`NODE_ENV` 必须为 `production`，以便 refresh token Cookie 自动启用 `secure`
 
 ## 运维要求
