@@ -1,5 +1,7 @@
 # 用户测试问题闭环任务计划（2026-04-21）
 
+> 注：本文记录的是首轮 `docs/user_test/web_problem.md` 的闭环结果。第二轮用户测试已重新确认新的线上问题，详见 `docs/plans/user-test-gap-round2-confirmed-issues-2026-04-21.md`。
+
 ## 1. 文档目的
 
 - 基于 `docs/user_test/web_problem.md` 的真实用户反馈，对照当前代码做一次“真实状态校对”。
