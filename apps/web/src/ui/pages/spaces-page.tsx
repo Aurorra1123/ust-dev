@@ -5,13 +5,16 @@ import { useNavigate } from "react-router-dom";
 import { createAcademicReservation, fetchResources } from "../../lib/api/resource-api";
 import { ApiError } from "../../lib/http/errors";
 import { addHours, startOfNextHour, toDateTimeLocalValue } from "../../lib/date";
+import { localeText } from "../../lib/locale";
 import { queryClient } from "../../lib/query-client";
+import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel } from "../user-experience-kit";
 
 export function SpacesPage() {
   const navigate = useNavigate();
+  const locale = useLocaleStore((state) => state.locale);
   const sessionStatus = useSessionStore((state) => state.status);
   const resourcesQuery = useQuery({
     queryKey: ["resources", "academic_space"],
@@ -58,19 +61,30 @@ export function SpacesPage() {
 
   return (
     <PageSection
-      title="学术空间预约"
-      description="选择资源与时间后直接提交预约。"
+      title={localeText(locale, "学术空间预约", "Study Space Booking")}
+      description={localeText(
+        locale,
+        "选择资源与时间后直接提交预约。",
+        "Select a resource and time, then submit the booking directly."
+      )}
     >
       {resourcesQuery.isLoading ? (
-        <StatePanel tone="loading" title="正在载入学术空间" description="请稍候。" />
+        <StatePanel
+          tone="loading"
+          title={localeText(locale, "正在载入学术空间", "Loading study spaces")}
+          description={localeText(locale, "请稍候。", "Please wait.")}
+        />
       ) : resourcesQuery.isError ? (
         <StatePanel
           tone="danger"
-          title="学术空间暂时无法加载"
+          title={localeText(locale, "学术空间暂时无法加载", "Study spaces are unavailable")}
           description={(resourcesQuery.error as ApiError).message}
         />
       ) : !resourcesQuery.data?.length ? (
-        <EmptyPanel title="当前没有可用学术空间" description="请稍后刷新。" />
+        <EmptyPanel
+          title={localeText(locale, "当前没有可用学术空间", "No study spaces available")}
+          description={localeText(locale, "请稍后刷新。", "Please refresh later.")}
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),340px]">
           <div className="grid gap-4">
@@ -81,7 +95,8 @@ export function SpacesPage() {
               >
                 <h3 className="text-xl font-semibold text-ink">{resource.name}</h3>
                 <p className="mt-2 text-sm text-slate">
-                  {resource.location || "校内位置待补充"}
+                  {resource.location ||
+                    localeText(locale, "校内位置待补充", "Campus location to be added")}
                 </p>
                 <div className="mt-4 grid gap-3">
                   {resource.units.map((unit) => (
@@ -127,11 +142,11 @@ export function SpacesPage() {
             <h3 className="text-xl font-semibold text-ink">
               {selectedUnit
                 ? `${selectedUnit.resourceName} · ${selectedUnit.name}`
-                : "请选择资源单元"}
+                : localeText(locale, "请选择资源单元", "Select a unit")}
             </h3>
 
             <label className="grid gap-2 text-sm text-ink/75">
-              开始时间
+              {localeText(locale, "开始时间", "Start Time")}
               <input
                 className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
                 type="datetime-local"
@@ -141,7 +156,7 @@ export function SpacesPage() {
             </label>
 
             <label className="grid gap-2 text-sm text-ink/75">
-              结束时间
+              {localeText(locale, "结束时间", "End Time")}
               <input
                 className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
                 type="datetime-local"
@@ -151,7 +166,7 @@ export function SpacesPage() {
             </label>
 
             <label className="grid gap-2 text-sm text-ink/75">
-              同行人邮箱
+              {localeText(locale, "同行人邮箱", "Companion Emails")}
               <textarea
                 className="min-h-[88px] rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
                 value={companionEmailsText}
@@ -162,7 +177,7 @@ export function SpacesPage() {
             {reservationMutation.isError ? (
               <StatePanel
                 tone="danger"
-                title="预约未提交成功"
+                title={localeText(locale, "预约未提交成功", "Booking failed")}
                 description={(reservationMutation.error as ApiError).message}
               />
             ) : null}
@@ -178,9 +193,9 @@ export function SpacesPage() {
             >
               {sessionStatus === "authenticated"
                 ? reservationMutation.isPending
-                  ? "提交中"
-                  : "提交预约"
-                : "请先登录后预约"}
+                  ? localeText(locale, "提交中", "Submitting")
+                  : localeText(locale, "提交预约", "Submit Booking")
+                : localeText(locale, "请先登录后预约", "Sign in before booking")}
             </button>
           </form>
         </div>

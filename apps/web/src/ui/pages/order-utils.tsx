@@ -1,17 +1,26 @@
 import type { OrderDetailResponse, OrderStatus } from "@campusbook/shared-types";
 
 import { formatDateTime } from "../../lib/date";
+import { localeText } from "../../lib/locale";
+import type { Locale } from "../../store/locale-store";
 
-export function statusLabel(status: OrderStatus) {
+export type OrderProgressState =
+  | "pending_confirmation"
+  | "confirmed"
+  | "cancelled"
+  | "in_progress"
+  | "finished";
+
+export function statusLabel(status: OrderStatus, locale: Locale) {
   switch (status) {
     case "pending_confirmation":
-      return "待确认";
+      return localeText(locale, "待确认", "Pending");
     case "confirmed":
-      return "已确认";
+      return localeText(locale, "已确认", "Confirmed");
     case "cancelled":
-      return "已取消";
+      return localeText(locale, "已取消", "Cancelled");
     case "no_show":
-      return "已结束";
+      return localeText(locale, "已结束", "Finished");
   }
 }
 
@@ -26,11 +35,16 @@ export function statusTone(status: OrderStatus) {
   }
 }
 
-export function bizTypeLabel(order: Pick<OrderDetailResponse, "bizType">) {
-  return order.bizType === "activity_registration" ? "校园活动" : "资源预约";
+export function bizTypeLabel(
+  order: Pick<OrderDetailResponse, "bizType">,
+  locale: Locale
+) {
+  return order.bizType === "activity_registration"
+    ? localeText(locale, "校园活动", "Activity Registration")
+    : localeText(locale, "资源预约", "Resource Reservation");
 }
 
-export function describeOrder(order: OrderDetailResponse) {
+export function describeOrder(order: OrderDetailResponse, locale: Locale) {
   if (order.academicReservation) {
     return `${order.academicReservation.resourceName} · ${order.academicReservation.resourceUnitName}`;
   }
@@ -38,7 +52,7 @@ export function describeOrder(order: OrderDetailResponse) {
   if (order.sportsReservationSlots.length > 0) {
     const firstSlot = order.sportsReservationSlots[0];
     if (!firstSlot) {
-      return "体育预约";
+      return localeText(locale, "体育预约", "Sports Reservation");
     }
     return `${firstSlot.resourceName} · ${order.sportsReservationSlots
       .map((slot) => slot.resourceUnitName)
@@ -49,26 +63,26 @@ export function describeOrder(order: OrderDetailResponse) {
     return `${order.activityRegistration.activityTitle} · ${order.activityRegistration.activityTicketName}`;
   }
 
-  return "暂无业务明细";
+  return localeText(locale, "暂无业务明细", "No order details");
 }
 
-export function orderCategoryLabel(order: OrderDetailResponse) {
+export function orderCategoryLabel(order: OrderDetailResponse, locale: Locale) {
   if (order.reservationCategory === "sports_facility") {
-    return "体育";
+    return localeText(locale, "体育", "Sports");
   }
 
   if (order.reservationCategory === "academic_space") {
-    return "学术";
+    return localeText(locale, "学术", "Study");
   }
 
   if (order.activityRegistration) {
-    return "活动";
+    return localeText(locale, "活动", "Activity");
   }
 
-  return "其他";
+  return localeText(locale, "其他", "Other");
 }
 
-export function orderResourceLabel(order: OrderDetailResponse) {
+export function orderResourceLabel(order: OrderDetailResponse, locale: Locale) {
   if (order.academicReservation) {
     return `${order.academicReservation.resourceName} · ${order.academicReservation.resourceUnitName}`;
   }
@@ -76,7 +90,7 @@ export function orderResourceLabel(order: OrderDetailResponse) {
   if (order.sportsReservationSlots.length > 0) {
     const firstSlot = order.sportsReservationSlots[0];
     if (!firstSlot) {
-      return "体育预约";
+      return localeText(locale, "体育预约", "Sports Reservation");
     }
     const unitNames = Array.from(
       new Set(order.sportsReservationSlots.map((slot) => slot.resourceUnitName))
@@ -88,26 +102,29 @@ export function orderResourceLabel(order: OrderDetailResponse) {
     return `${order.activityRegistration.activityTitle} · ${order.activityRegistration.activityTicketName}`;
   }
 
-  return "暂无资源信息";
+  return localeText(locale, "暂无资源信息", "No resource information");
 }
 
-export function orderLocationLabel(order: OrderDetailResponse) {
+export function orderLocationLabel(order: OrderDetailResponse, locale: Locale) {
   if (order.academicReservation) {
     return order.academicReservation.resourceName;
   }
 
   if (order.sportsReservationSlots.length > 0) {
-    return order.sportsReservationSlots[0]?.resourceName ?? "体育预约";
+    return (
+      order.sportsReservationSlots[0]?.resourceName ??
+      localeText(locale, "体育预约", "Sports Reservation")
+    );
   }
 
   if (order.activityRegistration) {
     return order.activityRegistration.activityTitle;
   }
 
-  return "未设置";
+  return localeText(locale, "未设置", "Not set");
 }
 
-export function orderTimeLabel(order: OrderDetailResponse) {
+export function orderTimeLabel(order: OrderDetailResponse, locale: Locale) {
   if (order.academicReservation) {
     return `${formatDateTime(order.academicReservation.startTime)} - ${formatDateTime(order.academicReservation.endTime)}`;
   }
@@ -123,23 +140,27 @@ export function orderTimeLabel(order: OrderDetailResponse) {
   }
 
   if (order.activityRegistration) {
-    return `报名时间：${formatDateTime(order.createdAt)}`;
+    return localeText(
+      locale,
+      `报名时间：${formatDateTime(order.createdAt)}`,
+      `Registered at: ${formatDateTime(order.createdAt)}`
+    );
   }
 
-  return "未设置";
+  return localeText(locale, "未设置", "Not set");
 }
 
-export function orderProgressLabel(order: OrderDetailResponse, now = new Date()) {
+export function getOrderProgressState(order: OrderDetailResponse, now = new Date()) {
   if (order.status === "cancelled") {
-    return "已取消";
+    return "cancelled" as const;
   }
 
   if (order.status === "pending_confirmation") {
-    return "待确认";
+    return "pending_confirmation" as const;
   }
 
   if (order.status === "no_show") {
-    return "已结束";
+    return "finished" as const;
   }
 
   const startTime = order.reservationStartTime
@@ -149,23 +170,38 @@ export function orderProgressLabel(order: OrderDetailResponse, now = new Date())
 
   if (startTime && endTime) {
     if (startTime.getTime() <= now.getTime() && endTime.getTime() >= now.getTime()) {
-      return "进行中";
+      return "in_progress" as const;
     }
 
     if (endTime.getTime() < now.getTime()) {
-      return "已结束";
+      return "finished" as const;
     }
   }
 
-  return "已确认";
+  return "confirmed" as const;
 }
 
-export function orderProgressTone(label: string) {
-  switch (label) {
-    case "已取消":
+export function orderProgressLabel(state: OrderProgressState, locale: Locale) {
+  switch (state) {
+    case "cancelled":
+      return localeText(locale, "已取消", "Cancelled");
+    case "pending_confirmation":
+      return localeText(locale, "待确认", "Pending");
+    case "in_progress":
+      return localeText(locale, "进行中", "In Progress");
+    case "finished":
+      return localeText(locale, "已结束", "Finished");
+    case "confirmed":
+      return localeText(locale, "已确认", "Confirmed");
+  }
+}
+
+export function orderProgressTone(state: OrderProgressState) {
+  switch (state) {
+    case "cancelled":
       return "danger" as const;
-    case "进行中":
-    case "已确认":
+    case "in_progress":
+    case "confirmed":
       return "success" as const;
     default:
       return "brand" as const;
@@ -185,7 +221,7 @@ export function getCancellationReason(order: OrderDetailResponse) {
     .reverse()
     .find((log) => log.toStatus === "cancelled");
 
-  return cancelledLog?.reason ?? "未记录备注";
+  return cancelledLog?.reason ?? null;
 }
 
 export function buildRebookPath(order: OrderDetailResponse) {
@@ -204,9 +240,9 @@ export function buildRebookPath(order: OrderDetailResponse) {
   return "/";
 }
 
-export function formatAmount(totalAmountCents: number) {
+export function formatAmount(totalAmountCents: number, locale: Locale) {
   if (totalAmountCents === 0) {
-    return "免费";
+    return localeText(locale, "免费", "Free");
   }
 
   return `¥${(totalAmountCents / 100).toFixed(2)}`;

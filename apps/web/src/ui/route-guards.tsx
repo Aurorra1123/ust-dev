@@ -1,21 +1,32 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
+import { localeText } from "../lib/locale";
+import { useLocaleStore } from "../store/locale-store";
 import { useSessionStore } from "../store/session-store";
 
 function RouteGateMessage({ message }: { message: string }) {
+  const locale = useLocaleStore((state) => state.locale);
+
   return (
     <div className="rounded-[28px] bg-white px-6 py-10 text-center shadow-panel">
-      <p className="text-sm uppercase tracking-[0.3em] text-moss">Session</p>
+      <p className="text-sm uppercase tracking-[0.3em] text-moss">
+        {localeText(locale, "会话状态", "Session")}
+      </p>
       <p className="mt-4 text-lg font-semibold text-ink">{message}</p>
     </div>
   );
 }
 
 export function PublicOnlyRoute() {
+  const locale = useLocaleStore((state) => state.locale);
   const status = useSessionStore((state) => state.status);
 
   if (status === "unknown") {
-    return <RouteGateMessage message="正在恢复登录态" />;
+    return (
+      <RouteGateMessage
+        message={localeText(locale, "正在恢复登录态", "Restoring your session")}
+      />
+    );
   }
 
   if (status === "authenticated") {
@@ -27,10 +38,15 @@ export function PublicOnlyRoute() {
 
 export function RequireAuth() {
   const location = useLocation();
+  const locale = useLocaleStore((state) => state.locale);
   const status = useSessionStore((state) => state.status);
 
   if (status === "unknown") {
-    return <RouteGateMessage message="正在恢复登录态" />;
+    return (
+      <RouteGateMessage
+        message={localeText(locale, "正在恢复登录态", "Restoring your session")}
+      />
+    );
   }
 
   if (status !== "authenticated") {
@@ -45,11 +61,16 @@ export function RequireAuth() {
 
 export function RequireStudentPortal() {
   const location = useLocation();
+  const locale = useLocaleStore((state) => state.locale);
   const status = useSessionStore((state) => state.status);
   const user = useSessionStore((state) => state.user);
 
   if (status === "unknown") {
-    return <RouteGateMessage message="正在恢复登录态" />;
+    return (
+      <RouteGateMessage
+        message={localeText(locale, "正在恢复登录态", "Restoring your session")}
+      />
+    );
   }
 
   if (status !== "authenticated") {
@@ -67,11 +88,16 @@ export function RequireStudentPortal() {
 }
 
 export function RequireAdmin() {
+  const locale = useLocaleStore((state) => state.locale);
   const status = useSessionStore((state) => state.status);
   const user = useSessionStore((state) => state.user);
 
   if (status === "unknown") {
-    return <RouteGateMessage message="正在恢复登录态" />;
+    return (
+      <RouteGateMessage
+        message={localeText(locale, "正在恢复登录态", "Restoring your session")}
+      />
+    );
   }
 
   if (status !== "authenticated") {

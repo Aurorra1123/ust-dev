@@ -17,7 +17,9 @@ import {
   startOfHour,
   startOfNextHour
 } from "../../lib/date";
+import { localeText } from "../../lib/locale";
 import { queryClient } from "../../lib/query-client";
+import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel } from "../user-experience-kit";
@@ -33,6 +35,7 @@ type CellState =
 
 export function SportsPage() {
   const navigate = useNavigate();
+  const locale = useLocaleStore((state) => state.locale);
   const sessionStatus = useSessionStore((state) => state.status);
   const [resourceId, setResourceId] = useState("");
   const [mode, setMode] = useState<"unit" | "group">("unit");
@@ -90,7 +93,11 @@ export function SportsPage() {
       return currentResource.groups.map((group) => ({
         id: group.id,
         label: group.name,
-        detail: `${group.items.length} 个场地单元`
+        detail: localeText(
+          locale,
+          `${group.items.length} 个场地单元`,
+          `${group.items.length} court units`
+        )
       }));
     }
 
@@ -99,7 +106,7 @@ export function SportsPage() {
       label: unit.name,
       detail: unit.code
     }));
-  }, [currentResource, mode]);
+  }, [currentResource, locale, mode]);
 
   const selectedGroup = useMemo(
     () => currentResource?.groups.find((group) => group.id === targetId) ?? null,
@@ -232,22 +239,38 @@ export function SportsPage() {
   }
 
   return (
-    <PageSection title="体育馆预约" description="左侧资源，中间时间表，右侧状态说明与提交。">
+    <PageSection
+      title={localeText(locale, "体育馆预约", "Sports Booking")}
+      description={localeText(
+        locale,
+        "左侧资源，中间时间表，右侧状态说明与提交。",
+        "Resources on the left, schedule in the middle, and submission controls on the right."
+      )}
+    >
       {resourcesQuery.isLoading ? (
-        <StatePanel tone="loading" title="正在载入体育资源" description="请稍候。" />
+        <StatePanel
+          tone="loading"
+          title={localeText(locale, "正在载入体育资源", "Loading sports resources")}
+          description={localeText(locale, "请稍候。", "Please wait.")}
+        />
       ) : resourcesQuery.isError ? (
         <StatePanel
           tone="danger"
-          title="体育资源暂时无法加载"
+          title={localeText(locale, "体育资源暂时无法加载", "Sports resources are unavailable")}
           description={(resourcesQuery.error as ApiError).message}
         />
       ) : !resourcesQuery.data?.length ? (
-        <EmptyPanel title="当前没有体育资源" description="请稍后刷新。" />
+        <EmptyPanel
+          title={localeText(locale, "当前没有体育资源", "No sports resources")}
+          description={localeText(locale, "请稍后刷新。", "Please refresh later.")}
+        />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[260px,minmax(0,1fr),320px]">
           <aside className="grid gap-4">
             <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
-              <p className="text-sm font-semibold text-ink">资源</p>
+              <p className="text-sm font-semibold text-ink">
+                {localeText(locale, "资源", "Resources")}
+              </p>
               <div className="mt-4 grid gap-3">
                 {resourcesQuery.data.map((resource) => (
                   <button
@@ -259,10 +282,14 @@ export function SportsPage() {
                         : "border-ink/10 bg-sand hover:border-moss"
                     }`}
                     onClick={() => setResourceId(resource.id)}
-                  >
+                    >
                     <p className="text-sm font-semibold text-ink">{resource.name}</p>
                     <p className="mt-1 text-xs text-ink/45">
-                      {resource.unitCount} 个单元
+                      {localeText(
+                        locale,
+                        `${resource.unitCount} 个单元`,
+                        `${resource.unitCount} units`
+                      )}
                     </p>
                   </button>
                 ))}
@@ -273,7 +300,8 @@ export function SportsPage() {
               <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
                 <p className="text-sm font-semibold text-ink">{currentResource.name}</p>
                 <p className="mt-2 text-sm text-slate">
-                  {currentResource.location || "校内位置待补充"}
+                  {currentResource.location ||
+                    localeText(locale, "校内位置待补充", "Campus location to be added")}
                 </p>
               </div>
             ) : null}
@@ -291,27 +319,31 @@ export function SportsPage() {
                   onClick={() => setDisplayStart(addHours(displayStart, -SLOT_COUNT))}
                   disabled={displayStart.getTime() <= currentHourStart.getTime()}
                 >
-                  上一段
+                  {localeText(locale, "上一段", "Previous")}
                 </button>
                 <button
                   type="button"
                   className="rounded-full border border-navy/10 px-4 py-2 text-sm text-ink transition hover:border-moss"
                   onClick={() => setDisplayStart(addHours(displayStart, SLOT_COUNT))}
                 >
-                  下一段
+                  {localeText(locale, "下一段", "Next")}
                 </button>
               </div>
             </div>
 
             {scheduleQuery.isLoading ? (
               <div className="mt-4">
-                <StatePanel tone="loading" title="正在载入时段状态" description="请稍候。" />
+                <StatePanel
+                  tone="loading"
+                  title={localeText(locale, "正在载入时段状态", "Loading schedule")}
+                  description={localeText(locale, "请稍候。", "Please wait.")}
+                />
               </div>
             ) : scheduleQuery.isError ? (
               <div className="mt-4">
                 <StatePanel
                   tone="danger"
-                  title="时段状态暂时无法加载"
+                  title={localeText(locale, "时段状态暂时无法加载", "Schedule is unavailable")}
                   description={(scheduleQuery.error as ApiError).message}
                 />
               </div>
@@ -324,7 +356,7 @@ export function SportsPage() {
                   }}
                 >
                   <div className="rounded-2xl bg-sand px-4 py-4 text-sm font-medium text-ink">
-                    场地 / 时间
+                    {localeText(locale, "场地 / 时间", "Court / Time")}
                   </div>
                   {slotMoments.map((slot) => {
                     const slotIso = slot.toISOString();
@@ -344,7 +376,7 @@ export function SportsPage() {
                             disabled={groupState !== "available" && groupState !== "selected"}
                             onClick={() => toggleSlot(slotIso)}
                           >
-                            {headerStateLabel(groupState)}
+                            {headerStateLabel(groupState, locale)}
                           </button>
                         ) : (
                           <p className="mt-2 text-xs text-ink/60">
@@ -396,7 +428,7 @@ export function SportsPage() {
                               {formatTime(slotIso)}
                             </p>
                             <p className="mt-2 text-sm font-medium text-ink">
-                              {cellStateLabel(state)}
+                              {cellStateLabel(state, locale)}
                             </p>
                           </button>
                         );
@@ -427,7 +459,7 @@ export function SportsPage() {
                 }`}
                 onClick={() => setMode("unit")}
               >
-                单场地
+                {localeText(locale, "单场地", "Single Court")}
               </button>
               <button
                 type="button"
@@ -437,12 +469,12 @@ export function SportsPage() {
                 onClick={() => setMode("group")}
                 disabled={!currentResource?.groups.length}
               >
-                组合场地
+                {localeText(locale, "组合场地", "Grouped Courts")}
               </button>
             </div>
 
             <label className="grid gap-2 text-sm text-ink/75">
-              目标
+              {localeText(locale, "目标", "Target")}
               <select
                 className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
                 value={targetId}
@@ -460,7 +492,9 @@ export function SportsPage() {
             </label>
 
             <div className="rounded-[22px] border border-navy/10 bg-sand px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-ink/45">已选时段</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
+                {localeText(locale, "已选时段", "Selected Slots")}
+              </p>
               {slotStarts.length ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   {slotStarts.map((slotStartIso) => (
@@ -475,23 +509,33 @@ export function SportsPage() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 text-sm text-slate">请在时间表中选择时段。</p>
+                <p className="mt-3 text-sm text-slate">
+                  {localeText(locale, "请在时间表中选择时段。", "Select time slots from the table.")}
+                </p>
               )}
             </div>
 
             <div className="rounded-[22px] border border-navy/10 bg-sand px-4 py-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-ink/45">状态说明</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
+                {localeText(locale, "状态说明", "Legend")}
+              </p>
               <div className="mt-3 grid gap-2 text-sm text-slate">
-                <LegendItem label="可预约" tone="available" />
-                <LegendItem label="已占用" tone="occupied" />
-                <LegendItem label="进行中" tone="in_progress" />
-                <LegendItem label="已选中" tone="selected" />
-                <LegendItem label="不可约" tone="closed" />
+                <LegendItem label={localeText(locale, "可预约", "Available")} tone="available" />
+                <LegendItem label={localeText(locale, "已占用", "Occupied")} tone="occupied" />
+                <LegendItem
+                  label={localeText(locale, "进行中", "In Progress")}
+                  tone="in_progress"
+                />
+                <LegendItem
+                  label={localeText(locale, "已选中", "Selected")}
+                  tone="selected"
+                />
+                <LegendItem label={localeText(locale, "不可约", "Closed")} tone="closed" />
               </div>
             </div>
 
             <label className="grid gap-2 text-sm text-ink/75">
-              同行人邮箱
+              {localeText(locale, "同行人邮箱", "Companion Emails")}
               <textarea
                 className="min-h-[88px] rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
                 value={companionEmailsText}
@@ -502,7 +546,7 @@ export function SportsPage() {
             {sportsMutation.isError ? (
               <StatePanel
                 tone="danger"
-                title="预约未提交成功"
+                title={localeText(locale, "预约未提交成功", "Booking failed")}
                 description={(sportsMutation.error as ApiError).message}
               />
             ) : null}
@@ -519,9 +563,9 @@ export function SportsPage() {
             >
               {sessionStatus === "authenticated"
                 ? sportsMutation.isPending
-                  ? "提交中"
-                  : "提交预约"
-                : "请先登录后预约"}
+                  ? localeText(locale, "提交中", "Submitting")
+                  : localeText(locale, "提交预约", "Submit Booking")
+                : localeText(locale, "请先登录后预约", "Sign in before booking")}
             </button>
           </form>
         </div>
@@ -545,33 +589,33 @@ function LegendItem({
   );
 }
 
-function cellStateLabel(state: CellState) {
+function cellStateLabel(state: CellState, locale: "zh-CN" | "en") {
   switch (state) {
     case "available":
-      return "可预约";
+      return localeText(locale, "可预约", "Available");
     case "occupied":
-      return "已占用";
+      return localeText(locale, "已占用", "Occupied");
     case "in_progress":
-      return "进行中";
+      return localeText(locale, "进行中", "In Progress");
     case "closed":
-      return "不可约";
+      return localeText(locale, "不可约", "Closed");
     case "selected":
-      return "已选择";
+      return localeText(locale, "已选择", "Selected");
   }
 }
 
-function headerStateLabel(state: CellState) {
+function headerStateLabel(state: CellState, locale: "zh-CN" | "en") {
   switch (state) {
     case "available":
-      return "可选";
+      return localeText(locale, "可选", "Pick");
     case "selected":
-      return "已选";
+      return localeText(locale, "已选", "Selected");
     case "occupied":
-      return "冲突";
+      return localeText(locale, "冲突", "Conflict");
     case "in_progress":
-      return "进行中";
+      return localeText(locale, "进行中", "In Progress");
     case "closed":
-      return "关闭";
+      return localeText(locale, "关闭", "Closed");
   }
 }
 

@@ -1,8 +1,12 @@
 import { Link, Navigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
+import { fetchPublishedNotifications } from "../../lib/api/notification-api";
+import { formatDateTime } from "../../lib/date";
 import { localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
+import { EmptyPanel, StatePanel } from "../user-experience-kit";
 
 const serviceCards = [
   {
@@ -19,6 +23,11 @@ const serviceCards = [
     title: "活动",
     description: "进入活动页面，查看活动并完成报名。",
     href: "/activities"
+  },
+  {
+    title: "报修",
+    description: "提交事故或设备报修，并跟踪管理员处理状态。",
+    href: "/service-requests"
   }
 ] as const;
 
@@ -43,6 +52,10 @@ export function HomePage() {
 
 function StudentHome() {
   const locale = useLocaleStore((state) => state.locale);
+  const notificationsQuery = useQuery({
+    queryKey: ["notifications", "published"],
+    queryFn: fetchPublishedNotifications
+  });
 
   return (
     <div className="grid gap-6">
@@ -77,14 +90,14 @@ function StudentHome() {
           </Link>
 
           <Link
-            to="/orders"
+            to="/service-requests"
             className="rounded-[24px] border border-navy/10 bg-sand px-6 py-6"
           >
             <p className="text-xs uppercase tracking-[0.24em] text-moss">
-              {localeText(locale, "个人中心", "My Orders")}
+              {localeText(locale, "服务台", "Service Desk")}
             </p>
             <h3 className="mt-3 text-3xl font-semibold text-ink">
-              {localeText(locale, "我的订单", "My Orders")}
+              {localeText(locale, "提交报修", "Submit Request")}
             </h3>
           </Link>
         </div>
@@ -106,7 +119,9 @@ function StudentHome() {
                     ? "Sports"
                     : card.title === "学术"
                       ? "Study"
-                      : "Activities"
+                      : card.title === "活动"
+                        ? "Activities"
+                        : "Repairs"
                 )}
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate">
@@ -117,11 +132,78 @@ function StudentHome() {
                     ? "Open the sports booking page."
                     : card.title === "学术"
                       ? "Open the study-space booking page."
-                      : "Open the activity registration page."
+                      : card.title === "活动"
+                        ? "Open the activity registration page."
+                        : "Submit a repair ticket and track the admin response."
                 )}
               </p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-[30px] border border-navy/10 bg-white px-6 py-6 shadow-panel lg:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-moss">
+              {localeText(locale, "首页通知", "Home Notices")}
+            </p>
+            <h3 className="mt-3 text-2xl font-semibold text-ink">
+              {localeText(locale, "最新通知", "Latest Notices")}
+            </h3>
+          </div>
+          <Link
+            to="/orders"
+            className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
+          >
+            {localeText(locale, "查看我的订单", "View My Orders")}
+          </Link>
+        </div>
+
+        <div className="mt-5">
+          {notificationsQuery.isLoading ? (
+            <StatePanel
+              tone="loading"
+              title={localeText(locale, "正在载入通知", "Loading notices")}
+              description={localeText(locale, "请稍候。", "Please wait.")}
+            />
+          ) : notificationsQuery.isError ? (
+            <StatePanel
+              tone="danger"
+              title={localeText(locale, "通知暂时无法加载", "Notices are unavailable")}
+              description={(notificationsQuery.error as Error).message}
+            />
+          ) : !notificationsQuery.data?.length ? (
+            <EmptyPanel
+              title={localeText(locale, "当前没有通知", "No notices yet")}
+              description={localeText(
+                locale,
+                "管理员发布后的通知会显示在这里。",
+                "Published admin notices will appear here."
+              )}
+            />
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-3">
+              {notificationsQuery.data.slice(0, 3).map((notification) => (
+                <article
+                  key={notification.id}
+                  className="rounded-[24px] border border-navy/10 bg-sand px-5 py-5"
+                >
+                  <p className="text-xs uppercase tracking-[0.2em] text-moss">
+                    {notification.publishedAt
+                      ? formatDateTime(notification.publishedAt)
+                      : localeText(locale, "待发布", "Draft")}
+                  </p>
+                  <h4 className="mt-3 text-lg font-semibold text-ink">
+                    {notification.title}
+                  </h4>
+                  <p className="mt-3 text-sm leading-7 text-slate">
+                    {notification.summary || notification.content}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

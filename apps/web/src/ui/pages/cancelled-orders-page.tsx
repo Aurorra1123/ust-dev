@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchOrders } from "../../lib/api/order-api";
 import { ApiError } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
+import { localeText } from "../../lib/locale";
+import { useLocaleStore } from "../../store/locale-store";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel } from "../user-experience-kit";
 import {
@@ -14,6 +16,7 @@ import {
 } from "./order-utils";
 
 export function CancelledOrdersPage() {
+  const locale = useLocaleStore((state) => state.locale);
   const ordersQuery = useQuery({
     queryKey: ["orders"],
     queryFn: fetchOrders
@@ -29,27 +32,42 @@ export function CancelledOrdersPage() {
 
   return (
     <PageSection
-      title="取消记录"
-      description="查看已取消预约的历史信息。"
+      title={localeText(locale, "取消记录", "Cancelled Orders")}
+      description={localeText(
+        locale,
+        "查看已取消预约的历史信息与原因回溯。",
+        "Review cancelled bookings and their reasons."
+      )}
       action={
         <Link
           to="/orders"
           className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
         >
-          返回我的订单
+          {localeText(locale, "返回我的订单", "Back to My Orders")}
         </Link>
       }
     >
       {ordersQuery.isLoading ? (
-        <StatePanel tone="loading" title="正在载入取消记录" description="请稍候。" />
+        <StatePanel
+          tone="loading"
+          title={localeText(locale, "正在载入取消记录", "Loading cancelled orders")}
+          description={localeText(locale, "请稍候。", "Please wait.")}
+        />
       ) : ordersQuery.isError ? (
         <StatePanel
           tone="danger"
-          title="取消记录暂时无法加载"
+          title={localeText(locale, "取消记录暂时无法加载", "Cancelled orders are unavailable")}
           description={(ordersQuery.error as ApiError).message}
         />
       ) : !cancelledOrders.length ? (
-        <EmptyPanel title="当前没有取消记录" description="已取消预约会显示在这里。" />
+        <EmptyPanel
+          title={localeText(locale, "当前没有取消记录", "No cancelled orders")}
+          description={localeText(
+            locale,
+            "已取消预约会显示在这里。",
+            "Cancelled bookings will appear here."
+          )}
+        />
       ) : (
         <div className="grid gap-4">
           {cancelledOrders.map((order) => (
@@ -59,12 +77,28 @@ export function CancelledOrdersPage() {
               className="rounded-[24px] border border-ink/10 bg-white px-5 py-5 transition hover:border-moss"
             >
               <div className="grid gap-3 text-sm text-slate md:grid-cols-4">
-                <InfoCard label="取消时间" value={formatDateTime(getCancelledAt(order))} />
-                <InfoCard label="预约人" value={order.userEmail} />
-                <InfoCard label="资源" value={orderResourceLabel(order)} />
-                <InfoCard label="费用" value={formatAmount(order.totalAmountCents)} />
+                <InfoCard
+                  label={localeText(locale, "取消时间", "Cancelled At")}
+                  value={formatDateTime(getCancelledAt(order))}
+                />
+                <InfoCard
+                  label={localeText(locale, "预约人", "Reporter")}
+                  value={order.userEmail}
+                />
+                <InfoCard
+                  label={localeText(locale, "资源", "Resource")}
+                  value={orderResourceLabel(order, locale)}
+                />
+                <InfoCard
+                  label={localeText(locale, "费用", "Amount")}
+                  value={formatAmount(order.totalAmountCents, locale)}
+                />
               </div>
-              <p className="mt-4 text-sm text-ink/70">备注：{getCancellationReason(order)}</p>
+              <p className="mt-4 text-sm text-ink/70">
+                {localeText(locale, "备注：", "Reason: ")}
+                {getCancellationReason(order) ||
+                  localeText(locale, "未记录备注", "No reason recorded")}
+              </p>
             </Link>
           ))}
         </div>

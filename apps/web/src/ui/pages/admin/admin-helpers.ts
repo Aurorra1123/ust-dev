@@ -1,14 +1,22 @@
 import type {
+  NotificationStatus,
   ResourceChannelStatus,
   ResourceReleaseFrequency,
   ResourceType,
-  RuleType
+  RuleType,
+  ServiceRequestStatus
 } from "@campusbook/shared-types";
 
 import { localeText } from "../../../lib/locale";
 import type { Locale } from "../../../store/locale-store";
 
-export type WorkspaceTab = "overview" | "resources" | "activities" | "rules";
+export type WorkspaceTab =
+  | "overview"
+  | "resources"
+  | "activities"
+  | "rules"
+  | "notifications"
+  | "serviceRequests";
 
 export function workspaceTabLabel(tab: WorkspaceTab, locale: Locale) {
   switch (tab) {
@@ -20,6 +28,10 @@ export function workspaceTabLabel(tab: WorkspaceTab, locale: Locale) {
       return localeText(locale, "活动工作区", "Activity Workspace");
     case "rules":
       return localeText(locale, "规则工作区", "Rule Workspace");
+    case "notifications":
+      return localeText(locale, "通知工作区", "Notification Workspace");
+    case "serviceRequests":
+      return localeText(locale, "工单工作区", "Service Request Workspace");
   }
 }
 
@@ -147,5 +159,48 @@ export function ruleTypeLabel(ruleType: RuleType) {
       return "最长预约时长";
     case "allowed_user_roles":
       return "允许用户角色";
+  }
+}
+
+export function notificationStatusLabel(
+  status: NotificationStatus,
+  locale: Locale
+) {
+  switch (status) {
+    case "draft":
+      return localeText(locale, "草稿", "Draft");
+    case "published":
+      return localeText(locale, "已发布", "Published");
+  }
+}
+
+export function serviceRequestStatusLabel(
+  status: ServiceRequestStatus,
+  locale: Locale
+) {
+  switch (status) {
+    case "submitted":
+      return localeText(locale, "待受理", "Submitted");
+    case "received":
+      return localeText(locale, "已接收", "Received");
+    case "in_progress":
+      return localeText(locale, "处理中", "In Progress");
+    case "resolved":
+      return localeText(locale, "已解决", "Resolved");
+    case "closed":
+      return localeText(locale, "已关闭", "Closed");
+  }
+}
+
+export function serviceRequestStatusTone(status: ServiceRequestStatus) {
+  switch (status) {
+    case "resolved":
+    case "closed":
+      return "success" as const;
+    case "submitted":
+      return "brand" as const;
+    case "received":
+    case "in_progress":
+      return "neutral" as const;
   }
 }

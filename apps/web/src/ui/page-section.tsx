@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 
+import { localeText } from "../lib/locale";
+import { useLocaleStore } from "../store/locale-store";
+
 export function PageSection({
   title,
   description,
@@ -11,13 +14,15 @@ export function PageSection({
   action?: ReactNode;
   children: ReactNode;
 }) {
+  const locale = useLocaleStore((state) => state.locale);
+
   return (
     <section className="mt-6 overflow-hidden rounded-[30px] border border-navy/10 bg-white shadow-panel">
       <div className="relative flex flex-wrap items-end justify-between gap-4 border-b border-navy/10 px-6 py-5 lg:px-8">
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold/45 to-transparent" />
         <div>
           <p className="text-[11px] uppercase tracking-[0.28em] text-moss">
-            Service Block
+            {localeText(locale, "服务区块", "Service Block")}
           </p>
           <h3 className="mt-2 text-xl font-semibold text-ink">{title}</h3>
           {description ? (

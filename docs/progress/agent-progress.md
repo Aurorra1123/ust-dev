@@ -6,6 +6,61 @@
 
 ### 已完成
 
+- 已完成 `PUX-006` 剩余收口：
+  - 登录页补学生 demo / 管理员 demo 账号快捷带入
+  - 学生首页补真实通知区，展示 demo 通知样例
+  - 管理员工作台补通知编辑与发布入口
+- 已完成 `PUX-010`：
+  - 学生端核心页面补齐双语切换覆盖
+  - “我的订单”不再重复展示已取消历史
+  - 管理员工作台删除独立“工作区导航”说明块，切换入口收拢为单一紧凑条
+- 已完成 `APP-017`：
+  - 新增 `Notification` Prisma 模型、migration、API 模块与前端 API
+  - 学生首页与管理员工作台共用同一条通知数据链路
+  - demo seed 已写入 2 条已发布通知与 1 条草稿通知
+- 已完成 `APP-018`：
+  - 新增 `ServiceRequest` Prisma 模型、migration、API 模块与前端页面
+  - 学生端可提交报修工单并查看自己的记录
+  - 管理员工作台可查看并更新工单状态与备注
+- 已补正式决策记录：
+  - `docs/adr/0008-notification-and-service-request-workspaces.md`
+- 已补本轮验证记录：
+  - `docs/verification/2026-04-21/pux-010-app-017-app-018-closeout.md`
+- 已完成本轮校验与本地数据收口：
+  - `pnpm prisma:generate`
+  - `pnpm lint`
+  - `pnpm typecheck`
+  - `pnpm build`
+  - `pnpm test`
+  - 本地 `prisma migrate deploy`
+  - 本地 `seed:demo`
+- 已修复本轮运行时发现的唯一兼容性问题：
+  - `apps/api/src/scripts/seed-demo-data.ts`
+  - 旧 seed 假设 demo 用户主键固定，遇到已有数据库会触发通知外键失败；现已改为复用 upsert 后返回的真实用户 ID
+
+### 当前状态
+
+- `PUX-006`、`PUX-010`、`APP-017`、`APP-018` 已完成并可在当前代码中找到完整入口
+- 本地数据库 migration 已应用，demo 通知与 demo 工单样例已成功写入
+- 当前通过结论基于静态校验、构建和本地 migration/seed 成功
+
+### 下一步建议
+
+1. 若要补强答辩或交付证据，应新增至少一组浏览器级验证：
+   - 学生首页看到管理员刚发布的通知
+   - 学生提报修工单后，管理员工作台立即可见并能更新状态
+2. 若后续继续演进通知能力，可考虑增加置顶、跳转链接和发布时间窗口
+3. 若后续继续演进工单能力，可考虑增加工单分类、处理人、附件和 SLA
+
+### 注意事项
+
+- 本轮对本地数据库执行了新增 migration 和 demo seed
+- `docs/architecture/architecture-diagrams.md` 与 `docs/architecture/current-implementation-audit-2026-04-21.md` 当前存在会话外改动，本轮未改动这些文件
+
+## 2026-04-21
+
+### 已完成
+
 - 已新增中文报告初稿：
   - `docs/architecture/architecture-and-product-report-2026-04-21.md`
 - 报告内容已按当前代码真实状态撰写，覆盖：

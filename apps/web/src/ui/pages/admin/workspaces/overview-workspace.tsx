@@ -190,7 +190,8 @@ export function OverviewWorkspace({
           items={[
             {
               title: "先判断今天维护什么",
-              description: "先在总览、资源、活动和规则之间切换到当前工作区。"
+              description:
+                "先在总览、资源、活动、规则、通知和工单之间切换到当前工作区。"
             },
             {
               title: "再查看选中对象详情",
@@ -250,7 +251,7 @@ export function OverviewWorkspace({
         <HighlightPanel
           eyebrow="Today Update"
           title="今日功能更新与维护入口"
-          description="当前工作台已经可以直接进入资源维护、活动维护和规则查看。后续如需补通知发布，也应作为工作台中的单独操作入口，而不是回到学生首页处理。"
+          description="当前工作台已经可以直接进入资源维护、活动维护、规则查看、通知编辑发布和工单处理入口。学生首页只负责展示结果，不再承担后台写操作。"
         >
           <div className="grid gap-3 sm:grid-cols-3">
             <WorkspaceBadge label="资源维护" value={`${resourceStats.resourceCount} 项`} />

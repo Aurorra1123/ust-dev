@@ -12,11 +12,14 @@ import {
 } from "../../lib/api/activity-api";
 import { ApiError } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
+import { localeText } from "../../lib/locale";
+import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel, StatusPill } from "../user-experience-kit";
 
 export function ActivitiesPage() {
+  const locale = useLocaleStore((state) => state.locale);
   const sessionStatus = useSessionStore((state) => state.status);
   const activitiesQuery = useQuery({
     queryKey: ["activities"],
@@ -66,19 +69,30 @@ export function ActivitiesPage() {
 
   return (
     <PageSection
-      title="校园活动"
-      description="选择活动后查看票种并完成报名。"
+      title={localeText(locale, "校园活动", "Campus Activities")}
+      description={localeText(
+        locale,
+        "选择活动后查看票种并完成报名。",
+        "Select an activity, review ticket types, and complete registration."
+      )}
     >
       {activitiesQuery.isLoading ? (
-        <StatePanel tone="loading" title="正在载入活动" description="请稍候。" />
+        <StatePanel
+          tone="loading"
+          title={localeText(locale, "正在载入活动", "Loading activities")}
+          description={localeText(locale, "请稍候。", "Please wait.")}
+        />
       ) : activitiesQuery.isError ? (
         <StatePanel
           tone="danger"
-          title="活动暂时无法加载"
+          title={localeText(locale, "活动暂时无法加载", "Activities are unavailable")}
           description={(activitiesQuery.error as ApiError).message}
         />
       ) : !activitiesQuery.data?.length ? (
-        <EmptyPanel title="当前没有活动" description="请稍后刷新。" />
+        <EmptyPanel
+          title={localeText(locale, "当前没有活动", "No activities available")}
+          description={localeText(locale, "请稍后刷新。", "Please refresh later.")}
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[320px,minmax(0,1fr)]">
           <div className="grid gap-3">
@@ -88,6 +102,7 @@ export function ActivitiesPage() {
                 activity={activity}
                 active={activity.id === selectedActivity?.id}
                 onSelect={() => setActivityId(activity.id)}
+                locale={locale}
               />
             ))}
           </div>
@@ -99,33 +114,49 @@ export function ActivitiesPage() {
                   {selectedActivity.title}
                 </h3>
                 <p className="mt-2 text-sm text-slate">
-                  {selectedActivity.location || "活动地点待补充"}
+                  {selectedActivity.location ||
+                    localeText(locale, "活动地点待补充", "Location to be added")}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <StatusPill tone="brand">{statusLabel(selectedActivity.status)}</StatusPill>
+                  <StatusPill tone="brand">
+                    {statusLabel(selectedActivity.status, locale)}
+                  </StatusPill>
                   <StatusPill tone={soldOut ? "danger" : "success"}>
-                    {soldOut ? "名额紧张" : "可报名"}
+                    {soldOut
+                      ? localeText(locale, "名额紧张", "Limited Seats")
+                      : localeText(locale, "可报名", "Available")}
                   </StatusPill>
                 </div>
                 <p className="mt-4 text-sm leading-6 text-slate">
-                  {selectedActivity.description || "当前活动暂无补充描述。"}
+                  {selectedActivity.description ||
+                    localeText(locale, "当前活动暂无补充描述。", "No description yet.")}
                 </p>
                 <p className="mt-3 text-sm text-slate">
-                  开售 {formatDateTime(selectedActivity.saleStartTime)} · 停售 {formatDateTime(selectedActivity.saleEndTime)}
+                  {localeText(
+                    locale,
+                    `开售 ${formatDateTime(selectedActivity.saleStartTime)} · 停售 ${formatDateTime(selectedActivity.saleEndTime)}`,
+                    `Sales ${formatDateTime(selectedActivity.saleStartTime)} · End ${formatDateTime(selectedActivity.saleEndTime)}`
+                  )}
                 </p>
               </div>
 
               <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
-                <h3 className="text-lg font-semibold text-ink">票种</h3>
+                <h3 className="text-lg font-semibold text-ink">
+                  {localeText(locale, "票种", "Ticket Types")}
+                </h3>
                 {detailQuery.isLoading ? (
                   <div className="mt-4">
-                    <StatePanel tone="loading" title="正在载入票种" description="请稍候。" />
+                    <StatePanel
+                      tone="loading"
+                      title={localeText(locale, "正在载入票种", "Loading ticket types")}
+                      description={localeText(locale, "请稍候。", "Please wait.")}
+                    />
                   </div>
                 ) : detailQuery.isError ? (
                   <div className="mt-4">
                     <StatePanel
                       tone="danger"
-                      title="票种暂时无法加载"
+                      title={localeText(locale, "票种暂时无法加载", "Ticket types are unavailable")}
                       description={(detailQuery.error as ApiError).message}
                     />
                   </div>
@@ -140,7 +171,11 @@ export function ActivitiesPage() {
                           <div>
                             <p className="text-base font-semibold text-ink">{ticket.name}</p>
                             <p className="mt-2 text-sm text-slate">
-                              库存 {ticket.stock} / 已保留 {ticket.reserved}
+                              {localeText(
+                                locale,
+                                `库存 ${ticket.stock} / 已保留 ${ticket.reserved}`,
+                                `Stock ${ticket.stock} / Reserved ${ticket.reserved}`
+                              )}
                             </p>
                           </div>
                           <button
@@ -160,9 +195,9 @@ export function ActivitiesPage() {
                           >
                             {sessionStatus === "authenticated"
                               ? grabMutation.isPending
-                                ? "提交中"
-                                : "立即报名"
-                              : "请先登录"}
+                                ? localeText(locale, "提交中", "Submitting")
+                                : localeText(locale, "立即报名", "Register Now")
+                              : localeText(locale, "请先登录", "Sign In")}
                           </button>
                         </div>
                       </div>
@@ -174,7 +209,7 @@ export function ActivitiesPage() {
                   <div className="mt-4">
                     <StatePanel
                       tone="danger"
-                      title="报名未完成"
+                      title={localeText(locale, "报名未完成", "Registration failed")}
                       description={(grabMutation.error as ApiError).message}
                     />
                   </div>
@@ -183,21 +218,34 @@ export function ActivitiesPage() {
 
               {sessionStatus === "authenticated" ? (
                 <div className="rounded-[24px] border border-ink/10 bg-white px-5 py-5">
-                  <h3 className="text-lg font-semibold text-ink">我的报名状态</h3>
+                  <h3 className="text-lg font-semibold text-ink">
+                    {localeText(locale, "我的报名状态", "My Registration Status")}
+                  </h3>
                   {registrationStatusQuery.isLoading ? (
                     <div className="mt-4">
-                      <StatePanel tone="loading" title="正在读取状态" description="请稍候。" />
+                      <StatePanel
+                        tone="loading"
+                        title={localeText(locale, "正在读取状态", "Loading status")}
+                        description={localeText(locale, "请稍候。", "Please wait.")}
+                      />
                     </div>
                   ) : registrationStatusQuery.isError ? (
                     (registrationStatusQuery.error as ApiError).status === 404 ? (
                       <div className="mt-4">
-                        <StatePanel title="还没有报名记录" description="提交后会显示在这里。" />
+                        <StatePanel
+                          title={localeText(locale, "还没有报名记录", "No registration yet")}
+                          description={localeText(
+                            locale,
+                            "提交后会显示在这里。",
+                            "Your registration status will appear here."
+                          )}
+                        />
                       </div>
                     ) : (
                       <div className="mt-4">
                         <StatePanel
                           tone="danger"
-                          title="状态暂时无法读取"
+                          title={localeText(locale, "状态暂时无法读取", "Status is unavailable")}
                           description={(registrationStatusQuery.error as ApiError).message}
                         />
                       </div>
@@ -205,14 +253,15 @@ export function ActivitiesPage() {
                   ) : registrationStatusQuery.data ? (
                     <div className="mt-4 rounded-2xl bg-sand px-4 py-4 text-sm text-ink/75">
                       <p className="font-medium text-ink">
-                        当前状态：{registrationStateLabel(registrationStatusQuery.data.status)}
+                        {localeText(locale, "当前状态：", "Current status: ")}
+                        {registrationStateLabel(registrationStatusQuery.data.status, locale)}
                       </p>
                       {registrationStatusQuery.data.orderId ? (
                         <Link
                           to={`/orders/${registrationStatusQuery.data.orderId}`}
                           className="mt-3 inline-flex rounded-full border border-navy/10 px-4 py-2 text-sm text-ink transition hover:border-moss"
                         >
-                          查看订单详情
+                          {localeText(locale, "查看订单详情", "View Order Details")}
                         </Link>
                       ) : null}
                     </div>
@@ -230,11 +279,13 @@ export function ActivitiesPage() {
 function ActivityCard({
   activity,
   active,
-  onSelect
+  onSelect,
+  locale
 }: {
   activity: ActivityListItem;
   active: boolean;
   onSelect: () => void;
+  locale: "zh-CN" | "en";
 }) {
   return (
     <button
@@ -245,42 +296,45 @@ function ActivityCard({
       onClick={onSelect}
     >
       <p className="text-xs uppercase tracking-[0.2em] text-moss">
-        {statusLabel(activity.status)}
+        {statusLabel(activity.status, locale)}
       </p>
       <h3 className="mt-2 text-lg font-semibold text-ink">{activity.title}</h3>
-      <p className="mt-2 text-sm text-ink/70">{activity.location || "线上/待定"}</p>
+      <p className="mt-2 text-sm text-ink/70">
+        {activity.location || localeText(locale, "线上/待定", "Online / TBD")}
+      </p>
     </button>
   );
 }
 
-function statusLabel(status: ActivityListItem["status"]) {
+function statusLabel(status: ActivityListItem["status"], locale: "zh-CN" | "en") {
   switch (status) {
     case "draft":
-      return "草稿";
+      return localeText(locale, "草稿", "Draft");
     case "published":
-      return "已发布";
+      return localeText(locale, "已发布", "Published");
     case "closed":
-      return "已关闭";
+      return localeText(locale, "已关闭", "Closed");
     case "cancelled":
-      return "已取消";
+      return localeText(locale, "已取消", "Cancelled");
   }
 }
 
 function registrationStateLabel(
-  status: "pending_confirmation" | "confirmed" | "cancelled" | "no_show" | "queued" | "failed"
+  status: "pending_confirmation" | "confirmed" | "cancelled" | "no_show" | "queued" | "failed",
+  locale: "zh-CN" | "en"
 ) {
   switch (status) {
     case "queued":
-      return "排队中";
+      return localeText(locale, "排队中", "Queued");
     case "pending_confirmation":
-      return "待确认";
+      return localeText(locale, "待确认", "Pending");
     case "confirmed":
-      return "已确认";
+      return localeText(locale, "已确认", "Confirmed");
     case "cancelled":
-      return "已取消";
+      return localeText(locale, "已取消", "Cancelled");
     case "no_show":
-      return "已结束";
+      return localeText(locale, "已结束", "Finished");
     case "failed":
-      return "失败";
+      return localeText(locale, "失败", "Failed");
   }
 }

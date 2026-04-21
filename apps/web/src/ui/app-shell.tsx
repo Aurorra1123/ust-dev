@@ -52,6 +52,10 @@ export function AppShell() {
       { label: localeText(locale, "体育", "Sports"), to: "/sports" },
       { label: localeText(locale, "学术", "Study"), to: "/spaces" },
       { label: localeText(locale, "活动", "Activities"), to: "/activities" },
+      {
+        label: localeText(locale, "报修工单", "Service Requests"),
+        to: "/service-requests"
+      },
       { label: localeText(locale, "我的订单", "Orders"), to: "/orders" },
       { label: localeText(locale, "取消记录", "Cancelled"), to: "/orders/cancellations" }
     ];
@@ -150,7 +154,7 @@ export function AppShell() {
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         {sessionStatus === "unknown" ? (
           <div className="rounded-2xl border border-navy/10 bg-white px-4 py-3 text-sm text-slate">
-            正在恢复登录状态。
+            {localeText(locale, "正在恢复登录状态。", "Restoring your session.")}
           </div>
         ) : null}
         <Outlet />

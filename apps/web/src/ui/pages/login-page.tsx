@@ -17,6 +17,11 @@ const defaultAccount = {
   password: "demo123456"
 };
 
+const adminAccount = {
+  email: "admin@campusbook.top",
+  password: "admin123456"
+};
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -114,15 +119,31 @@ export function LoginPage() {
 
           <div className="mt-6 rounded-2xl border border-navy/10 bg-white px-4 py-4">
             <p className="text-xs uppercase tracking-[0.22em] text-moss">
-              {localeText(locale, "注册入口", "Registration")}
+              {localeText(locale, "演示账号", "Demo Accounts")}
             </p>
             <p className="mt-2 text-sm text-slate">
               {localeText(
                 locale,
-                "当前演示环境未开放注册。",
-                "Registration is not open in the demo environment."
+                "保留学生与管理员 demo 账号快捷带入，便于课堂演示与联调。当前演示环境未开放注册。",
+                "Student and admin demo accounts can be filled in quickly for demos. Registration is not open in the demo environment."
               )}
             </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
+                onClick={() => setForm(defaultAccount)}
+              >
+                {localeText(locale, "带入学生 demo", "Use Student Demo")}
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
+                onClick={() => setForm(adminAccount)}
+              >
+                {localeText(locale, "带入管理员 demo", "Use Admin Demo")}
+              </button>
+            </div>
           </div>
         </div>
       </div>

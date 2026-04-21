@@ -8,6 +8,7 @@ import { HomePage } from "./ui/pages/home-page";
 import { LoginPage } from "./ui/pages/login-page";
 import { OrderDetailPage } from "./ui/pages/order-detail-page";
 import { OrdersPage } from "./ui/pages/orders-page";
+import { ServiceRequestsPage } from "./ui/pages/service-requests-page";
 import { SpacesPage } from "./ui/pages/spaces-page";
 import { SportsPage } from "./ui/pages/sports-page";
 import {
@@ -43,6 +44,10 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
           {
             path: "orders",
             element: <OrdersPage />
+          },
+          {
+            path: "service-requests",
+            element: <ServiceRequestsPage />
           },
           {
             path: "orders/cancellations",
