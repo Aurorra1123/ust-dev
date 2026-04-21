@@ -22,6 +22,25 @@ const adminAccount = {
   password: "admin123456"
 };
 
+const quickAccounts = [
+  {
+    id: "student",
+    labelZh: "学生入口",
+    labelEn: "Student Access",
+    hintZh: "点击后带入学生 demo 账号",
+    hintEn: "Fill the student demo account",
+    account: defaultAccount
+  },
+  {
+    id: "teacher",
+    labelZh: "教师入口",
+    labelEn: "Teacher Access",
+    hintZh: "点击后带入管理员 demo 账号",
+    hintEn: "Fill the admin demo account",
+    account: adminAccount
+  }
+] as const;
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -62,6 +81,38 @@ export function LoginPage() {
           <h3 className="mt-3 text-3xl font-semibold text-ink">
             {localeText(locale, "进入系统", "Access")}
           </h3>
+
+          <div className="mt-6 grid gap-3">
+            <p className="text-sm font-medium text-ink">
+              {localeText(locale, "快捷身份带入", "Quick Role Access")}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {quickAccounts.map((entry) => {
+                const isActive =
+                  form.email === entry.account.email && form.password === entry.account.password;
+
+                return (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    className={`rounded-[22px] border px-4 py-4 text-left transition ${
+                      isActive
+                        ? "border-ember bg-ember/10"
+                        : "border-navy/10 bg-white hover:border-moss"
+                    }`}
+                    onClick={() => setForm(entry.account)}
+                  >
+                    <p className="text-sm font-semibold text-ink">
+                      {localeText(locale, entry.labelZh, entry.labelEn)}
+                    </p>
+                    <p className="mt-2 text-xs leading-6 text-slate">
+                      {localeText(locale, entry.hintZh, entry.hintEn)}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <form
             className="mt-6 grid gap-4"
@@ -124,26 +175,10 @@ export function LoginPage() {
             <p className="mt-2 text-sm text-slate">
               {localeText(
                 locale,
-                "保留学生与管理员 demo 账号快捷带入，便于课堂演示与联调。当前演示环境未开放注册。",
-                "Student and admin demo accounts can be filled in quickly for demos. Registration is not open in the demo environment."
+                "上方可直接点击学生入口或教师入口完成账号带入。当前演示环境未开放注册。",
+                "Use the student or teacher entry above to fill the demo credentials. Registration is not open in the demo environment."
               )}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
-                onClick={() => setForm(defaultAccount)}
-              >
-                {localeText(locale, "带入学生 demo", "Use Student Demo")}
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-navy/10 bg-sand px-4 py-2 text-sm text-ink transition hover:border-moss"
-                onClick={() => setForm(adminAccount)}
-              >
-                {localeText(locale, "带入管理员 demo", "Use Admin Demo")}
-              </button>
-            </div>
           </div>
         </div>
       </div>
