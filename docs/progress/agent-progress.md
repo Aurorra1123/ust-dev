@@ -6,6 +6,35 @@
 
 ### 已完成
 
+- 已完成代码质量重构第二阶段的学生端页面拆分：
+  - `spaces-page.tsx` 已收口为查询、状态与提交编排，时间轴 segment / 冲突判断 / 可用性面板 / 提交面板已下沉到 `ui/pages/spaces/`
+  - `sports-page.tsx` 已收口为查询、目标切换与提交编排，slot state 推导 / 时间表面板 / 提交面板已下沉到 `ui/pages/sports/`
+  - 两个主页面已不再直接堆放大段派生逻辑和展示细节
+- 已完成本地校验并留证：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - 新增验证记录：`docs/verification/2026-04-21/code-quality-second-phase-student-page-split.md`
+
+### 当前状态
+
+- 代码质量基线文档中“先拆学生端 `spaces-page.tsx` 与 `sports-page.tsx`”已完成
+- 当前学生端两个预约页的主文件职责已经明显收窄，后续可以继续按相同原则处理后台 `resources-workspace.tsx` 与 `rules-workspace.tsx`
+
+### 下一步建议
+
+1. 进入下一阶段，拆分管理员 `resources-workspace.tsx` 与 `rules-workspace.tsx` 中混杂的派生逻辑和大块视图
+2. 在 admin 工作区拆分完成后，再统一收口错误契约和 HTTP fallback
+
+### 注意事项
+
+- 本轮没有新增 ADR，因为拆分边界完全落在 `docs/adr/0009-code-quality-refactor-boundaries.md` 已确认范围内
+- 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
+
+## 2026-04-21
+
+### 已完成
+
 - 已根据第二轮用户测试 `docs/user_test/web_problem_2.md` 重新核对线上与当前代码状态，并确认 2 条新的真实问题：
   - `UTG-011`：学术空间“创新协作室”在线上 API 中没有任何资源单元，导致学生端时间轴看起来像“未加载”
   - `UTG-012`：管理端预约关闭规则只有新增和更新能力，没有删除或撤销入口
