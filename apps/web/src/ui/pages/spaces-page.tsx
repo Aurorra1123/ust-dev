@@ -22,6 +22,7 @@ import { queryClient } from "../../lib/query-client";
 import { useLocaleStore } from "../../store/locale-store";
 import type { Locale } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
+import { parseCompanionEmails } from "../helpers/reservation-input";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel } from "../user-experience-kit";
 
@@ -884,17 +885,6 @@ function rangesOverlap(
     : Number.POSITIVE_INFINITY;
 
   return start.getTime() < comparedEnd && end.getTime() > comparedStart;
-}
-
-function parseCompanionEmails(value: string) {
-  return Array.from(
-    new Set(
-      value
-        .split(/[\n,;]+/)
-        .map((item) => item.trim().toLowerCase())
-        .filter(Boolean)
-    )
-  );
 }
 
 function parseLocalDateTime(value: string) {

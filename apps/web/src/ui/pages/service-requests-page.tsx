@@ -10,6 +10,10 @@ import { formatDateTime } from "../../lib/date";
 import { localeText } from "../../lib/locale";
 import { queryClient } from "../../lib/query-client";
 import { useLocaleStore } from "../../store/locale-store";
+import {
+  serviceRequestStatusLabel,
+  serviceRequestStatusTone
+} from "../helpers/service-request-status";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel, StatusPill } from "../user-experience-kit";
 
@@ -196,37 +200,4 @@ function InfoCard({ label, value }: { label: string; value: string }) {
       <p className="mt-2 text-sm font-medium text-ink">{value}</p>
     </div>
   );
-}
-
-function serviceRequestStatusLabel(
-  status: "submitted" | "received" | "in_progress" | "resolved" | "closed",
-  locale: "zh-CN" | "en"
-) {
-  switch (status) {
-    case "submitted":
-      return localeText(locale, "待受理", "Submitted");
-    case "received":
-      return localeText(locale, "已接收", "Received");
-    case "in_progress":
-      return localeText(locale, "处理中", "In Progress");
-    case "resolved":
-      return localeText(locale, "已解决", "Resolved");
-    case "closed":
-      return localeText(locale, "已关闭", "Closed");
-  }
-}
-
-function serviceRequestStatusTone(
-  status: "submitted" | "received" | "in_progress" | "resolved" | "closed"
-) {
-  switch (status) {
-    case "resolved":
-    case "closed":
-      return "success" as const;
-    case "submitted":
-      return "brand" as const;
-    case "received":
-    case "in_progress":
-      return "neutral" as const;
-  }
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { ServiceRequestStatus } from "@campusbook/shared-types";
 
 import {
   fetchAdminServiceRequests,
@@ -9,12 +10,13 @@ import { formatDateTime } from "../../../../lib/date";
 import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
-import { PageSection } from "../../../page-section";
-import { EmptyPanel, StatePanel, StatusPill } from "../../../user-experience-kit";
 import {
   serviceRequestStatusLabel,
+  serviceRequestStatusOptions,
   serviceRequestStatusTone
-} from "../admin-helpers";
+} from "../../../helpers/service-request-status";
+import { PageSection } from "../../../page-section";
+import { EmptyPanel, StatePanel, StatusPill } from "../../../user-experience-kit";
 import { AdminInfoCard } from "../components/admin-info-card";
 import { MutationState } from "../components/mutation-state";
 
@@ -24,9 +26,7 @@ export function ServiceRequestsWorkspace({ locale }: { locale: Locale }) {
     queryFn: fetchAdminServiceRequests
   });
   const [selectedId, setSelectedId] = useState("");
-  const [status, setStatus] = useState<
-    "submitted" | "received" | "in_progress" | "resolved" | "closed"
-  >("submitted");
+  const [status, setStatus] = useState<ServiceRequestStatus>("submitted");
   const [adminNote, setAdminNote] = useState("");
 
   useEffect(() => {
@@ -54,7 +54,7 @@ export function ServiceRequestsWorkspace({ locale }: { locale: Locale }) {
   const updateMutation = useMutation({
     mutationFn: (payload: {
       requestId: string;
-      status: "submitted" | "received" | "in_progress" | "resolved" | "closed";
+      status: ServiceRequestStatus;
       adminNote: string;
     }) =>
       updateServiceRequest(payload.requestId, {
@@ -198,22 +198,13 @@ export function ServiceRequestsWorkspace({ locale }: { locale: Locale }) {
               <select
                 className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
                 value={status}
-                onChange={(event) =>
-                  setStatus(
-                    event.target.value as
-                      | "submitted"
-                      | "received"
-                      | "in_progress"
-                      | "resolved"
-                      | "closed"
-                  )
-                }
+                onChange={(event) => setStatus(event.target.value as ServiceRequestStatus)}
               >
-                <option value="submitted">{localeText(locale, "待受理", "Submitted")}</option>
-                <option value="received">{localeText(locale, "已接收", "Received")}</option>
-                <option value="in_progress">{localeText(locale, "处理中", "In Progress")}</option>
-                <option value="resolved">{localeText(locale, "已解决", "Resolved")}</option>
-                <option value="closed">{localeText(locale, "已关闭", "Closed")}</option>
+                {serviceRequestStatusOptions(locale).map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
 
               <textarea

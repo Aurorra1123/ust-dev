@@ -3,31 +3,9 @@ import { Link, Navigate } from "react-router-dom";
 import { localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
+import { homeServiceCards } from "../helpers/home-service-cards";
 import { buildDemoLoginPath, quickRoleEntries } from "../demo-accounts";
 import { HomeNotificationsSection } from "./home-notifications-section";
-
-const serviceCards = [
-  {
-    title: "体育",
-    description: "进入体育场馆预约页面，查看时段并提交预约。",
-    href: "/sports"
-  },
-  {
-    title: "学术",
-    description: "进入学术空间预约页面，选择资源与时间。",
-    href: "/spaces"
-  },
-  {
-    title: "活动",
-    description: "进入活动页面，查看活动并完成报名。",
-    href: "/activities"
-  },
-  {
-    title: "报修",
-    description: "提交事故或设备报修，并跟踪管理员处理状态。",
-    href: "/service-requests"
-  }
-] as const;
 
 export function HomePage() {
   const status = useSessionStore((state) => state.status);
@@ -122,37 +100,17 @@ function PublicHome() {
 
       <section className="rounded-[30px] border border-navy/10 bg-white px-6 py-6 shadow-panel lg:px-8">
         <div className="grid gap-4 lg:grid-cols-4">
-          {serviceCards.map((card) => (
+          {homeServiceCards.map((card) => (
             <Link
-              key={card.href}
+              key={card.id}
               to={buildDemoLoginPath("student", card.href)}
               className="rounded-[24px] border border-navy/10 bg-sand px-5 py-5 transition hover:border-moss"
             >
               <h3 className="text-2xl font-semibold text-ink">
-                {localeText(
-                  locale,
-                  card.title,
-                  card.title === "体育"
-                    ? "Sports"
-                    : card.title === "学术"
-                      ? "Study"
-                      : card.title === "活动"
-                        ? "Activities"
-                        : "Repairs"
-                )}
+                {localeText(locale, card.titleZh, card.titleEn)}
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate">
-                {localeText(
-                  locale,
-                  card.description,
-                  card.title === "体育"
-                    ? "Open the sports booking page."
-                    : card.title === "学术"
-                      ? "Open the study-space booking page."
-                      : card.title === "活动"
-                        ? "Open the activity registration page."
-                        : "Submit a repair ticket and track the admin response."
-                )}
+                {localeText(locale, card.descriptionZh, card.descriptionEn)}
               </p>
             </Link>
           ))}
@@ -220,37 +178,17 @@ function StudentHome() {
 
       <section className="rounded-[30px] border border-navy/10 bg-white px-6 py-6 shadow-panel lg:px-8">
         <div className="grid gap-4 lg:grid-cols-3">
-          {serviceCards.map((card) => (
+          {homeServiceCards.map((card) => (
             <Link
-              key={card.href}
+              key={card.id}
               to={card.href}
               className="rounded-[24px] border border-navy/10 bg-sand px-5 py-5 transition hover:border-moss"
             >
               <h3 className="text-2xl font-semibold text-ink">
-                {localeText(
-                  locale,
-                  card.title,
-                  card.title === "体育"
-                    ? "Sports"
-                    : card.title === "学术"
-                      ? "Study"
-                      : card.title === "活动"
-                        ? "Activities"
-                        : "Repairs"
-                )}
+                {localeText(locale, card.titleZh, card.titleEn)}
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate">
-                {localeText(
-                  locale,
-                  card.description,
-                  card.title === "体育"
-                    ? "Open the sports booking page."
-                    : card.title === "学术"
-                      ? "Open the study-space booking page."
-                      : card.title === "活动"
-                        ? "Open the activity registration page."
-                        : "Submit a repair ticket and track the admin response."
-                )}
+                {localeText(locale, card.descriptionZh, card.descriptionEn)}
               </p>
             </Link>
           ))}

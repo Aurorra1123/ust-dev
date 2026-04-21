@@ -21,6 +21,7 @@ import { localeText } from "../../lib/locale";
 import { queryClient } from "../../lib/query-client";
 import { useLocaleStore } from "../../store/locale-store";
 import { useSessionStore } from "../../store/session-store";
+import { parseCompanionEmails } from "../helpers/reservation-input";
 import { PageSection } from "../page-section";
 import { EmptyPanel, StatePanel } from "../user-experience-kit";
 
@@ -740,17 +741,6 @@ function legendToneClass(state: CellState) {
     case "selected":
       return "bg-ember/80";
   }
-}
-
-function parseCompanionEmails(value: string) {
-  return Array.from(
-    new Set(
-      value
-        .split(/[\n,;]+/)
-        .map((item) => item.trim().toLowerCase())
-        .filter(Boolean)
-    )
-  );
 }
 
 function formatNameList(names: string[], locale: "zh-CN" | "en") {

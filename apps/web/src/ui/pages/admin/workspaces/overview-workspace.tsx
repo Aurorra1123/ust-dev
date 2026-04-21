@@ -11,6 +11,7 @@ import { ApiError } from "../../../../lib/http/errors";
 import { formatDateTime } from "../../../../lib/date";
 import { localeText } from "../../../../lib/locale";
 import type { Locale } from "../../../../store/locale-store";
+import { serviceRequestStatusLabel } from "../../../helpers/service-request-status";
 import { PageSection } from "../../../page-section";
 import {
   HighlightPanel,
@@ -22,7 +23,6 @@ import {
   notificationStatusLabel,
   resourceTypeLabel,
   ruleTypeLabel,
-  serviceRequestStatusLabel,
   type WorkspaceTab
 } from "../admin-helpers";
 import { AdminStatCard } from "../components/admin-stat-card";

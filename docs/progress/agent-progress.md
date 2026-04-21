@@ -6,6 +6,35 @@
 
 ### 已完成
 
+- 已完成代码质量重构第一阶段的共享小逻辑收口：
+  - 新增预约输入 helper，`parseCompanionEmails` 不再在学术页和体育页各写一份
+  - 新增工单状态 helper，学生端、后台工单工作区和后台总览现在共用同一套状态 label / tone / option 来源
+  - 首页服务卡片已改为稳定 key 与显式中英文文案，不再通过中文标题值分支推导英文
+- 已完成本地校验并留证：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - 新增验证记录：`docs/verification/2026-04-21/code-quality-first-phase-shared-helpers.md`
+
+### 当前状态
+
+- 代码质量基线文档中第一批“共享小逻辑收口”事项已开始落地
+- 当前已消除预约邮箱解析、工单状态字典和首页服务卡片文案映射这三类明确重复
+
+### 下一步建议
+
+1. 继续按基线顺序推进第二阶段，优先拆学生端 `spaces-page.tsx` 与 `sports-page.tsx` 的页面内派生逻辑
+2. 再处理管理员 `resources-workspace.tsx` 与 `rules-workspace.tsx` 的职责拆分
+
+### 注意事项
+
+- 本轮没有新增 ADR，因为实现范围完全落在 `docs/adr/0009-code-quality-refactor-boundaries.md` 已确认的边界内
+- `no_show` 的“已结束 / 已爽约”语义漂移尚未处理，刻意留给后续单独决策，不与这批机械性收口混做
+
+## 2026-04-21
+
+### 已完成
+
 - 已将本轮代码质量 review findings 固化为正式文档，作为后续重构基线：
   - `docs/architecture/code-quality-review-and-refactor-baseline-2026-04-21.md`
   - 已详细记录当前主要问题、影响、重构原则与第一批拆分顺序
