@@ -128,6 +128,10 @@ docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compo
   - `https://www.campusbook.top`
   - `https://api.campusbook.top/health`
 - 如果本轮修改涉及具体业务入口，还要补对应业务 smoke 验证
+- 如果本轮修改涉及前端运行时配置、demo 凭据或登录快捷带入，还要额外验证：
+  - `https://campusbook.top/config.js` 中的运行时值是否与根 `.env` 一致
+  - 学生 demo 登录接口返回 `200`
+  - 管理员 demo 登录接口返回 `200`
 
 ## 单机资源保护
 
