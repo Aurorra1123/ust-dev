@@ -6,6 +6,34 @@
 
 ### 已完成
 
+- 已将本轮代码质量 review findings 固化为正式文档，作为后续重构基线：
+  - `docs/architecture/code-quality-review-and-refactor-baseline-2026-04-21.md`
+  - 已详细记录当前主要问题、影响、重构原则与第一批拆分顺序
+- 已新增 ADR：
+  - `docs/adr/0009-code-quality-refactor-boundaries.md`
+  - 明确后续重构必须优先按职责拆分，而不是继续引入过早抽象或猜测性兜底
+- 已更新架构文档导航：
+  - `docs/architecture/README.md`
+
+### 当前状态
+
+- 当前仓库已经有一份可直接作为下一轮重构输入的正式基线文档
+- 后续若继续实施重构，应以本轮固化的问题边界为准，不再回到“大页面里继续堆逻辑”的路径
+
+### 下一步建议
+
+1. 先从共享小逻辑收口开始，优先消除 `parseCompanionEmails`、工单状态字典和首页服务卡片文案映射的重复
+2. 再按文档顺序拆学生端预约页与管理员资源/规则工作区
+3. 最后再收口错误契约，避免边改页面边继续扩散字符串协议
+
+### 注意事项
+
+- 本轮只新增/更新文档，没有修改业务代码或接口语义
+
+## 2026-04-21
+
+### 已完成
+
 - 已修复资源工作区“新增资源单元”报错 `property resourceId should not exist`：
   - 前端创建资源单元时，`resourceId` 现在只用于 URL 路径参数，不再混入请求体
   - 后端 `CreateResourceUnitDto` 的严格白名单校验已可正常通过

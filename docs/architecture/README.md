@@ -13,6 +13,7 @@
 - `technical-solution-v2.md`：修订后的推荐技术方案
 - `architecture-diagrams.md`：基于当前代码核实后的真实架构图与流程图
 - `current-implementation-audit-2026-04-21.md`：当前代码真实状态审计与差距说明
+- `code-quality-review-and-refactor-baseline-2026-04-21.md`：当前代码组织问题、重构原则与第一批拆分边界
 - `architecture-and-product-report-2026-04-21.md`：面向提交/答辩的中文架构与产品使用报告初稿
 - `development-environment-audit-2026-04-16.md`：当前服务器开发环境核查
 
@@ -25,7 +26,8 @@
 5. `technical-solution-v2.md`
 6. `architecture-diagrams.md`
 7. `current-implementation-audit-2026-04-21.md`
-8. `architecture-and-product-report-2026-04-21.md`
-9. `admin-resource-reservation-boundary-refactor.md`
-10. `development-environment-audit-2026-04-16.md`
-11. `technical-solution-v1.md`
+8. `code-quality-review-and-refactor-baseline-2026-04-21.md`
+9. `architecture-and-product-report-2026-04-21.md`
+10. `admin-resource-reservation-boundary-refactor.md`
+11. `development-environment-audit-2026-04-16.md`
+12. `technical-solution-v1.md`
