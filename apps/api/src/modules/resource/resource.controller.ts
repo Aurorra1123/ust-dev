@@ -158,6 +158,11 @@ export class AdminResourceController {
     return this.resourceWriteService.updateBookingClosure(id, payload);
   }
 
+  @Delete("closures/:id")
+  deleteBookingClosure(@Param("id") id: string): Promise<{ id: string }> {
+    return this.resourceWriteService.deleteBookingClosure(id);
+  }
+
   @Get(":id/reservation-status")
   getReservationStatus(
     @Param("id") id: string,

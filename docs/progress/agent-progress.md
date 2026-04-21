@@ -6,6 +6,44 @@
 
 ### 已完成
 
+- 已完成第二轮用户测试确认问题 `UTG-011` 与 `UTG-012`：
+  - `UTG-011`
+    - 学术空间学生端现在会对零单元资源显示明确空状态，不再出现近似空白时间轴
+    - 后端公开资源边界已收口为“`active` 且至少存在一个资源单元”，零单元资源不再直接面向学生公开
+    - 管理端资源工作区已补“未配置单元 / 当前不会形成学生侧时间轴”的明显提示
+  - `UTG-012`
+    - 后端已新增 `DELETE /admin/resources/closures/:id`
+    - 管理端资源工作区已为每条关闭规则补“删除关闭规则”入口、确认提示和成功/失败反馈
+- 已新增 ADR：
+  - `docs/adr/0015-public-resource-must-have-units-before-student-exposure.md`
+- 已完成本地校验并留证：
+  - `pnpm --filter api lint`
+  - `pnpm --filter api typecheck`
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter api build`
+  - `pnpm --filter web build`
+  - 新增验证记录：`docs/verification/2026-04-21/utg-011-utg-012-resource-completeness-and-closure-delete.md`
+
+### 当前状态
+
+- 第二轮用户测试中当前已确认的两条 P0 问题 `UTG-011`、`UTG-012` 已完成
+- `docs/plans/feature-list.json` 中这两项现在可标记为通过
+
+### 下一步建议
+
+1. 若要继续压缩演示风险，可补一组浏览器级截图，覆盖“零单元资源隐藏 / 后台关闭规则删除”两个场景
+2. 若后续继续做产品回访，可复查此前暂未纳入正式开发列表的第二轮用户反馈项
+
+### 注意事项
+
+- 本轮没有修改线上数据库或 demo seed；对线上零单元资源的收口依赖本轮代码发布后生效
+- 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成代码质量重构第五阶段的 HTTP fallback 清理：
   - `apps/web/src/lib/http/client.ts` 已移除对未知 hostname 默认猜到 `api.campusbook.top` 的分支
   - 当前只保留正式域名与本地开发环境的已确认默认推导，其他环境必须显式配置 API 地址

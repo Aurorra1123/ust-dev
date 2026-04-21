@@ -162,6 +162,12 @@ export function updateResourceBookingClosure(
   });
 }
 
+export function deleteResourceBookingClosure(closureId: string) {
+  return requestJson<{ id: string }>(`/admin/resources/closures/${closureId}`, {
+    method: "DELETE"
+  });
+}
+
 export function fetchAdminResourceReservationStatus(
   resourceId: string,
   params?: { from?: string; to?: string }

@@ -36,6 +36,9 @@ export class ResourceReadService {
     const resources = await this.prismaService.resource.findMany({
       where: {
         status: PrismaResourceStatus.ACTIVE,
+        units: {
+          some: {}
+        },
         ...(type ? { type: mapSharedResourceType(type) } : {})
       },
       include: resourceDetailInclude,
@@ -54,7 +57,10 @@ export class ResourceReadService {
     const resource = await this.prismaService.resource.findFirst({
       where: {
         id,
-        status: PrismaResourceStatus.ACTIVE
+        status: PrismaResourceStatus.ACTIVE,
+        units: {
+          some: {}
+        }
       },
       include: resourceDetailInclude
     });

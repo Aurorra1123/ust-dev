@@ -131,109 +131,124 @@ export function SpacesAvailabilityPanel({
             />
           ) : null}
 
-          <div className="overflow-x-auto">
-            <div className="min-w-[780px]">
-              <div className="ml-[188px] flex items-end justify-between gap-2 px-2">
-                {timelineMarkers.map((marker, index) => (
-                  <div key={marker.toISOString()} className="text-right">
-                    <p className="text-xs uppercase tracking-[0.16em] text-ink/45">
-                      {index === 0
-                        ? formatDate(marker.toISOString())
-                        : formatTime(marker.toISOString())}
-                    </p>
-                  </div>
-                ))}
-              </div>
+          {selectedResource.units.length === 0 ? (
+            <StatePanel
+              title={localeText(
+                locale,
+                "当前资源还没有可预约单元",
+                "This resource has no bookable units yet"
+              )}
+              description={localeText(
+                locale,
+                "该资源尚未完成配置，因此当前不会显示时间轴。请先选择其他学术空间。",
+                "This resource is not fully configured yet, so no timeline can be shown. Please choose another study space."
+              )}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="min-w-[780px]">
+                <div className="ml-[188px] flex items-end justify-between gap-2 px-2">
+                  {timelineMarkers.map((marker, index) => (
+                    <div key={marker.toISOString()} className="text-right">
+                      <p className="text-xs uppercase tracking-[0.16em] text-ink/45">
+                        {index === 0
+                          ? formatDate(marker.toISOString())
+                          : formatTime(marker.toISOString())}
+                      </p>
+                    </div>
+                  ))}
+                </div>
 
-              <div className="mt-4 grid gap-3">
-                {selectedResource.units.map((unit) => {
-                  const reservationSegments =
-                    schedule?.academicReservations.filter(
-                      (reservation) => reservation.resourceUnitId === unit.id
-                    ) ?? [];
-                  const segments = buildTimelineSegments({
-                    displayStart,
-                    displayEnd,
-                    unitName: unit.name,
-                    reservations: reservationSegments,
-                    closures: schedule?.closures ?? [],
-                    selectedRange: unit.id === selectedUnitId ? selectedRange : null
-                  });
-                  const rowSummary = summarizeUnitWindow(
-                    reservationSegments.length,
-                    schedule?.closures.length ?? 0,
-                    locale
-                  );
+                <div className="mt-4 grid gap-3">
+                  {selectedResource.units.map((unit) => {
+                    const reservationSegments =
+                      schedule?.academicReservations.filter(
+                        (reservation) => reservation.resourceUnitId === unit.id
+                      ) ?? [];
+                    const segments = buildTimelineSegments({
+                      displayStart,
+                      displayEnd,
+                      unitName: unit.name,
+                      reservations: reservationSegments,
+                      closures: schedule?.closures ?? [],
+                      selectedRange: unit.id === selectedUnitId ? selectedRange : null
+                    });
+                    const rowSummary = summarizeUnitWindow(
+                      reservationSegments.length,
+                      schedule?.closures.length ?? 0,
+                      locale
+                    );
 
-                  return (
-                    <button
-                      key={unit.id}
-                      type="button"
-                      className={`flex min-w-[780px] items-center gap-4 rounded-[22px] border px-4 py-4 text-left transition ${
-                        unit.id === selectedUnitId
-                          ? "border-ember bg-ember/10"
-                          : "border-ink/10 bg-sand hover:border-moss"
-                      }`}
-                      onClick={() => onSelectUnit(unit.id)}
-                    >
-                      <div className="w-40 shrink-0">
-                        <p className="text-sm font-semibold text-ink">{unit.name}</p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink/45">
-                          {unit.code}
-                        </p>
-                        <p className="mt-2 text-xs text-slate">{rowSummary}</p>
-                      </div>
+                    return (
+                      <button
+                        key={unit.id}
+                        type="button"
+                        className={`flex min-w-[780px] items-center gap-4 rounded-[22px] border px-4 py-4 text-left transition ${
+                          unit.id === selectedUnitId
+                            ? "border-ember bg-ember/10"
+                            : "border-ink/10 bg-sand hover:border-moss"
+                        }`}
+                        onClick={() => onSelectUnit(unit.id)}
+                      >
+                        <div className="w-40 shrink-0">
+                          <p className="text-sm font-semibold text-ink">{unit.name}</p>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink/45">
+                            {unit.code}
+                          </p>
+                          <p className="mt-2 text-xs text-slate">{rowSummary}</p>
+                        </div>
 
-                      <div className="relative h-16 flex-1 rounded-2xl border border-navy/10 bg-white">
-                        <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-navy/10" />
+                        <div className="relative h-16 flex-1 rounded-2xl border border-navy/10 bg-white">
+                          <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-navy/10" />
 
-                        {timelineMarkers.slice(1, -1).map((marker) => (
-                          <div
-                            key={marker.toISOString()}
-                            className="absolute inset-y-0 w-px bg-navy/8"
-                            style={{
-                              left: `${calculateLeftPercent(
-                                marker.getTime(),
-                                displayStart.getTime(),
-                                displayEnd.getTime()
-                              )}%`
-                            }}
-                          />
-                        ))}
+                          {timelineMarkers.slice(1, -1).map((marker) => (
+                            <div
+                              key={marker.toISOString()}
+                              className="absolute inset-y-0 w-px bg-navy/8"
+                              style={{
+                                left: `${calculateLeftPercent(
+                                  marker.getTime(),
+                                  displayStart.getTime(),
+                                  displayEnd.getTime()
+                                )}%`
+                              }}
+                            />
+                          ))}
 
-                        {isNowVisible(displayStart, displayEnd) ? (
-                          <div
-                            className="absolute inset-y-1 z-[3] w-[2px] rounded-full bg-navy/60"
-                            style={{
-                              left: `${calculateLeftPercent(
-                                Date.now(),
-                                displayStart.getTime(),
-                                displayEnd.getTime()
-                              )}%`
-                            }}
-                          />
-                        ) : null}
+                          {isNowVisible(displayStart, displayEnd) ? (
+                            <div
+                              className="absolute inset-y-1 z-[3] w-[2px] rounded-full bg-navy/60"
+                              style={{
+                                left: `${calculateLeftPercent(
+                                  Date.now(),
+                                  displayStart.getTime(),
+                                  displayEnd.getTime()
+                                )}%`
+                              }}
+                            />
+                          ) : null}
 
-                        {segments.map((segment) => (
-                          <div
-                            key={segment.key}
-                            className={`absolute inset-y-2 rounded-xl ${timelineSegmentClass(
-                              segment.tone
-                            )}`}
-                            style={{
-                              left: `${segment.leftPercent}%`,
-                              width: `${segment.widthPercent}%`
-                            }}
-                            title={segment.label}
-                          />
-                        ))}
-                      </div>
-                    </button>
-                  );
-                })}
+                          {segments.map((segment) => (
+                            <div
+                              key={segment.key}
+                              className={`absolute inset-y-2 rounded-xl ${timelineSegmentClass(
+                                segment.tone
+                              )}`}
+                              style={{
+                                left: `${segment.leftPercent}%`,
+                                width: `${segment.widthPercent}%`
+                              }}
+                              title={segment.label}
+                            />
+                          ))}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       ) : null}
     </div>

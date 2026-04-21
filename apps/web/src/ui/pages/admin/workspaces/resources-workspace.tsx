@@ -8,6 +8,7 @@ import {
   createResourceReleaseRules,
   createResourceUnit,
   deleteResource,
+  deleteResourceBookingClosure,
   deleteResourceUnit,
   fetchAdminResourceReservationStatus,
   fetchAdminResources,
@@ -188,6 +189,16 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
     }
   });
 
+  const deleteBookingClosureMutation = useMutation({
+    mutationFn: (closureId: string) => deleteResourceBookingClosure(closureId),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
+      ]);
+    }
+  });
+
   const cancelReservationMutation = useMutation({
     mutationFn: (payload: { orderId: string; reason: string }) =>
       cancelOrder(payload.orderId, payload.reason),
@@ -346,6 +357,22 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
     });
   }
 
+  function handleDeleteBookingClosure(closureId: string) {
+    if (
+      !window.confirm(
+        localeText(
+          locale,
+          "删除后该预约关闭规则将立即失效。确认继续吗？",
+          "Deleting this booking closure will remove it immediately. Continue?"
+        )
+      )
+    ) {
+      return;
+    }
+
+    deleteBookingClosureMutation.mutate(closureId);
+  }
+
   function handleCancelReservation(orderId: string) {
     cancelReservationMutation.mutate({
       orderId,
@@ -400,9 +427,11 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
               onToggleResourceStatus={handleToggleResourceStatus}
               onDeleteResource={handleDeleteResource}
               onDeleteResourceUnit={handleDeleteResourceUnit}
+              onDeleteBookingClosure={handleDeleteBookingClosure}
               updateResourceStatusMutation={updateResourceStatusMutation}
               deleteResourceMutation={deleteResourceMutation}
               deleteResourceUnitMutation={deleteResourceUnitMutation}
+              deleteBookingClosureMutation={deleteBookingClosureMutation}
               statusWindow={statusWindow}
               onStatusWindowChange={handleStatusWindowChange}
               resourceStatusQuery={{

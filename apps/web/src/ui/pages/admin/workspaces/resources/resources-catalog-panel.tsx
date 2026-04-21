@@ -45,6 +45,11 @@ export function ResourcesCatalogPanel({
               ? localeText(locale, "启用中", "Active")
               : localeText(locale, "已停用", "Inactive")}
           </StatusPill>
+          {resource.units.length === 0 ? (
+            <StatusPill tone="danger">
+              {localeText(locale, "未配置单元", "No Units")}
+            </StatusPill>
+          ) : null}
           <StatusPill tone={channelStatusTone(resource.channelStatus.status)}>
             {channelStatusLabel(resource.channelStatus.status, locale)}
           </StatusPill>

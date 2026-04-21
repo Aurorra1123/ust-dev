@@ -114,7 +114,10 @@ export class ResourceStatusService {
     const resource = await this.prismaService.resource.findFirst({
       where: {
         id,
-        status: PrismaResourceStatus.ACTIVE
+        status: PrismaResourceStatus.ACTIVE,
+        units: {
+          some: {}
+        }
       },
       include: adminResourceInclude
     });

@@ -46,9 +46,11 @@ export function ResourcesDetailPanel({
   onToggleResourceStatus,
   onDeleteResource,
   onDeleteResourceUnit,
+  onDeleteBookingClosure,
   updateResourceStatusMutation,
   deleteResourceMutation,
   deleteResourceUnitMutation,
+  deleteBookingClosureMutation,
   statusWindow,
   onStatusWindowChange,
   resourceStatusQuery,
@@ -63,9 +65,11 @@ export function ResourcesDetailPanel({
   onToggleResourceStatus: () => void;
   onDeleteResource: () => void;
   onDeleteResourceUnit: (unitId: string) => void;
+  onDeleteBookingClosure: (closureId: string) => void;
   updateResourceStatusMutation: MutationStateLike;
   deleteResourceMutation: MutationStateLike;
   deleteResourceUnitMutation: MutationStateLike;
+  deleteBookingClosureMutation: MutationStateLike;
   statusWindow: StatusWindowState;
   onStatusWindowChange: (field: keyof StatusWindowState, value: string) => void;
   resourceStatusQuery: ResourceStatusQueryState;
@@ -139,6 +143,23 @@ export function ResourcesDetailPanel({
               "No additional description for this resource yet."
             )}
         </p>
+        {selectedResource.units.length === 0 ? (
+          <div className="mt-5">
+            <StatePanel
+              tone="danger"
+              title={localeText(
+                locale,
+                "该资源还没有可预约单元",
+                "This resource has no bookable units yet"
+              )}
+              description={localeText(
+                locale,
+                "资源虽然已创建，但当前不会在学生端形成可预约时间轴。请先补资源单元，再决定是否继续保持启用。",
+                "The resource exists, but it cannot form a student-facing booking timeline yet. Add at least one unit before keeping it exposed."
+              )}
+            />
+          </div>
+        ) : null}
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <AdminInfoCard
             label={localeText(locale, "当前位置", "Location")}
@@ -166,25 +187,35 @@ export function ResourcesDetailPanel({
           />
         </div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {selectedResource.units.map((unit) => (
-            <div key={unit.id} className="rounded-2xl border border-navy/10 bg-white px-4 py-4">
-              <div className="flex items-start justify-between gap-3">
-                <p className="font-medium text-ink">{unit.name}</p>
-                <button
-                  type="button"
-                  className="rounded-full border border-danger/20 px-3 py-1 text-xs text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => onDeleteResourceUnit(unit.id)}
-                  disabled={deleteResourceUnitMutation.isPending}
-                >
-                  {localeText(locale, "删除", "Delete")}
-                </button>
+          {selectedResource.units.length ? (
+            selectedResource.units.map((unit) => (
+              <div key={unit.id} className="rounded-2xl border border-navy/10 bg-white px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-medium text-ink">{unit.name}</p>
+                  <button
+                    type="button"
+                    className="rounded-full border border-danger/20 px-3 py-1 text-xs text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => onDeleteResourceUnit(unit.id)}
+                    disabled={deleteResourceUnitMutation.isPending}
+                  >
+                    {localeText(locale, "删除", "Delete")}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs uppercase tracking-[0.2em] text-ink/45">{unit.code}</p>
+                <p className="mt-2 text-sm text-slate">
+                  {localeText(locale, `类型：${unit.unitType}`, `Type: ${unit.unitType}`)}
+                </p>
               </div>
-              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-ink/45">{unit.code}</p>
-              <p className="mt-2 text-sm text-slate">
-                {localeText(locale, `类型：${unit.unitType}`, `Type: ${unit.unitType}`)}
-              </p>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-dashed border-ink/12 px-4 py-4 text-sm text-slate sm:col-span-2">
+              {localeText(
+                locale,
+                "当前还没有配置任何资源单元。学生端不会显示该资源的可预约时间轴。",
+                "No resource units are configured yet. Students will not see a booking timeline for this resource."
+              )}
             </div>
-          ))}
+          )}
         </div>
         <MutationState
           mutation={deleteResourceUnitMutation}
@@ -278,17 +309,29 @@ export function ResourcesDetailPanel({
                   selectedResource.bookingClosures.slice(0, 5).map((closure) => (
                     <div key={closure.id} className="rounded-2xl border border-ink/10 bg-sand px-4 py-4">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="font-medium text-ink">
-                          {formatDateTime(closure.startsAt)} {" → "}
-                          {closure.endsAt
-                            ? formatDateTime(closure.endsAt)
-                            : localeText(locale, "长期关闭", "Open-ended")}
-                        </p>
-                        <StatusPill tone={closure.isCurrentlyClosed ? "danger" : "neutral"}>
-                          {closure.isCurrentlyClosed
-                            ? localeText(locale, "生效中", "Live")
-                            : localeText(locale, "已登记", "Recorded")}
-                        </StatusPill>
+                        <div>
+                          <p className="font-medium text-ink">
+                            {formatDateTime(closure.startsAt)} {" → "}
+                            {closure.endsAt
+                              ? formatDateTime(closure.endsAt)
+                              : localeText(locale, "长期关闭", "Open-ended")}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <StatusPill tone={closure.isCurrentlyClosed ? "danger" : "neutral"}>
+                              {closure.isCurrentlyClosed
+                                ? localeText(locale, "生效中", "Live")
+                                : localeText(locale, "已登记", "Recorded")}
+                            </StatusPill>
+                            <button
+                              type="button"
+                              className="rounded-full border border-danger/20 px-3 py-1 text-xs text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+                              onClick={() => onDeleteBookingClosure(closure.id)}
+                              disabled={deleteBookingClosureMutation.isPending}
+                            >
+                              {localeText(locale, "删除关闭规则", "Delete Closure")}
+                            </button>
+                          </div>
+                        </div>
                       </div>
                       <p className="mt-2 text-sm text-slate">
                         {closure.reason ||
@@ -302,6 +345,19 @@ export function ResourcesDetailPanel({
                   </div>
                 )}
               </div>
+              <MutationState
+                mutation={deleteBookingClosureMutation}
+                pending={localeText(
+                  locale,
+                  "正在删除预约关闭规则。",
+                  "Deleting booking closure."
+                )}
+                success={localeText(
+                  locale,
+                  "预约关闭规则已删除。",
+                  "Booking closure deleted."
+                )}
+              />
             </div>
           </div>
         </div>

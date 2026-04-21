@@ -397,6 +397,27 @@ export class ResourceWriteService {
     return toBookingClosureDetail(updated, new Date());
   }
 
+  async deleteBookingClosure(id: string): Promise<{ id: string }> {
+    const existing = await this.prismaService.resourceBookingClosure.findUnique({
+      where: { id },
+      select: {
+        id: true
+      }
+    });
+
+    if (!existing) {
+      throw new NotFoundException("resource-booking-closure-not-found");
+    }
+
+    await this.prismaService.resourceBookingClosure.delete({
+      where: { id }
+    });
+
+    return {
+      id
+    };
+  }
+
   private async ensureResourceExists(id: string) {
     const resource = await this.prismaService.resource.findUnique({
       where: { id }
