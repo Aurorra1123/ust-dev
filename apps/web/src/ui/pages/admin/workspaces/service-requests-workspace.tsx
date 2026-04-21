@@ -134,13 +134,28 @@ export function ServiceRequestsWorkspace({ locale }: { locale: Locale }) {
           {selectedRequest ? (
             <form
               className="grid gap-4 rounded-[24px] border border-ink/10 bg-white px-5 py-5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                updateMutation.mutate({
-                  requestId: selectedRequest.id,
-                  status,
-                  adminNote
-                });
+            onSubmit={(event) => {
+              event.preventDefault();
+
+              if (
+                selectedRequest.status !== "closed" &&
+                status === "closed" &&
+                !window.confirm(
+                  localeText(
+                    locale,
+                    "关闭后该工单将进入结束状态。确认继续吗？",
+                    "Closing this request will move it to a final state. Continue?"
+                  )
+                )
+              ) {
+                return;
+              }
+
+              updateMutation.mutate({
+                requestId: selectedRequest.id,
+                status,
+                adminNote
+              });
               }}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">

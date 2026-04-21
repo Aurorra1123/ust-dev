@@ -399,13 +399,28 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
                     <button
                       type="button"
                       className="rounded-full border border-moss/25 px-4 py-3 text-sm text-moss transition hover:bg-moss/10 disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={() =>
+                      onClick={() => {
+                        const nextStatus =
+                          selectedRule.status === "active" ? "inactive" : "active";
+
+                        if (
+                          nextStatus === "inactive" &&
+                          !window.confirm(
+                            localeText(
+                              locale,
+                              "停用后该规则会立即停止影响预约主流程。确认继续吗？",
+                              "After deactivation, this rule will immediately stop affecting booking flows. Continue?"
+                            )
+                          )
+                        ) {
+                          return;
+                        }
+
                         updateRuleStatusMutation.mutate({
                           ruleId: selectedRule.id,
-                          status:
-                            selectedRule.status === "active" ? "inactive" : "active"
-                        })
-                      }
+                          status: nextStatus
+                        });
+                      }}
                       disabled={updateRuleStatusMutation.isPending}
                     >
                       {selectedRule.status === "active"

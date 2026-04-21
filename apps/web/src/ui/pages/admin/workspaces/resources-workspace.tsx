@@ -375,13 +375,28 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                   <button
                     type="button"
                     className="rounded-full border border-moss/25 px-4 py-2 text-sm text-moss transition hover:bg-moss/10 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() =>
+                    onClick={() => {
+                      const nextStatus =
+                        selectedResource.status === "active" ? "inactive" : "active";
+
+                      if (
+                        nextStatus === "inactive" &&
+                        !window.confirm(
+                          localeText(
+                            locale,
+                            "停用后学生端将不再看到该资源。确认继续吗？",
+                            "After deactivation, students will no longer see this resource. Continue?"
+                          )
+                        )
+                      ) {
+                        return;
+                      }
+
                       updateResourceStatusMutation.mutate({
                         resourceId: selectedResource.id,
-                        status:
-                          selectedResource.status === "active" ? "inactive" : "active"
-                      })
-                    }
+                        status: nextStatus
+                      });
+                    }}
                     disabled={updateResourceStatusMutation.isPending}
                   >
                     {selectedResource.status === "active"

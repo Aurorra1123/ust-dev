@@ -509,6 +509,12 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
             <MutationState
               mutation={createTicketMutation}
               success={localeText(locale, "票种已追加。", "Ticket type added.")}
+              pending={localeText(locale, "正在追加票种。", "Adding ticket type.")}
+            />
+            <MutationState
+              mutation={publishMutation}
+              success={localeText(locale, "活动状态已更新。", "Activity status updated.")}
+              pending={localeText(locale, "正在更新活动状态。", "Updating activity status.")}
             />
             <div className="mt-4 flex gap-3">
               <button
@@ -532,7 +538,21 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
                 type="button"
                 className="rounded-full border border-ink/15 px-4 py-3 text-sm text-ink transition hover:bg-sand disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={!selectedActivity || publishMutation.isPending}
-                onClick={() => publishMutation.mutate("closed")}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      localeText(
+                        locale,
+                        "关闭后活动将停止对外售卖。确认继续吗？",
+                        "Closing the activity will stop ticket sales. Continue?"
+                      )
+                    )
+                  ) {
+                    return;
+                  }
+
+                  publishMutation.mutate("closed");
+                }}
               >
                 {localeText(locale, "关闭", "Close")}
               </button>

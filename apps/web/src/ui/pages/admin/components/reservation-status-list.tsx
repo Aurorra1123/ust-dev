@@ -54,7 +54,21 @@ export function ReservationStatusList({
                 <button
                   type="button"
                   className="mt-4 rounded-full bg-danger px-4 py-2 text-sm font-medium text-white transition hover:bg-danger/90 disabled:cursor-not-allowed disabled:bg-danger/50"
-                  onClick={() => onCancel(entry.orderId)}
+                  onClick={() => {
+                    if (
+                      !window.confirm(
+                        localeText(
+                          locale,
+                          "确认要取消这条预约吗？该操作会直接影响用户当前订单状态。",
+                          "Cancel this reservation? This will immediately change the user's order status."
+                        )
+                      )
+                    ) {
+                      return;
+                    }
+
+                    onCancel(entry.orderId);
+                  }}
                   disabled={isMutating}
                 >
                   {localeText(locale, "取消预约", "Cancel reservation")}
