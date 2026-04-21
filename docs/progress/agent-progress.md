@@ -6,6 +6,33 @@
 
 ### 已完成
 
+- 已完成管理员工作台页面首轮边界拆分：
+  - `apps/web/src/ui/pages/admin-page.tsx` 收口为后台页面出口
+  - 新增 `apps/web/src/ui/pages/admin/`
+  - 后台概览、资源、活动、规则已按 workspace 分文件组织
+  - workspace 内部各自持有 query、mutation 与表单状态，后台总入口仅负责工作区切换
+- 本轮前端校验已通过：
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+
+### 当前状态
+
+- 前端请求层与后台工作台都已按模块边界完成首轮拆分
+- `APP-016` 当前剩余后端资源域与预约策略共享逻辑的拆分收口
+
+### 下一步建议
+
+1. 拆分 `apps/api/src/modules/resource/resource.service.ts`，将读写、状态聚合和映射职责拆开
+2. 将 `reservation` 与 `orders` 中重复的预约策略判断收拢到共享 helper
+
+### 注意事项
+
+- 本轮未改动后台接口语义，只调整管理端页面内部边界与组件组织
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成前端请求层首轮边界拆分：
   - 删除 `apps/web/src/lib/api.ts`
   - 新增 `apps/web/src/lib/http/`
