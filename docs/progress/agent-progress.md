@@ -6,6 +6,42 @@
 
 ### 已完成
 
+- 已完成 `UTG-004`：
+  - 学术空间页已接入公共预约状态查询，不再只展示资源单元后直接提交预约
+  - 页面已新增“资源单元 × 连续时间轴”的可用性视图，可展示占用、关闭、进行中和当前选择区间
+  - 开始时间 / 结束时间表单已与时间轴联动，可在提交前识别明显冲突或关闭区间
+- 已沉淀一条新的前端表达决策：
+  - 新增 ADR：`docs/adr/0011-academic-space-availability-uses-continuous-timeline.md`
+  - 学术空间后续采用连续时间轴，而不是照搬体育页的离散槽位表
+- 已完成本地校验与运行时验证：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - `docker compose --env-file .env -f infra/docker-compose.yml up -d --build --no-deps web`
+  - 本地前端 bundle 已更新为 `assets/index-CKB0JMC-.js`
+  - 新增验证记录：`docs/verification/2026-04-21/utg-004-academic-space-availability-visualization.md`
+
+### 当前状态
+
+- `docs/plans/feature-list.json` 中的 `UTG-004` 当前可标记为通过
+- 学术空间页已从“纯表单预约”升级为“可视化可用性 + 表单联动”模式
+- 用户测试闭环中，下一项更适合继续推进的明确缺口为 `UTG-006`
+
+### 下一步建议
+
+1. 继续处理 `UTG-006`，系统化清理英文模式中文残留
+2. 之后再视产品需要处理 `UTG-005` 或 `UTG-008`
+3. 若后续想进一步提升学术空间体验，可补“快捷对齐到最近可用边界”或推荐时长
+
+### 注意事项
+
+- 本轮没有新增后端 schema 或接口，只是在现有公共预约状态接口之上补齐前端可视化
+- 学术空间当前采用连续时间轴视图，这一表达方式已在 ADR 中固化，不应再退回离散槽位表
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成 `REG-001` 本地真实复测：
   - 使用本地 HTTPS 站点管理员链路创建临时资源与资源单元成功
   - 创建响应中已包含新增资源单元，说明“新增后结构刷新数据”链路成立
