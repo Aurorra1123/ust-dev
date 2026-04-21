@@ -27,10 +27,16 @@ import type { AuthenticatedUser } from "../auth/auth.types";
 import { ReservationAttendanceQueueService } from "../orders/reservation-attendance-queue.service";
 import { getResourceChannelBlock } from "../resource/resource-channel";
 import { RulesService } from "../rules/rules.service";
+import {
+  buildReservationCheckInWindow,
+  getReservationAttendanceEvaluateAt,
+  getReservationBanDeadline,
+  getReservationCategoryFromOrder,
+  getReservationStartTimeFromOrder,
+  mapReservationCategory
+} from "./shared/reservation-policy";
 
 const ACADEMIC_BUFFER_MINUTES = 5;
-const CHECK_IN_WINDOW_MINUTES = 10;
-const RESERVATION_BAN_DAYS = 7;
 const SPORTS_SLOT_MINUTES = 60;
 
 @Injectable()
@@ -609,7 +615,7 @@ export class ReservationService {
     throw new BadRequestException(
       `reservation-category-disabled:${firstRestriction.user.email}:${
         firstRestriction.bannedUntil?.toISOString() ??
-        addDays(now, RESERVATION_BAN_DAYS).toISOString()
+        getReservationBanDeadline(now).toISOString()
       }`
     );
   }
@@ -618,7 +624,7 @@ export class ReservationService {
     try {
       await this.reservationAttendanceQueueService.scheduleAttendanceEvaluation(
         orderId,
-        addMinutes(reservationStartTime, CHECK_IN_WINDOW_MINUTES)
+        getReservationAttendanceEvaluateAt(reservationStartTime)
       );
     } catch (error) {
       this.logger.warn(
@@ -681,51 +687,6 @@ export class ReservationService {
 
 function addMinutes(value: Date, minutes: number) {
   return new Date(value.getTime() + minutes * 60 * 1000);
-}
-
-function addDays(value: Date, days: number) {
-  return new Date(value.getTime() + days * 24 * 60 * 60 * 1000);
-}
-
-function buildReservationCheckInWindow(reservationStartTime: Date) {
-  return {
-    checkInOpenAt: addMinutes(reservationStartTime, -CHECK_IN_WINDOW_MINUTES),
-    checkInCloseAt: addMinutes(reservationStartTime, CHECK_IN_WINDOW_MINUTES)
-  };
-}
-
-function getReservationStartTimeFromOrder(order: {
-  academicReservation: { startTime: Date } | null;
-  sportsReservationSlots: Array<{ slotStart: Date }>;
-}) {
-  if (order.academicReservation) {
-    return order.academicReservation.startTime;
-  }
-
-  return order.sportsReservationSlots[0]?.slotStart ?? null;
-}
-
-function getReservationCategoryFromOrder(order: {
-  academicReservation: unknown;
-  sportsReservationSlots: unknown[];
-}) {
-  if (order.academicReservation) {
-    return ReservationCategory.ACADEMIC_SPACE;
-  }
-
-  if (order.sportsReservationSlots.length > 0) {
-    return ReservationCategory.SPORTS_FACILITY;
-  }
-
-  return null;
-}
-
-function mapReservationCategory(
-  category: ReservationCategory
-): ReservationCheckInResponse["reservationCategory"] {
-  return category === ReservationCategory.ACADEMIC_SPACE
-    ? "academic_space"
-    : "sports_facility";
 }
 
 function normalizeSportsSlots(slotStarts: string[]) {

@@ -376,6 +376,6 @@
       "reservation 与 orders 共用单一预约策略 helper，签到窗口、预约类别判断和预约开始时间提取不再重复实现",
       "存在正式架构方案与 ADR，明确本轮拆分边界、依赖规则和非目标"
     ],
-    "passes": false
+    "passes": true
   }
 ]

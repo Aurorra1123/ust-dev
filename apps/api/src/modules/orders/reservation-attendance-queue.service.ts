@@ -7,13 +7,16 @@ import Redis from "ioredis";
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import { createBullmqConnection } from "../../infrastructure/redis/bullmq";
 import {
+  getReservationAttendanceEvaluateAt,
+  getReservationStartTimeFromOrder
+} from "../reservation/shared/reservation-policy";
+import {
   RESERVATION_ATTENDANCE_JOB_NAME,
   RESERVATION_ATTENDANCE_QUEUE_NAME,
   type ReservationAttendanceJobPayload
 } from "./reservation-attendance.constants";
 
 const DEFAULT_REHYDRATE_LIMIT = 100;
-const CHECK_IN_WINDOW_MINUTES = 10;
 
 @Injectable()
 export class ReservationAttendanceQueueService implements OnModuleDestroy {
@@ -108,9 +111,7 @@ export class ReservationAttendanceQueueService implements OnModuleDestroy {
     let scheduled = 0;
 
     for (const order of orders) {
-      const reservationStart =
-        order.academicReservation?.startTime ??
-        order.sportsReservationSlots[0]?.slotStart;
+      const reservationStart = getReservationStartTimeFromOrder(order);
 
       if (!reservationStart) {
         continue;
@@ -118,7 +119,7 @@ export class ReservationAttendanceQueueService implements OnModuleDestroy {
 
       await this.scheduleAttendanceEvaluation(
         order.id,
-        addMinutes(reservationStart, CHECK_IN_WINDOW_MINUTES)
+        getReservationAttendanceEvaluateAt(reservationStart)
       );
       scheduled += 1;
     }
@@ -137,8 +138,4 @@ export class ReservationAttendanceQueueService implements OnModuleDestroy {
 
 export function buildReservationAttendanceJobId(orderId: string) {
   return `reservation-attendance-${orderId}`;
-}
-
-function addMinutes(value: Date, minutes: number) {
-  return new Date(value.getTime() + minutes * 60 * 1000);
 }

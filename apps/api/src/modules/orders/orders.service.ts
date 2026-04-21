@@ -9,18 +9,23 @@ import {
 import {
   OrderBizType as PrismaOrderBizType,
   OrderStatus,
-  Prisma,
-  ReservationCategory
+  Prisma
 } from "@prisma/client";
 import type { AuthUser, OrderDetailResponse } from "@campusbook/shared-types";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import { ActivityInventoryCacheService } from "../activities/activity-inventory-cache.service";
+import {
+  buildReservationCheckInWindow,
+  getReservationAttendanceEvaluateAt,
+  getReservationBanDeadline,
+  getReservationCategoryFromOrder,
+  getReservationStartTimeFromOrder,
+  mapReservationCategory,
+  maxReservationPolicyDate
+} from "../reservation/shared/reservation-policy";
 import { OrderExpirationQueueService } from "./order-expiration-queue.service";
 import { ReservationAttendanceQueueService } from "./reservation-attendance-queue.service";
-
-const CHECK_IN_WINDOW_MINUTES = 10;
-const RESERVATION_BAN_DAYS = 7;
 
 const orderDetailInclude = {
   user: true,
@@ -369,7 +374,7 @@ export class OrdersService {
         if (params.nextStatus === OrderStatus.CONFIRMED) {
           await this.reservationAttendanceQueueService.scheduleAttendanceEvaluation(
             order.id,
-            addMinutes(reservationStartTime, CHECK_IN_WINDOW_MINUTES)
+            getReservationAttendanceEvaluateAt(reservationStartTime)
           );
         } else {
           await this.reservationAttendanceQueueService.removeAttendanceEvaluation(
@@ -526,9 +531,9 @@ export class OrdersService {
               }
             },
             data: {
-              bannedUntil: maxDate(
+              bannedUntil: maxReservationPolicyDate(
                 restriction.bannedUntil,
-                addDays(new Date(), RESERVATION_BAN_DAYS)
+                getReservationBanDeadline(new Date())
               )
             }
           });
@@ -691,59 +696,4 @@ function mapPrismaBizType(
   return bizType === PrismaOrderBizType.ACTIVITY_REGISTRATION
     ? "activity_registration"
     : "resource_reservation";
-}
-
-function getReservationCategoryFromOrder(
-  order: Pick<OrderWithRelations, "academicReservation" | "sportsReservationSlots">
-) {
-  if (order.academicReservation) {
-    return ReservationCategory.ACADEMIC_SPACE;
-  }
-
-  if (order.sportsReservationSlots.length > 0) {
-    return ReservationCategory.SPORTS_FACILITY;
-  }
-
-  return null;
-}
-
-function getReservationStartTimeFromOrder(
-  order: Pick<OrderWithRelations, "academicReservation" | "sportsReservationSlots">
-) {
-  if (order.academicReservation) {
-    return order.academicReservation.startTime;
-  }
-
-  return order.sportsReservationSlots[0]?.slotStart ?? null;
-}
-
-function buildReservationCheckInWindow(reservationStartTime: Date) {
-  return {
-    checkInOpenAt: addMinutes(reservationStartTime, -CHECK_IN_WINDOW_MINUTES),
-    checkInCloseAt: addMinutes(reservationStartTime, CHECK_IN_WINDOW_MINUTES)
-  };
-}
-
-function mapReservationCategory(
-  category: ReservationCategory
-): OrderDetailResponse["reservationCategory"] {
-  return category === ReservationCategory.ACADEMIC_SPACE
-    ? "academic_space"
-    : "sports_facility";
-}
-
-function addMinutes(value: Date, minutes: number) {
-  return new Date(value.getTime() + minutes * 60 * 1000);
-}
-
-function addDays(value: Date, days: number) {
-  return new Date(value.getTime() + days * 24 * 60 * 60 * 1000);
-}
-
-function maxDate(current: Date | null, next: Date) {
-  if (!current) {
-    return next;
-  }
-
-  return current.getTime() > next.getTime() ? current : next;
 }

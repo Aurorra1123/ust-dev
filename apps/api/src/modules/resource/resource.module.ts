@@ -5,11 +5,13 @@ import {
   AdminResourceController,
   ResourceController
 } from "./resource.controller";
-import { ResourceService } from "./resource.service";
+import { ResourceReadService } from "./resource-read.service";
+import { ResourceStatusService } from "./resource-status.service";
+import { ResourceWriteService } from "./resource-write.service";
 
 @Module({
   imports: [AuthModule],
   controllers: [ResourceController, AdminResourceController],
-  providers: [ResourceService]
+  providers: [ResourceReadService, ResourceWriteService, ResourceStatusService]
 })
 export class ResourceModule {}

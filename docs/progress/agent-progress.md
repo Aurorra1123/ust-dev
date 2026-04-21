@@ -6,6 +6,40 @@
 
 ### 已完成
 
+- 已完成 `APP-016` 后端边界拆分收口：
+  - 删除 `apps/api/src/modules/resource/resource.service.ts`
+  - 新增 `resource-read.service.ts`、`resource-write.service.ts`、`resource-status.service.ts`
+  - 新增 `resource.mapper.ts`，将资源响应映射和 Prisma/shared 类型转换收拢到单一文件
+  - `resource.controller.ts` 已按读、写、状态三类服务注入，不再通过单个巨型 service 承担全部职责
+- 已新增共享预约策略 helper：
+  - `apps/api/src/modules/reservation/shared/reservation-policy.ts`
+  - `reservation.service.ts`、`orders.service.ts`、`reservation-attendance-queue.service.ts` 已改为复用同一套预约类别判断、预约开始时间提取、签到窗口和考勤调度时间计算
+- 本轮收口校验已通过：
+  - `pnpm --filter api build`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+
+### 当前状态
+
+- `APP-016` 已完成：
+  - 前端 API 客户端已按领域拆分
+  - 管理端工作台已按 workspace 拆分
+  - 后端资源域已按 read / write / status / mapper 拆分
+  - 预约策略重复逻辑已收拢为单一 helper
+
+### 下一步建议
+
+1. 如需继续做质量向收口，可优先补一组资源预约与管理员操作的集成测试，固定当前边界
+2. 后续若继续拆分后台能力，保持按业务工作区推进，不要回退到跨工作区共享大状态页
+
+### 注意事项
+
+- 本轮未修改接口语义，目标是边界重组和重复策略收敛
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成管理员工作台页面首轮边界拆分：
   - `apps/web/src/ui/pages/admin-page.tsx` 收口为后台页面出口
   - 新增 `apps/web/src/ui/pages/admin/`

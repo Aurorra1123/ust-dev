@@ -23,22 +23,27 @@ import { ResourceReservationStatusQueryDto } from "./dto/resource-reservation-st
 import { UpdateResourceBookingClosureDto } from "./dto/update-resource-booking-closure.dto";
 import { UpdateResourceDto } from "./dto/update-resource.dto";
 import { UpdateResourceReleaseRuleDto } from "./dto/update-resource-release-rule.dto";
-import { ResourceService } from "./resource.service";
+import { ResourceReadService } from "./resource-read.service";
+import { ResourceStatusService } from "./resource-status.service";
+import { ResourceWriteService } from "./resource-write.service";
 
 @Controller("resources")
 export class ResourceController {
-  constructor(private readonly resourceService: ResourceService) {}
+  constructor(
+    private readonly resourceReadService: ResourceReadService,
+    private readonly resourceStatusService: ResourceStatusService
+  ) {}
 
   @Get()
   listResources(
     @Query() query: ListResourcesQueryDto
   ): Promise<ResourceListItem[]> {
-    return this.resourceService.listResources(query.type);
+    return this.resourceReadService.listResources(query.type);
   }
 
   @Get(":id")
   getResource(@Param("id") id: string): Promise<ResourceDetailResponse> {
-    return this.resourceService.getResourceDetail(id);
+    return this.resourceReadService.getResourceDetail(id);
   }
 
   @Get(":id/reservation-status")
@@ -46,7 +51,7 @@ export class ResourceController {
     @Param("id") id: string,
     @Query() query: ResourceReservationStatusQueryDto
   ): Promise<PublicResourceReservationStatusResponse> {
-    return this.resourceService.getPublicReservationStatus(
+    return this.resourceStatusService.getPublicReservationStatus(
       id,
       query.from,
       query.to
@@ -58,18 +63,22 @@ export class ResourceController {
 @UseGuards(AccessTokenGuard, RolesGuard)
 @Roles("admin")
 export class AdminResourceController {
-  constructor(private readonly resourceService: ResourceService) {}
+  constructor(
+    private readonly resourceReadService: ResourceReadService,
+    private readonly resourceWriteService: ResourceWriteService,
+    private readonly resourceStatusService: ResourceStatusService
+  ) {}
 
   @Get()
   listResources(): Promise<AdminResourceDetailResponse[]> {
-    return this.resourceService.listAdminResources();
+    return this.resourceReadService.listAdminResources();
   }
 
   @Post()
   createResource(
     @Body() payload: CreateResourceDto
   ): Promise<AdminResourceDetailResponse> {
-    return this.resourceService.createResource(payload);
+    return this.resourceWriteService.createResource(payload);
   }
 
   @Patch(":id")
@@ -77,7 +86,7 @@ export class AdminResourceController {
     @Param("id") id: string,
     @Body() payload: UpdateResourceDto
   ): Promise<AdminResourceDetailResponse> {
-    return this.resourceService.updateResource(id, payload);
+    return this.resourceWriteService.updateResource(id, payload);
   }
 
   @Post(":id/units")
@@ -85,7 +94,7 @@ export class AdminResourceController {
     @Param("id") id: string,
     @Body() payload: CreateResourceUnitDto
   ): Promise<AdminResourceDetailResponse> {
-    return this.resourceService.createResourceUnit(id, payload);
+    return this.resourceWriteService.createResourceUnit(id, payload);
   }
 
   @Post(":id/groups")
@@ -93,14 +102,14 @@ export class AdminResourceController {
     @Param("id") id: string,
     @Body() payload: CreateResourceGroupDto
   ): Promise<AdminResourceDetailResponse> {
-    return this.resourceService.createResourceGroup(id, payload);
+    return this.resourceWriteService.createResourceGroup(id, payload);
   }
 
   @Post("release-rules")
   createReleaseRules(
     @Body() payload: CreateResourceReleaseRuleDto
   ): Promise<AdminBulkMutationResponse> {
-    return this.resourceService.createReleaseRules(payload);
+    return this.resourceWriteService.createReleaseRules(payload);
   }
 
   @Patch("release-rules/:id")
@@ -108,14 +117,14 @@ export class AdminResourceController {
     @Param("id") id: string,
     @Body() payload: UpdateResourceReleaseRuleDto
   ): Promise<ResourceReleaseRuleDetail> {
-    return this.resourceService.updateReleaseRule(id, payload);
+    return this.resourceWriteService.updateReleaseRule(id, payload);
   }
 
   @Post("closures")
   createBookingClosures(
     @Body() payload: CreateResourceBookingClosureDto
   ): Promise<AdminBulkMutationResponse> {
-    return this.resourceService.createBookingClosures(payload);
+    return this.resourceWriteService.createBookingClosures(payload);
   }
 
   @Patch("closures/:id")
@@ -123,7 +132,7 @@ export class AdminResourceController {
     @Param("id") id: string,
     @Body() payload: UpdateResourceBookingClosureDto
   ): Promise<ResourceBookingClosureDetail> {
-    return this.resourceService.updateBookingClosure(id, payload);
+    return this.resourceWriteService.updateBookingClosure(id, payload);
   }
 
   @Get(":id/reservation-status")
@@ -131,6 +140,6 @@ export class AdminResourceController {
     @Param("id") id: string,
     @Query() query: ResourceReservationStatusQueryDto
   ): Promise<AdminResourceReservationStatusResponse> {
-    return this.resourceService.getReservationStatus(id, query.from, query.to);
+    return this.resourceStatusService.getReservationStatus(id, query.from, query.to);
   }
 }
