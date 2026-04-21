@@ -23,6 +23,7 @@ export function LoginPage() {
   const locale = useLocaleStore((state) => state.locale);
   const redirectTo = useMemo(() => searchParams.get("redirect"), [searchParams]);
   const quickRole = useMemo(() => searchParams.get("role"), [searchParams]);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [form, setForm] = useState<LoginFormState>(
     () => resolveDemoAccount(quickRole) ?? studentDemoAccount
   );
@@ -125,17 +126,36 @@ export function LoginPage() {
 
             <label className="grid gap-2 text-sm text-slate">
               {localeText(locale, "密码", "Password")}
-              <input
-                className="rounded-2xl border border-navy/10 bg-white px-4 py-3 outline-none transition focus:border-moss"
-                type="password"
-                value={form.password}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    password: event.target.value
-                  }))
-                }
-              />
+              <div className="flex items-center gap-3 rounded-2xl border border-navy/10 bg-white px-4 py-1 transition focus-within:border-moss">
+                <input
+                  className="min-w-0 flex-1 bg-transparent py-2 outline-none"
+                  type={isPasswordVisible ? "text" : "password"}
+                  value={form.password}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      password: event.target.value
+                    }))
+                  }
+                />
+                <button
+                  type="button"
+                  className="shrink-0 rounded-full border border-navy/10 px-3 py-1 text-xs font-medium text-ink transition hover:border-moss hover:text-moss"
+                  onClick={() => setIsPasswordVisible((current) => !current)}
+                  aria-label={localeText(
+                    locale,
+                    isPasswordVisible ? "隐藏密码" : "显示密码",
+                    isPasswordVisible ? "Hide password" : "Show password"
+                  )}
+                  aria-pressed={isPasswordVisible}
+                >
+                  {localeText(
+                    locale,
+                    isPasswordVisible ? "隐藏" : "显示",
+                    isPasswordVisible ? "Hide" : "Show"
+                  )}
+                </button>
+              </div>
             </label>
 
             {loginMutation.isError ? (
