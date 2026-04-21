@@ -7,6 +7,7 @@ import {
   fetchMyServiceRequests
 } from "../../lib/api/service-request-api";
 import { formatDateTime } from "../../lib/date";
+import { getErrorMessage } from "../../lib/http/errors";
 import { localeText } from "../../lib/locale";
 import { queryClient } from "../../lib/query-client";
 import { useLocaleStore } from "../../store/locale-store";
@@ -101,7 +102,7 @@ export function ServiceRequestsPage() {
             <StatePanel
               tone="danger"
               title={localeText(locale, "工单提交失败", "Failed to submit")}
-              description={(createMutation.error as Error).message}
+              description={getErrorMessage(createMutation.error)}
             />
           ) : null}
           {createMutation.isSuccess ? (
@@ -142,7 +143,7 @@ export function ServiceRequestsPage() {
             <StatePanel
               tone="danger"
               title={localeText(locale, "工单暂时无法加载", "Requests are unavailable")}
-              description={(requestsQuery.error as Error).message}
+              description={getErrorMessage(requestsQuery.error)}
             />
           ) : !requestsQuery.data?.length ? (
             <EmptyPanel

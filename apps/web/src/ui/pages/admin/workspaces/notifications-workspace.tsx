@@ -8,6 +8,7 @@ import {
   updateNotification
 } from "../../../../lib/api/notification-api";
 import { formatDateTime } from "../../../../lib/date";
+import { getErrorMessage } from "../../../../lib/http/errors";
 import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
@@ -126,7 +127,7 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
             <StatePanel
               tone="danger"
               title={localeText(locale, "通知工作区暂时无法加载", "Notification workspace is unavailable")}
-              description={(notificationsQuery.error as Error).message}
+              description={getErrorMessage(notificationsQuery.error)}
             />
           ) : !notificationsQuery.data?.length ? (
             <EmptyPanel

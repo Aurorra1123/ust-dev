@@ -6,7 +6,7 @@ import {
   checkInReservation,
   fetchOrderDetail
 } from "../../lib/api/order-api";
-import { ApiError } from "../../lib/http/errors";
+import { getErrorMessage } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
 import { localeText } from "../../lib/locale";
 import { queryClient } from "../../lib/query-client";
@@ -97,7 +97,7 @@ export function OrderDetailPage() {
         <StatePanel
           tone="danger"
           title={localeText(locale, "详情暂时无法加载", "Order details are unavailable")}
-          description={(orderQuery.error as ApiError).message}
+          description={getErrorMessage(orderQuery.error)}
         />
       ) : order ? (
         <div className="grid gap-4">
@@ -185,8 +185,8 @@ export function OrderDetailPage() {
               title={localeText(locale, "操作未完成", "Action failed")}
               description={
                 cancelMutation.isError
-                  ? (cancelMutation.error as ApiError).message
-                  : (checkInMutation.error as ApiError).message
+                  ? getErrorMessage(cancelMutation.error)
+                  : getErrorMessage(checkInMutation.error)
               }
             />
           ) : null}

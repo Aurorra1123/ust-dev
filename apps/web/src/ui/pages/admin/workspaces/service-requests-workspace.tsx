@@ -7,6 +7,7 @@ import {
   updateServiceRequest
 } from "../../../../lib/api/service-request-api";
 import { formatDateTime } from "../../../../lib/date";
+import { getErrorMessage } from "../../../../lib/http/errors";
 import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
@@ -90,7 +91,7 @@ export function ServiceRequestsWorkspace({ locale }: { locale: Locale }) {
             <StatePanel
               tone="danger"
               title={localeText(locale, "工单工作区暂时无法加载", "Service request workspace is unavailable")}
-              description={(requestsQuery.error as Error).message}
+              description={getErrorMessage(requestsQuery.error)}
             />
           ) : !requestsQuery.data?.length ? (
             <EmptyPanel

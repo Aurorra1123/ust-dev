@@ -13,6 +13,7 @@ import {
   fetchAdminResources,
   updateResource
 } from "../../../../lib/api/resource-api";
+import { getErrorMessage } from "../../../../lib/http/errors";
 import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
@@ -379,7 +380,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
         <StatePanel
           tone="danger"
           title={localeText(locale, "资源工作区暂时无法加载", "Resource workspace is unavailable")}
-          description={(resourcesQuery.error as Error).message}
+          description={getErrorMessage(resourcesQuery.error)}
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),340px]">

@@ -10,6 +10,7 @@ import {
   updateRule
 } from "../../../../lib/api/rule-api";
 import { fetchAdminResources } from "../../../../lib/api/resource-api";
+import { getErrorMessage } from "../../../../lib/http/errors";
 import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
@@ -225,10 +226,7 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
         <StatePanel
           tone="danger"
           title={localeText(locale, "规则工作区暂时无法加载", "Rule workspace is unavailable")}
-          description={
-            ((rulesQuery.error ?? resourcesQuery.error) as Error | undefined)?.message ??
-            localeText(locale, "未知错误", "Unknown error")
-          }
+          description={getErrorMessage(rulesQuery.error ?? resourcesQuery.error)}
         />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[280px,minmax(0,1fr),320px]">

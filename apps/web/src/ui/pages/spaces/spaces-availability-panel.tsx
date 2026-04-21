@@ -3,8 +3,8 @@ import type {
   ResourceListItem
 } from "@campusbook/shared-types";
 
-import { ApiError } from "../../../lib/http/errors";
 import { formatDate, formatTime } from "../../../lib/date";
+import { getErrorMessage } from "../../../lib/http/errors";
 import { localeText } from "../../../lib/locale";
 import type { Locale } from "../../../store/locale-store";
 import { StatePanel } from "../../user-experience-kit";
@@ -107,7 +107,7 @@ export function SpacesAvailabilityPanel({
           <StatePanel
             tone="danger"
             title={localeText(locale, "可用时间视图暂时无法加载", "Availability is unavailable")}
-            description={(error as ApiError | null)?.message ?? error?.message ?? ""}
+            description={getErrorMessage(error, "")}
           />
         </div>
       ) : selectedResource ? (

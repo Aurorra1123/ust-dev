@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchOrders } from "../../lib/api/order-api";
-import { ApiError } from "../../lib/http/errors";
+import { getErrorMessage } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
 import { localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
@@ -52,7 +52,7 @@ export function OrdersPage() {
         <StatePanel
           tone="danger"
           title={localeText(locale, "订单暂时无法加载", "Orders are unavailable")}
-          description={(ordersQuery.error as ApiError).message}
+          description={getErrorMessage(ordersQuery.error)}
         />
       ) : !orders.length ? (
         <EmptyPanel

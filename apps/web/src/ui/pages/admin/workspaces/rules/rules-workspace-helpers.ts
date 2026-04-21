@@ -5,7 +5,7 @@ import type {
   UserRole
 } from "@campusbook/shared-types";
 
-import { ApiError } from "../../../../../lib/http/errors";
+import { getErrorCode, getErrorMessage } from "../../../../../lib/http/errors";
 import { localeText } from "../../../../../lib/locale";
 import type { Locale } from "../../../../../store/locale-store";
 
@@ -86,9 +86,9 @@ export function roleLabel(role: UserRole, locale: Locale) {
 }
 
 export function formatRuleMutationError(error: unknown, locale: Locale) {
-  const message = (error as ApiError).message;
+  const code = getErrorCode(error);
 
-  switch (message) {
+  switch (code) {
     case "rule-delete-blocked-existing-bindings":
       return localeText(
         locale,
@@ -96,6 +96,6 @@ export function formatRuleMutationError(error: unknown, locale: Locale) {
         "This rule is still bound to resources or user profiles. Remove those bindings before deleting it."
       );
     default:
-      return message;
+      return getErrorMessage(error);
   }
 }

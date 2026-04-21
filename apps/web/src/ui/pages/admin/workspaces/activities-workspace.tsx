@@ -8,6 +8,7 @@ import {
   updateActivity
 } from "../../../../lib/api/activity-api";
 import { addHours, formatDateTime, startOfNextHour, toDateTimeLocalValue } from "../../../../lib/date";
+import { getErrorMessage } from "../../../../lib/http/errors";
 import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
@@ -181,7 +182,7 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
             <StatePanel
               tone="danger"
               title={localeText(locale, "活动工作区暂时无法加载", "Activity workspace is unavailable")}
-              description={(activitiesQuery.error as Error).message}
+              description={getErrorMessage(activitiesQuery.error)}
             />
           ) : (
             activitiesQuery.data?.map((activity) => (

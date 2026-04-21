@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import { fetchPublishedNotifications } from "../../lib/api/notification-api";
 import { formatDateTime } from "../../lib/date";
+import { getErrorMessage } from "../../lib/http/errors";
 import { localeText } from "../../lib/locale";
 import type { Locale } from "../../store/locale-store";
 import { EmptyPanel, StatePanel } from "../user-experience-kit";
@@ -56,7 +57,7 @@ export function HomeNotificationsSection({
           <StatePanel
             tone="danger"
             title={localeText(locale, "通知暂时无法加载", "Notices are unavailable")}
-            description={(notificationsQuery.error as Error).message}
+            description={getErrorMessage(notificationsQuery.error)}
           />
         ) : !notificationsQuery.data?.length ? (
           <EmptyPanel

@@ -1,4 +1,4 @@
-import { ApiError } from "../../../../lib/http/errors";
+import { getErrorMessage } from "../../../../lib/http/errors";
 
 export function MutationState({
   mutation,
@@ -29,7 +29,7 @@ export function MutationState({
       <div className="mt-4 rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
         {formatError
           ? formatError(mutation.error)
-          : (mutation.error as ApiError).message}
+          : getErrorMessage(mutation.error)}
       </div>
     );
   }

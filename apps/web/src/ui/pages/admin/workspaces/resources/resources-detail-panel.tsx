@@ -4,6 +4,7 @@ import type {
 } from "@campusbook/shared-types";
 
 import { formatDateTime } from "../../../../../lib/date";
+import { getErrorMessage } from "../../../../../lib/http/errors";
 import { localeText } from "../../../../../lib/locale";
 import type { Locale } from "../../../../../store/locale-store";
 import { StatePanel, StatusPill } from "../../../../user-experience-kit";
@@ -403,7 +404,7 @@ export function ResourcesDetailPanel({
             <StatePanel
               tone="danger"
               title={localeText(locale, "预约状态暂时无法加载", "Reservation status is unavailable")}
-              description={resourceStatusQuery.error?.message ?? ""}
+              description={getErrorMessage(resourceStatusQuery.error)}
             />
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">

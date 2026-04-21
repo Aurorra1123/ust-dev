@@ -8,7 +8,7 @@ import {
   fetchResourceReservationStatus,
   fetchResources
 } from "../../lib/api/resource-api";
-import { ApiError } from "../../lib/http/errors";
+import { getErrorMessage } from "../../lib/http/errors";
 import {
   addHours,
   formatDateTime,
@@ -188,7 +188,7 @@ export function SpacesPage() {
         <StatePanel
           tone="danger"
           title={localeText(locale, "学术空间暂时无法加载", "Study spaces are unavailable")}
-          description={(resourcesQuery.error as ApiError).message}
+          description={getErrorMessage(resourcesQuery.error)}
         />
       ) : !resourcesQuery.data?.length ? (
         <EmptyPanel

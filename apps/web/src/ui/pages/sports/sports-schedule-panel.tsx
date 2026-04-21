@@ -4,8 +4,8 @@ import type {
   ResourceDetailResponse
 } from "@campusbook/shared-types";
 
-import { ApiError } from "../../../lib/http/errors";
 import { addHours, formatDate, formatTime } from "../../../lib/date";
+import { getErrorMessage } from "../../../lib/http/errors";
 import { localeText } from "../../../lib/locale";
 import { StatePanel } from "../../user-experience-kit";
 import {
@@ -94,7 +94,7 @@ export function SportsSchedulePanel({
           <StatePanel
             tone="danger"
             title={localeText(locale, "时段状态暂时无法加载", "Schedule is unavailable")}
-            description={(error as ApiError | null)?.message ?? error?.message ?? ""}
+            description={getErrorMessage(error, "")}
           />
         </div>
       ) : currentResource ? (

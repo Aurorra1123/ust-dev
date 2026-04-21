@@ -1,7 +1,7 @@
 import type { ResourceDetailResponse } from "@campusbook/shared-types";
 
-import { ApiError } from "../../../lib/http/errors";
 import { formatDateTime } from "../../../lib/date";
+import { getErrorMessage } from "../../../lib/http/errors";
 import { localeText } from "../../../lib/locale";
 import type { SessionStatus } from "../../../store/session-store";
 import { StatePanel } from "../../user-experience-kit";
@@ -220,7 +220,7 @@ export function SportsBookingPanel({
         <StatePanel
           tone="danger"
           title={localeText(locale, "预约未提交成功", "Booking failed")}
-          description={(error as ApiError).message}
+          description={getErrorMessage(error)}
         />
       ) : null}
 

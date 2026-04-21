@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { login } from "../../lib/api/auth-api";
-import { ApiError } from "../../lib/http/errors";
+import { getErrorMessage } from "../../lib/http/errors";
 import { localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
 import {
@@ -160,7 +160,7 @@ export function LoginPage() {
 
             {loginMutation.isError ? (
               <div className="rounded-2xl border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger">
-                {(loginMutation.error as ApiError).message}
+                {getErrorMessage(loginMutation.error)}
               </div>
             ) : null}
 

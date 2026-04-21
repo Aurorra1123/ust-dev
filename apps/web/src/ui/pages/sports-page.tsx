@@ -8,7 +8,7 @@ import {
   fetchResourceReservationStatus,
   fetchResources
 } from "../../lib/api/resource-api";
-import { ApiError } from "../../lib/http/errors";
+import { getErrorMessage } from "../../lib/http/errors";
 import {
   addHours,
   startOfHour,
@@ -182,7 +182,7 @@ export function SportsPage() {
         <StatePanel
           tone="danger"
           title={localeText(locale, "体育资源暂时无法加载", "Sports resources are unavailable")}
-          description={(resourcesQuery.error as ApiError).message}
+          description={getErrorMessage(resourcesQuery.error)}
         />
       ) : !resourcesQuery.data?.length ? (
         <EmptyPanel

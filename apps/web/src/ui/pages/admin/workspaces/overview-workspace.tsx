@@ -7,8 +7,8 @@ import { fetchAdminNotifications } from "../../../../lib/api/notification-api";
 import { fetchAdminResources } from "../../../../lib/api/resource-api";
 import { fetchAdminRules } from "../../../../lib/api/rule-api";
 import { fetchAdminServiceRequests } from "../../../../lib/api/service-request-api";
-import { ApiError } from "../../../../lib/http/errors";
 import { formatDateTime } from "../../../../lib/date";
+import { getErrorMessage } from "../../../../lib/http/errors";
 import { localeText } from "../../../../lib/locale";
 import type { Locale } from "../../../../store/locale-store";
 import { serviceRequestStatusLabel } from "../../../helpers/service-request-status";
@@ -164,11 +164,11 @@ export function OverviewWorkspace({
     serviceRequestsQuery.isError
   ) {
     const error =
-      (resourcesQuery.error as ApiError | null) ??
-      (activitiesQuery.error as ApiError | null) ??
-      (rulesQuery.error as ApiError | null) ??
-      (notificationsQuery.error as ApiError | null) ??
-      (serviceRequestsQuery.error as ApiError | null);
+      resourcesQuery.error ??
+      activitiesQuery.error ??
+      rulesQuery.error ??
+      notificationsQuery.error ??
+      serviceRequestsQuery.error;
 
     return (
       <PageSection
@@ -182,7 +182,7 @@ export function OverviewWorkspace({
         <StatePanel
           tone="danger"
           title={localeText(locale, "后台总览暂时无法加载", "Admin overview is unavailable")}
-          description={error?.message ?? "request-failed"}
+          description={getErrorMessage(error)}
         />
       </PageSection>
     );

@@ -6,6 +6,36 @@
 
 ### 已完成
 
+- 已完成代码质量重构第四阶段中的前端错误契约收口：
+  - `apps/web/src/lib/http/errors.ts` 已新增统一的 `getErrorMessage / getErrorStatus / getErrorCode`
+  - `ApiError` 现在会在前端侧统一推导稳定 `code`，页面不再自己猜测 message 是否可当机器码
+  - 学生端主要页面、后台工作区和 `MutationState` 已改为通过统一 helper 读取错误信息
+  - 资源/规则相关 mutation 的错误分支已从按 `message` 判断切到按 `code` 判断
+- 已完成本地校验并留证：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - 新增验证记录：`docs/verification/2026-04-21/code-quality-fourth-phase-error-contract.md`
+
+### 当前状态
+
+- 前端错误读取边界已经基本统一，页面层不再继续扩散 `as ApiError).message` 与页面内硬编码 message 分支
+- 当前整轮代码质量重构只剩 HTTP client 的猜测性 API base URL fallback 需要清理
+
+### 下一步建议
+
+1. 进入最后阶段，移除 `apps/web/src/lib/http/client.ts` 中面向未知 host 的猜测性 fallback
+2. 完成最终一轮验证、进度更新与整体收尾提交
+
+### 注意事项
+
+- 本轮没有新增 ADR，因为实现仍落在 `docs/adr/0009-code-quality-refactor-boundaries.md` 已确认的“错误边界收口”范围内
+- 后端当前仍主要返回 slug 型 message；本轮只是前端统一读取方式，没有擅自变更后端协议
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成代码质量重构第三阶段的后台工作区拆分：
   - `resources-workspace.tsx` 已收口为 query / mutation / 页面级确认与状态联动，资源列表、详情、批量目标和右侧操作表单已下沉到 `workspaces/resources/`
   - `rules-workspace.tsx` 已收口为 query / mutation / 编辑状态编排，规则列表、编辑与绑定、概览说明已下沉到 `workspaces/rules/`

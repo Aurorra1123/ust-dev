@@ -5,7 +5,7 @@ import type {
 } from "@campusbook/shared-types";
 
 import { addHours, startOfNextHour, toDateTimeLocalValue } from "../../../../../lib/date";
-import { ApiError } from "../../../../../lib/http/errors";
+import { getErrorCode, getErrorMessage } from "../../../../../lib/http/errors";
 import { localeText } from "../../../../../lib/locale";
 import type { Locale } from "../../../../../store/locale-store";
 
@@ -112,9 +112,9 @@ export function createDefaultStatusWindow(): StatusWindowState {
 }
 
 export function formatResourceMutationError(error: unknown, locale: Locale) {
-  const message = (error as ApiError).message;
+  const code = getErrorCode(error);
 
-  switch (message) {
+  switch (code) {
     case "resource-delete-blocked-existing-records":
       return localeText(
         locale,
@@ -128,6 +128,6 @@ export function formatResourceMutationError(error: unknown, locale: Locale) {
         "This unit is referenced by reservations, orders, or a grouped sports configuration and cannot be deleted."
       );
     default:
-      return message;
+      return getErrorMessage(error);
   }
 }

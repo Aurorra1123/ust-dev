@@ -10,7 +10,7 @@ import {
   fetchActivityRegistrationStatus,
   grabActivity
 } from "../../lib/api/activity-api";
-import { ApiError } from "../../lib/http/errors";
+import { getErrorMessage, getErrorStatus } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
 import { localeText } from "../../lib/locale";
 import { useLocaleStore } from "../../store/locale-store";
@@ -86,7 +86,7 @@ export function ActivitiesPage() {
         <StatePanel
           tone="danger"
           title={localeText(locale, "活动暂时无法加载", "Activities are unavailable")}
-          description={(activitiesQuery.error as ApiError).message}
+          description={getErrorMessage(activitiesQuery.error)}
         />
       ) : !activitiesQuery.data?.length ? (
         <EmptyPanel
@@ -157,7 +157,7 @@ export function ActivitiesPage() {
                     <StatePanel
                       tone="danger"
                       title={localeText(locale, "票种暂时无法加载", "Ticket types are unavailable")}
-                      description={(detailQuery.error as ApiError).message}
+                      description={getErrorMessage(detailQuery.error)}
                     />
                   </div>
                 ) : (
@@ -210,7 +210,7 @@ export function ActivitiesPage() {
                     <StatePanel
                       tone="danger"
                       title={localeText(locale, "报名未完成", "Registration failed")}
-                      description={(grabMutation.error as ApiError).message}
+                      description={getErrorMessage(grabMutation.error)}
                     />
                   </div>
                 ) : null}
@@ -230,7 +230,7 @@ export function ActivitiesPage() {
                       />
                     </div>
                   ) : registrationStatusQuery.isError ? (
-                    (registrationStatusQuery.error as ApiError).status === 404 ? (
+                    getErrorStatus(registrationStatusQuery.error) === 404 ? (
                       <div className="mt-4">
                         <StatePanel
                           title={localeText(locale, "还没有报名记录", "No registration yet")}
@@ -246,7 +246,7 @@ export function ActivitiesPage() {
                         <StatePanel
                           tone="danger"
                           title={localeText(locale, "状态暂时无法读取", "Status is unavailable")}
-                          description={(registrationStatusQuery.error as ApiError).message}
+                          description={getErrorMessage(registrationStatusQuery.error)}
                         />
                       </div>
                     )
