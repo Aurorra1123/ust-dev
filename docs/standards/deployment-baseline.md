@@ -77,6 +77,57 @@
 - 部署文档中的域名、端口、服务归属必须与本文件一致
 - 如果后续变更域名结构、反向代理边界或发布拓扑，必须新增 ADR 记录
 
+## 增量发布规则
+
+当前生产环境运行在 Docker 容器中。代码改动后，必须同步部署受影响的服务；仅刷新网页或普通重启容器，不等于上线新代码。
+
+- 不需要重启整台服务器
+- 默认只重建并替换受影响的服务，不做整栈重建
+- 生产 compose 命令统一显式使用 `--env-file .env`
+- 仅文档改动不触发生产服务重建
+
+### 前端改动
+
+- 改动 `apps/web`、前端静态资源、前端构建配置后，执行：
+
+```bash
+docker compose --env-file .env -f infra/docker-compose.yml up -d --build --no-deps web
+```
+
+### 后端改动
+
+- 改动 `apps/api` 业务逻辑、共享类型且影响运行时接口后，执行：
+
+```bash
+docker compose --env-file .env -f infra/docker-compose.yml up -d --build --no-deps api worker
+```
+
+### 数据库迁移
+
+- 只要 Prisma schema 或 migration 有变更，先执行：
+
+```bash
+docker compose --env-file .env -f infra/docker-compose.yml run --rm api pnpm --filter api prisma:migrate:deploy
+```
+
+- 然后再重建 `api/worker`
+
+### Nginx 与证书改动
+
+- 改动 `infra/nginx/`、`infra/docker-compose.https.yml` 或证书相关配置后，执行：
+
+```bash
+docker compose --env-file .env -f infra/docker-compose.yml -f infra/docker-compose.https.yml up -d nginx
+```
+
+### 发布后验证
+
+- 每次增量发布后，至少验证：
+  - `https://campusbook.top`
+  - `https://www.campusbook.top`
+  - `https://api.campusbook.top/health`
+- 如果本轮修改涉及具体业务入口，还要补对应业务 smoke 验证
+
 ## 单机资源保护
 
 当前服务器仅有 `2 vCPU / 2 GiB RAM`，后续开发、联调和部署必须默认按低余量机器处理。

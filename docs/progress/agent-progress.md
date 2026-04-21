@@ -6,6 +6,47 @@
 
 ### 已完成
 
+- 已将“改动后按受影响服务做增量发布，而不是重启整机”的部署理解写入长期标准
+- `docs/standards/deployment-baseline.md` 当前已补充：
+  - 前端改动重建 `web`
+  - 后端改动重建 `api / worker`
+  - migration 先于后端发布执行
+  - Nginx / HTTPS 改动单独更新 `nginx`
+  - 发布后最小验证要求
+- 已确认当前线上服务落后于仓库最新业务代码：
+  - 仓库已包含通知模块与首页通知区
+  - 线上 `https://api.campusbook.top/notifications` 仍返回 `404`
+  - 本轮因此需要增量更新 `web + api + worker`
+- 已完成本轮增量发布：
+  - 先执行 `prisma:migrate:deploy`
+  - 重建 `api`
+  - 重建 `web`
+  - 替换 `api / worker / web`
+- 已新增验证记录：
+  - `docs/verification/2026-04-21/ops-incremental-service-sync.md`
+- 已确认同步后：
+  - `https://api.campusbook.top/notifications` 返回 `200`
+  - 线上前端 bundle 已切换到新哈希 `index-CfShXjUs.js`
+
+### 当前状态
+
+- 当前增量发布规则已经被文档化，可作为后续每次功能上线的统一执行基线
+- 线上 `web / api / worker` 当前已同步到仓库最新业务代码
+
+### 下一步建议
+
+1. 后续若再有业务改动，直接按本轮写入的增量发布规则执行
+2. 如果需要减少人为步骤，可继续补一个正式环境的一键增量发布脚本
+
+### 注意事项
+
+- 线上当前不是“未启动”，而是“已同步到当前仓库业务代码”
+- 对 Docker 生产环境来说，普通 restart 不会替换成新代码镜像
+
+## 2026-04-21
+
+### 已完成
+
 - 已将用户新增的长期代码评估与实现要求写入 `AGENTS.md`：
   - 后续代码评估默认围绕模块化/组件化、高内聚低耦合、单一职责与清晰组织、简洁高效和可读性展开
   - 明确反对过度设计、兜底代码、冗余代码与猜测性代码
