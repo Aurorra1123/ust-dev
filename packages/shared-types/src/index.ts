@@ -10,11 +10,18 @@ export type ResourceChannelStatus = "open" | "closed" | "scheduled";
 
 export type ActivityStatus = "draft" | "published" | "closed" | "cancelled";
 export type ActivityTicketStatus = "active" | "inactive";
+export type NotificationStatus = "draft" | "published";
 export type RuleStatus = "active" | "inactive";
 export type RuleType =
   | "min_credit_score"
   | "max_duration_minutes"
   | "allowed_user_roles";
+export type ServiceRequestStatus =
+  | "submitted"
+  | "received"
+  | "in_progress"
+  | "resolved"
+  | "closed";
 
 export type OrderBizType =
   | "resource_reservation"
@@ -119,6 +126,17 @@ export interface AppActivityTicket {
   reserved: number;
   priceCents: number;
   status: ActivityTicketStatus;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  summary?: string | null;
+  content: string;
+  status: NotificationStatus;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AppOrder {
@@ -428,6 +446,20 @@ export interface ActivityRegistrationStatusResponse {
   reason?: string | null;
 }
 
+export interface CreateNotificationPayload {
+  title: string;
+  summary?: string;
+  content: string;
+  status?: NotificationStatus;
+}
+
+export interface UpdateNotificationPayload {
+  title?: string;
+  summary?: string | null;
+  content?: string;
+  status?: NotificationStatus;
+}
+
 export interface RuleExpression {
   min?: number;
   max?: number;
@@ -441,6 +473,32 @@ export interface AppRule {
   status: RuleStatus;
   expression: RuleExpression;
   resourceIds: string[];
+}
+
+export interface AppServiceRequest {
+  id: string;
+  userId: string;
+  userEmail: string;
+  title: string;
+  description: string;
+  location: string;
+  status: ServiceRequestStatus;
+  adminNote: string | null;
+  receivedAt: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateServiceRequestPayload {
+  title: string;
+  description: string;
+  location: string;
+}
+
+export interface UpdateServiceRequestPayload {
+  status?: ServiceRequestStatus;
+  adminNote?: string | null;
 }
 
 export interface RouteCard {

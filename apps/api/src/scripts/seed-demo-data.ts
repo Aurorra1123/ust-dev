@@ -1,11 +1,13 @@
 import {
   ActivityStatus,
   ActivityTicketStatus,
+  NotificationStatus,
   PrismaClient,
   ResourceAvailabilityMode,
   ResourceStatus,
   ResourceType,
   RuleStatus,
+  ServiceRequestStatus,
   UserRole,
   UserStatus
 } from "@prisma/client";
@@ -22,7 +24,7 @@ async function main() {
   const eventStartTime = addDays(now, 21);
   const eventEndTime = addHours(eventStartTime, 2);
 
-  await prisma.user.upsert({
+  const studentUser = await prisma.user.upsert({
     where: { email: "demo@campusbook.top" },
     update: {
       name: "demo",
@@ -40,7 +42,7 @@ async function main() {
     }
   });
 
-  await prisma.user.upsert({
+  const adminUser = await prisma.user.upsert({
     where: { email: "admin@campusbook.top" },
     update: {
       name: "admin",
@@ -58,7 +60,7 @@ async function main() {
     }
   });
 
-  await prisma.user.upsert({
+  const partnerOneUser = await prisma.user.upsert({
     where: { email: "partner1@campusbook.top" },
     update: {
       name: "partner1",
@@ -361,6 +363,125 @@ async function main() {
     }
   });
 
+  await prisma.notification.upsert({
+    where: { id: "notification_demo_sports_maintenance" },
+    update: {
+      title: "体育馆周三晚间维护提醒",
+      summary: "Sports Hall A 本周三 20:00 后暂停开放预约。",
+      content:
+        "Sports Hall A 将于本周三 20:00 后进行地板维护，相关时段的预约会陆续调整，请同学优先选择周四后的场次。",
+      status: NotificationStatus.PUBLISHED,
+      publishedAt: addHours(now, -4),
+      createdByUserId: adminUser.id
+    },
+    create: {
+      id: "notification_demo_sports_maintenance",
+      title: "体育馆周三晚间维护提醒",
+      summary: "Sports Hall A 本周三 20:00 后暂停开放预约。",
+      content:
+        "Sports Hall A 将于本周三 20:00 后进行地板维护，相关时段的预约会陆续调整，请同学优先选择周四后的场次。",
+      status: NotificationStatus.PUBLISHED,
+      publishedAt: addHours(now, -4),
+      createdByUserId: adminUser.id
+    }
+  });
+
+  await prisma.notification.upsert({
+    where: { id: "notification_demo_open_day" },
+    update: {
+      title: "开放日报名已开放",
+      summary: "Campus Open Day 2026 已开放普通票与优先票报名。",
+      content:
+        "开放日活动已经开放报名，学生可在活动页查看票种与余量。若需要带同学入场，请优先选择同一时段完成报名。",
+      status: NotificationStatus.PUBLISHED,
+      publishedAt: addHours(now, -1),
+      createdByUserId: adminUser.id
+    },
+    create: {
+      id: "notification_demo_open_day",
+      title: "开放日报名已开放",
+      summary: "Campus Open Day 2026 已开放普通票与优先票报名。",
+      content:
+        "开放日活动已经开放报名，学生可在活动页查看票种与余量。若需要带同学入场，请优先选择同一时段完成报名。",
+      status: NotificationStatus.PUBLISHED,
+      publishedAt: addHours(now, -1),
+      createdByUserId: adminUser.id
+    }
+  });
+
+  await prisma.notification.upsert({
+    where: { id: "notification_demo_draft_workshop" },
+    update: {
+      title: "设计冲刺工作坊预热文案",
+      summary: "管理员可在后台继续补充后发布。",
+      content:
+        "这是一条草稿通知，用于验证管理员编辑、保存与发布流程。发布后应同步出现在学生首页通知区。",
+      status: NotificationStatus.DRAFT,
+      publishedAt: null,
+      createdByUserId: adminUser.id
+    },
+    create: {
+      id: "notification_demo_draft_workshop",
+      title: "设计冲刺工作坊预热文案",
+      summary: "管理员可在后台继续补充后发布。",
+      content:
+        "这是一条草稿通知，用于验证管理员编辑、保存与发布流程。发布后应同步出现在学生首页通知区。",
+      status: NotificationStatus.DRAFT,
+      publishedAt: null,
+      createdByUserId: adminUser.id
+    }
+  });
+
+  await prisma.serviceRequest.upsert({
+    where: { id: "service_request_demo_screen" },
+    update: {
+      userId: studentUser.id,
+      title: "自习室投影无法连接",
+      description: "Room 101 投影设备显示无信号，已尝试更换线缆但未恢复。",
+      location: "Learning Commons 1F / Room 101",
+      status: ServiceRequestStatus.RECEIVED,
+      adminNote: "已登记给现场值班同事，今晚 19:00 前回看设备。",
+      receivedAt: addHours(now, -2),
+      resolvedAt: null
+    },
+    create: {
+      id: "service_request_demo_screen",
+      userId: studentUser.id,
+      title: "自习室投影无法连接",
+      description: "Room 101 投影设备显示无信号，已尝试更换线缆但未恢复。",
+      location: "Learning Commons 1F / Room 101",
+      status: ServiceRequestStatus.RECEIVED,
+      adminNote: "已登记给现场值班同事，今晚 19:00 前回看设备。",
+      receivedAt: addHours(now, -2),
+      resolvedAt: null
+    }
+  });
+
+  await prisma.serviceRequest.upsert({
+    where: { id: "service_request_demo_aircon" },
+    update: {
+      userId: partnerOneUser.id,
+      title: "羽毛球馆空调温度异常",
+      description: "Sports Hall A 东侧区域空调未出风，体感温度明显偏高。",
+      location: "Sports Hall A / East Courts",
+      status: ServiceRequestStatus.IN_PROGRESS,
+      adminNote: "后勤已接单，等待设备检修人员到场。",
+      receivedAt: addHours(now, -6),
+      resolvedAt: null
+    },
+    create: {
+      id: "service_request_demo_aircon",
+      userId: partnerOneUser.id,
+      title: "羽毛球馆空调温度异常",
+      description: "Sports Hall A 东侧区域空调未出风，体感温度明显偏高。",
+      location: "Sports Hall A / East Courts",
+      status: ServiceRequestStatus.IN_PROGRESS,
+      adminNote: "后勤已接单，等待设备检修人员到场。",
+      receivedAt: addHours(now, -6),
+      resolvedAt: null
+    }
+  });
+
   await prisma.rule.upsert({
     where: { id: "rule_demo_academic_min_credit" },
     update: {
@@ -465,6 +586,15 @@ async function main() {
         seededActivities: [
           "activity_demo_open_day",
           "activity_demo_workshop_draft"
+        ],
+        seededNotifications: [
+          "notification_demo_sports_maintenance",
+          "notification_demo_open_day",
+          "notification_demo_draft_workshop"
+        ],
+        seededServiceRequests: [
+          "service_request_demo_screen",
+          "service_request_demo_aircon"
         ],
         seededUsers: [
           "demo@campusbook.top",

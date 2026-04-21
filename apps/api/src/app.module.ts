@@ -8,9 +8,11 @@ import { AppController } from "./modules/app/app.controller";
 import { AuthModule } from "./modules/auth/auth.module";
 import { HealthModule } from "./modules/health/health.module";
 import { OrdersModule } from "./modules/orders/orders.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { ReservationModule } from "./modules/reservation/reservation.module";
 import { ResourceModule } from "./modules/resource/resource.module";
 import { RulesModule } from "./modules/rules/rules.module";
+import { ServiceRequestsModule } from "./modules/service-requests/service-requests.module";
 import { UsersModule } from "./modules/users/users.module";
 
 @Module({
@@ -27,7 +29,9 @@ import { UsersModule } from "./modules/users/users.module";
     ReservationModule,
     ActivitiesModule,
     OrdersModule,
-    RulesModule
+    NotificationsModule,
+    RulesModule,
+    ServiceRequestsModule
   ],
   controllers: [AppController]
 })

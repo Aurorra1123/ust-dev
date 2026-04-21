@@ -55,6 +55,11 @@ enum ActivityTicketStatus {
   INACTIVE
 }
 
+enum NotificationStatus {
+  DRAFT
+  PUBLISHED
+}
+
 enum OrderBizType {
   RESOURCE_RESERVATION
   ACTIVITY_REGISTRATION
@@ -79,6 +84,14 @@ enum RuleStatus {
   INACTIVE
 }
 
+enum ServiceRequestStatus {
+  SUBMITTED
+  RECEIVED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
 model User {
   id                     String                  @id @default(cuid())
   name                   String
@@ -93,6 +106,8 @@ model User {
   sportsReservationSlots SportsReservationSlot[]
   reservationParticipants ReservationParticipant[]
   reservationRestrictions UserReservationRestriction[]
+  notificationsCreated   Notification[]          @relation("NotificationCreatedBy")
+  serviceRequests        ServiceRequest[]
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
   userCreditLogs         UserCreditLog[]
@@ -234,6 +249,22 @@ model ActivityTicket {
   @@index([activityId, status])
 }
 
+model Notification {
+  id              String             @id @default(cuid())
+  title           String
+  summary         String?
+  content         String
+  status          NotificationStatus @default(DRAFT)
+  publishedAt     DateTime?
+  createdByUserId String?
+  createdByUser   User?              @relation("NotificationCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([createdAt])
+}
+
 model Order {
   id                     String                  @id @default(cuid())
   orderNo                String                  @unique @default(cuid())
@@ -259,6 +290,24 @@ model Order {
   @@index([userId, createdAt])
   @@index([activityId])
   @@index([status, expireAt])
+}
+
+model ServiceRequest {
+  id          String               @id @default(cuid())
+  userId      String
+  title       String
+  description String
+  location    String
+  status      ServiceRequestStatus @default(SUBMITTED)
+  adminNote   String?
+  receivedAt  DateTime?
+  resolvedAt  DateTime?
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }
 
 model ActivityRegistration {
