@@ -8,6 +8,7 @@ import {
   updateActivity
 } from "../../../../lib/api/activity-api";
 import { addHours, formatDateTime, startOfNextHour, toDateTimeLocalValue } from "../../../../lib/date";
+import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
 import { PageSection } from "../../../page-section";
@@ -31,7 +32,7 @@ type ActivityFormState = {
   priceCents: number;
 };
 
-export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
+export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
   const activitiesQuery = useQuery({
     queryKey: ["admin", "activities"],
     queryFn: fetchAdminActivities
@@ -44,22 +45,26 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
     const eventEnd = addHours(eventStart, 2);
 
     return {
-      title: "CampusBook 校园服务说明会",
-      description: "由管理后台创建的活动示例，用于验证票种和状态流转。",
-      location: "学生活动中心",
+      title: localeText(locale, "CampusBook 校园服务说明会", "CampusBook Service Briefing"),
+      description: localeText(
+        locale,
+        "由管理后台创建的活动示例，用于验证票种和状态流转。",
+        "An admin-created demo activity used to verify ticket and status flows."
+      ),
+      location: localeText(locale, "学生活动中心", "Student Activity Center"),
       totalQuota: 30,
       saleStartTime: toDateTimeLocalValue(saleStart),
       saleEndTime: toDateTimeLocalValue(saleEnd),
       eventStartTime: toDateTimeLocalValue(eventStart),
       eventEndTime: toDateTimeLocalValue(eventEnd),
       status: "published",
-      ticketName: "普通票",
+      ticketName: localeText(locale, "普通票", "General Ticket"),
       ticketStock: 20,
       priceCents: 0
     };
   });
   const [ticketForm, setTicketForm] = useState({
-    name: "候补票",
+    name: localeText(locale, "候补票", "Waitlist Ticket"),
     stock: 10,
     priceCents: 0
   });
@@ -118,21 +123,29 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
 
   return (
     <PageSection
-      title="活动工作区"
-      description="这里负责活动、票种和活动状态维护。左侧先选活动，中间看当前详情，右侧做创建或加票操作。"
+      title={localeText(locale, "活动工作区", "Activity Workspace")}
+      description={localeText(
+        locale,
+        "这里负责活动、票种和活动状态维护。左侧先选活动，中间看当前详情，右侧做创建或加票操作。",
+        "Manage activities, ticket types, and status here. Pick an activity on the left, review it in the middle, and create or extend it on the right."
+      )}
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),360px]">
         <div className="grid gap-4">
           {activitiesQuery.isLoading ? (
             <StatePanel
               tone="loading"
-              title="正在载入活动工作区"
-              description="页面正在整理当前活动、票种与状态信息。"
+              title={localeText(locale, "正在载入活动工作区", "Loading activity workspace")}
+              description={localeText(
+                locale,
+                "页面正在整理当前活动、票种与状态信息。",
+                "Collecting activities, tickets, and status information."
+              )}
             />
           ) : activitiesQuery.isError ? (
             <StatePanel
               tone="danger"
-              title="活动工作区暂时无法加载"
+              title={localeText(locale, "活动工作区暂时无法加载", "Activity workspace is unavailable")}
               description={(activitiesQuery.error as Error).message}
             />
           ) : (
@@ -150,14 +163,18 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                      {activity.status}
+                      {activityStatusLabel(activity.status, locale)}
                     </p>
                     <h3 className="mt-2 text-xl font-semibold text-ink">
                       {activity.title}
                     </h3>
                   </div>
                   <span className="rounded-full bg-sand px-3 py-1 text-xs text-ink/75">
-                    {activity.tickets.length} 个票种
+                    {localeText(
+                      locale,
+                      `${activity.tickets.length} 个票种`,
+                      `${activity.tickets.length} ticket types`
+                    )}
                   </span>
                 </div>
                 <p className="mt-3 text-sm text-ink/70">
@@ -172,33 +189,42 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
             <div className="overflow-hidden rounded-[26px] border border-navy/10 bg-white">
               <div className="border-b border-navy/10 bg-gradient-to-r from-navy via-[#0d3f82] to-moss px-5 py-4 text-white">
                 <p className="text-xs uppercase tracking-[0.2em] text-white/70">
-                  Selected Activity
+                  {localeText(locale, "当前活动", "Selected Activity")}
                 </p>
                 <h3 className="mt-2 text-2xl font-semibold">{selectedActivity.title}</h3>
                 <p className="mt-2 text-sm text-white/80">
-                  {selectedActivity.location || "活动地点待补充"}
+                  {selectedActivity.location ||
+                    localeText(locale, "活动地点待补充", "Location to be added")}
                 </p>
               </div>
               <div className="px-5 py-5">
                 <div className="flex flex-wrap gap-2">
-                  <StatusPill tone="brand">{activityStatusLabel(selectedActivity.status)}</StatusPill>
-                  <StatusPill tone="success">{selectedActivity.tickets.length} 个票种</StatusPill>
+                  <StatusPill tone="brand">
+                    {activityStatusLabel(selectedActivity.status, locale)}
+                  </StatusPill>
+                  <StatusPill tone="success">
+                    {localeText(
+                      locale,
+                      `${selectedActivity.tickets.length} 个票种`,
+                      `${selectedActivity.tickets.length} ticket types`
+                    )}
+                  </StatusPill>
                 </div>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   <AdminInfoCard
-                    label="开售时间"
+                    label={localeText(locale, "开售时间", "Sales Start")}
                     value={formatDateTime(selectedActivity.saleStartTime)}
                   />
                   <AdminInfoCard
-                    label="停售时间"
+                    label={localeText(locale, "停售时间", "Sales End")}
                     value={formatDateTime(selectedActivity.saleEndTime)}
                   />
                   <AdminInfoCard
-                    label="票种数量"
+                    label={localeText(locale, "票种数量", "Ticket Types")}
                     value={String(selectedActivity.tickets.length)}
                   />
                   <AdminInfoCard
-                    label="总额度"
+                    label={localeText(locale, "总额度", "Total Quota")}
                     value={String(selectedActivity.totalQuota)}
                   />
                 </div>
@@ -210,7 +236,11 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                     >
                       <p className="font-medium text-ink">{ticket.name}</p>
                       <p className="mt-2 text-sm text-slate">
-                        库存 {ticket.stock} / 已保留 {ticket.reserved}
+                        {localeText(
+                          locale,
+                          `库存 ${ticket.stock} / 已保留 ${ticket.reserved}`,
+                          `Stock ${ticket.stock} / Reserved ${ticket.reserved}`
+                        )}
                       </p>
                     </div>
                   ))}
@@ -245,7 +275,9 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
               });
             }}
           >
-            <h3 className="text-lg font-semibold text-ink">新增活动</h3>
+            <h3 className="text-lg font-semibold text-ink">
+              {localeText(locale, "新增活动", "Create Activity")}
+            </h3>
             <div className="mt-4 grid gap-3">
               <input
                 className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -256,7 +288,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                     title: event.target.value
                   }))
                 }
-                placeholder="活动标题"
+                placeholder={localeText(locale, "活动标题", "Activity title")}
               />
               <input
                 className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -267,7 +299,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                     location: event.target.value
                   }))
                 }
-                placeholder="活动地点"
+                placeholder={localeText(locale, "活动地点", "Location")}
               />
               <textarea
                 className="min-h-[96px] rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -278,7 +310,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                     description: event.target.value
                   }))
                 }
-                placeholder="活动描述"
+                placeholder={localeText(locale, "活动描述", "Description")}
               />
               <div className="grid gap-3 sm:grid-cols-2">
                 <input
@@ -292,7 +324,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                       totalQuota: Number(event.target.value)
                     }))
                   }
-                  placeholder="总额度"
+                  placeholder={localeText(locale, "总额度", "Total quota")}
                 />
                 <select
                   className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -304,8 +336,8 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                     }))
                   }
                 >
-                  <option value="draft">草稿</option>
-                  <option value="published">已发布</option>
+                  <option value="draft">{localeText(locale, "草稿", "Draft")}</option>
+                  <option value="published">{localeText(locale, "已发布", "Published")}</option>
                 </select>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -366,7 +398,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                       ticketName: event.target.value
                     }))
                   }
-                  placeholder="首个票种名称"
+                  placeholder={localeText(locale, "首个票种名称", "First ticket type")}
                 />
                 <input
                   className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -379,7 +411,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                       ticketStock: Number(event.target.value)
                     }))
                   }
-                  placeholder="票数"
+                  placeholder={localeText(locale, "票数", "Ticket stock")}
                 />
                 <input
                   className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -392,17 +424,22 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                       priceCents: Number(event.target.value)
                     }))
                   }
-                  placeholder="价格分"
+                  placeholder={localeText(locale, "价格分", "Price in cents")}
                 />
               </div>
             </div>
-            <MutationState mutation={createActivityMutation} success="活动已创建。" />
+            <MutationState
+              mutation={createActivityMutation}
+              success={localeText(locale, "活动已创建。", "Activity created.")}
+            />
             <button
               type="submit"
               className="mt-4 w-full rounded-full bg-ember px-5 py-3 text-sm font-medium text-white transition hover:bg-ember/90 disabled:cursor-not-allowed disabled:bg-ember/50"
               disabled={createActivityMutation.isPending}
             >
-              {createActivityMutation.isPending ? "创建中" : "创建活动"}
+              {createActivityMutation.isPending
+                ? localeText(locale, "创建中", "Creating")
+                : localeText(locale, "创建活动", "Create Activity")}
             </button>
           </form>
 
@@ -420,9 +457,13 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
               });
             }}
           >
-            <h3 className="text-lg font-semibold text-ink">活动加票与状态切换</h3>
+            <h3 className="text-lg font-semibold text-ink">
+              {localeText(locale, "活动加票与状态切换", "Ticketing and Status")}
+            </h3>
             <p className="mt-2 text-sm text-ink/70">
-              当前活动：{selectedActivity?.title || "请先选择左侧活动"}
+              {localeText(locale, "当前活动：", "Current activity: ")}
+              {selectedActivity?.title ||
+                localeText(locale, "请先选择左侧活动", "Select an activity from the left")}
             </p>
             <div className="mt-4 grid gap-3">
               <input
@@ -434,7 +475,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                     name: event.target.value
                   }))
                 }
-                placeholder="新增票种名称"
+                placeholder={localeText(locale, "新增票种名称", "New ticket type")}
               />
               <div className="grid gap-3 sm:grid-cols-2">
                 <input
@@ -448,7 +489,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                       stock: Number(event.target.value)
                     }))
                   }
-                  placeholder="库存"
+                  placeholder={localeText(locale, "库存", "Stock")}
                 />
                 <input
                   className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
@@ -461,18 +502,23 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                       priceCents: Number(event.target.value)
                     }))
                   }
-                  placeholder="价格分"
+                  placeholder={localeText(locale, "价格分", "Price in cents")}
                 />
               </div>
             </div>
-            <MutationState mutation={createTicketMutation} success="票种已追加。" />
+            <MutationState
+              mutation={createTicketMutation}
+              success={localeText(locale, "票种已追加。", "Ticket type added.")}
+            />
             <div className="mt-4 flex gap-3">
               <button
                 type="submit"
                 className="flex-1 rounded-full bg-moss px-5 py-3 text-sm font-medium text-white transition hover:bg-moss/90 disabled:cursor-not-allowed disabled:bg-moss/50"
                 disabled={!selectedActivity || createTicketMutation.isPending}
               >
-                {createTicketMutation.isPending ? "提交中" : "新增票种"}
+                {createTicketMutation.isPending
+                  ? localeText(locale, "提交中", "Submitting")
+                  : localeText(locale, "新增票种", "Add Ticket Type")}
               </button>
               <button
                 type="button"
@@ -480,7 +526,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                 disabled={!selectedActivity || publishMutation.isPending}
                 onClick={() => publishMutation.mutate("published")}
               >
-                发布
+                {localeText(locale, "发布", "Publish")}
               </button>
               <button
                 type="button"
@@ -488,7 +534,7 @@ export function ActivitiesWorkspace({ locale: _locale }: { locale: Locale }) {
                 disabled={!selectedActivity || publishMutation.isPending}
                 onClick={() => publishMutation.mutate("closed")}
               >
-                关闭
+                {localeText(locale, "关闭", "Close")}
               </button>
             </div>
           </form>

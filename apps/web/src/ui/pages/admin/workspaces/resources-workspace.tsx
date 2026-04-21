@@ -314,7 +314,9 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
                     </h3>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <StatusPill tone="brand">{resourceTypeLabel(selectedResource.type)}</StatusPill>
+                    <StatusPill tone="brand">
+                      {resourceTypeLabel(selectedResource.type, locale)}
+                    </StatusPill>
                     <StatusPill tone={selectedResource.status === "active" ? "success" : "danger"}>
                       {selectedResource.status === "active"
                         ? localeText(locale, "启用中", "Active")

@@ -132,33 +132,36 @@ export function orderStatusLabel(
   }
 }
 
-export function resourceTypeLabel(type: ResourceType) {
-  return type === "academic_space" ? "学术空间" : "体育设施";
+export function resourceTypeLabel(type: ResourceType, locale: Locale) {
+  return type === "academic_space"
+    ? localeText(locale, "学术空间", "Study Space")
+    : localeText(locale, "体育设施", "Sports Facility");
 }
 
 export function activityStatusLabel(
-  status: "draft" | "published" | "closed" | "cancelled"
+  status: "draft" | "published" | "closed" | "cancelled",
+  locale: Locale
 ) {
   switch (status) {
     case "draft":
-      return "草稿";
+      return localeText(locale, "草稿", "Draft");
     case "published":
-      return "已发布";
+      return localeText(locale, "已发布", "Published");
     case "closed":
-      return "已关闭";
+      return localeText(locale, "已关闭", "Closed");
     case "cancelled":
-      return "已取消";
+      return localeText(locale, "已取消", "Cancelled");
   }
 }
 
-export function ruleTypeLabel(ruleType: RuleType) {
+export function ruleTypeLabel(ruleType: RuleType, locale: Locale) {
   switch (ruleType) {
     case "min_credit_score":
-      return "最低信用分";
+      return localeText(locale, "最低信用分", "Minimum Credit Score");
     case "max_duration_minutes":
-      return "最长预约时长";
+      return localeText(locale, "最长预约时长", "Maximum Duration");
     case "allowed_user_roles":
-      return "允许用户角色";
+      return localeText(locale, "允许用户角色", "Allowed User Roles");
   }
 }
 
