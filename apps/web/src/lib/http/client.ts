@@ -1,15 +1,8 @@
 import type { AuthSessionResponse } from "@campusbook/shared-types";
 
+import { getRuntimeApiBaseUrl as getRuntimeApiBaseUrlFromConfig } from "../runtime-config";
 import { useSessionStore } from "../../store/session-store";
 import { buildApiError } from "./errors";
-
-declare global {
-  interface Window {
-    __CAMPUSBOOK_CONFIG__?: {
-      apiBaseUrl?: string;
-    };
-  }
-}
 
 export interface RequestOptions {
   method?: "GET" | "POST" | "PATCH";
@@ -18,13 +11,7 @@ export interface RequestOptions {
 }
 
 function getRuntimeApiBaseUrl() {
-  const runtimeApiBaseUrl = window.__CAMPUSBOOK_CONFIG__?.apiBaseUrl?.trim();
-
-  if (!runtimeApiBaseUrl) {
-    return undefined;
-  }
-
-  return runtimeApiBaseUrl;
+  return typeof window !== "undefined" ? getRuntimeApiBaseUrlFromConfig() : undefined;
 }
 
 function inferDefaultApiBaseUrl() {

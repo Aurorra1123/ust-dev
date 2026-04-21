@@ -1,17 +1,26 @@
+import { getRuntimeDemoAccount } from "../lib/runtime-config";
+
 export type DemoAccount = {
   email: string;
   password: string;
 };
 
-export const studentDemoAccount: DemoAccount = {
+const defaultStudentDemoAccount: DemoAccount = {
   email: "demo@campusbook.top",
   password: "demo123456"
 };
 
-export const teacherDemoAccount: DemoAccount = {
+const defaultTeacherDemoAccount: DemoAccount = {
   email: "admin@campusbook.top",
   password: "admin123456"
 };
+
+export const studentDemoAccount: DemoAccount = {
+  ...(getRuntimeDemoAccount("student") ?? defaultStudentDemoAccount)
+};
+
+export const teacherDemoAccount: DemoAccount =
+  getRuntimeDemoAccount("admin") ?? defaultTeacherDemoAccount;
 
 export const quickRoleEntries = [
   {

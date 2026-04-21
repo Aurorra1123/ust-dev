@@ -94,6 +94,10 @@ services:
     restart: unless-stopped
     environment:
       CAMPUSBOOK_API_BASE_URL: ${CAMPUSBOOK_API_BASE_URL:-}
+      DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-demo@campusbook.top}
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-demo123456}
+      DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-admin@campusbook.top}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin123456}
     expose:
       - "80"
 

@@ -84,6 +84,7 @@
 - 不需要重启整台服务器
 - 默认只重建并替换受影响的服务，不做整栈重建
 - 生产 compose 命令统一显式使用 `--env-file .env`
+- `infra/docker-compose.yml` 位于子目录，且 `web` 容器会把运行时变量写入 `/config.js`；如果省略 `--env-file .env`，前端会回退到 compose 默认 demo 凭据，造成快捷登录填充与 API 实际账号密码不一致
 - 仅文档改动不触发生产服务重建
 
 ### 前端改动

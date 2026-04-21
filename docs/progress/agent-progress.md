@@ -6,6 +6,36 @@
 
 ### 已完成
 
+- 已修复网页端 demo 快捷填充密码与真实 demo 账号不一致的问题：
+  - 前端不再只依赖 `apps/web/src/ui/demo-accounts.ts` 中的源码常量
+  - 新增运行时配置读取模块，由 `web` 容器把 demo 凭据写入 `/config.js`
+  - `infra/docker-compose.yml` 已为 `web` 注入 demo 账号环境变量
+- 已完成线上核验与重建：
+  - 使用 `--env-file .env` 重建 `web`
+  - 确认线上 `config.js` 中的 demo 凭据已与根 `.env` 一致
+  - 确认学生/管理员 demo 账号登录 API 返回 `200`
+  - 确认旧默认学生密码 `demo123456` 返回 `401`
+- 已新增验证记录：
+  - `docs/verification/2026-04-21/web-demo-credentials-runtime-sync.md`
+
+### 当前状态
+
+- 真实网站当前应已可正确使用学生/管理员 demo 快捷带入
+- demo 密码后续可通过运行时环境变量轮换，不再要求改动前端源码
+
+### 下一步建议
+
+1. 若后续变更 demo 凭据，只更新根 `.env` 后按基线重建 `web`
+2. 若需要更强验收证据，可再补一组浏览器级录屏或截图
+
+### 注意事项
+
+- 生产环境重建 `web` 时必须显式带 `--env-file .env`；否则 `config.js` 会写入 compose 默认 demo 凭据，导致前后端密码再次错位
+
+## 2026-04-21
+
+### 已完成
+
 - 已将“改动后按受影响服务做增量发布，而不是重启整机”的部署理解写入长期标准
 - `docs/standards/deployment-baseline.md` 当前已补充：
   - 前端改动重建 `web`
