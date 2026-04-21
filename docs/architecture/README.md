@@ -7,6 +7,7 @@
 - `product-baseline.md`：当前正式产品范围与用户路径
 - `productization-plan-v1.md`：当前产品化改造方案
 - `pux-009-student-frontend-prototype.md`：学生端前端原型专项需求稿
+- `admin-frontend-restructure-plan-2026-04-21.md`：管理员前端一级模块重组与资源工作区拆分方案
 - `domain-model-baseline.md`：当前正式领域模型入口
 - `admin-resource-reservation-boundary-refactor.md`：后台、前端 API 与资源预约后端边界拆分蓝图
 - `technical-solution-v1.md`：归档版首版技术方案
@@ -22,12 +23,13 @@
 1. `product-baseline.md`
 2. `productization-plan-v1.md`
 3. `pux-009-student-frontend-prototype.md`
-4. `domain-model-baseline.md`
-5. `technical-solution-v2.md`
-6. `architecture-diagrams.md`
-7. `current-implementation-audit-2026-04-21.md`
-8. `code-quality-review-and-refactor-baseline-2026-04-21.md`
-9. `architecture-and-product-report-2026-04-21.md`
-10. `admin-resource-reservation-boundary-refactor.md`
-11. `development-environment-audit-2026-04-16.md`
-12. `technical-solution-v1.md`
+4. `admin-frontend-restructure-plan-2026-04-21.md`
+5. `domain-model-baseline.md`
+6. `technical-solution-v2.md`
+7. `architecture-diagrams.md`
+8. `current-implementation-audit-2026-04-21.md`
+9. `code-quality-review-and-refactor-baseline-2026-04-21.md`
+10. `architecture-and-product-report-2026-04-21.md`
+11. `admin-resource-reservation-boundary-refactor.md`
+12. `development-environment-audit-2026-04-16.md`
+13. `technical-solution-v1.md`

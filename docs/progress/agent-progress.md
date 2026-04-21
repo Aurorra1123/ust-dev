@@ -6,6 +6,39 @@
 
 ### 已完成
 
+- 已根据管理员端新的重组方向，新增正式方案文档：
+  - `docs/architecture/admin-frontend-restructure-plan-2026-04-21.md`
+- 已新增 ADR：
+  - `docs/adr/0015-admin-workspace-split-by-business-domain.md`
+- 已同步结构化开发列表，新增 `ADM-001` 至 `ADM-004`：
+  - 管理员一级模块重组
+  - 资源工作区拆分为体育场馆与学术空间
+  - 学术空间按 `E1 / E2 / E3 / E4 ...` 分组
+  - 规则工作区从一级导航下线
+- 已更新架构文档导航：
+  - `docs/architecture/README.md`
+
+### 当前状态
+
+- 管理员前端新的目标信息架构已经正式落文档，不再只存在于聊天记录中
+- 当前还没有开始业务代码改造，现状仍然是旧的 `overview / resources / activities / rules / notifications / serviceRequests`
+- `feature-list.json` 在本轮更新前已经被推进到更高状态：`UTG-011`、`UTG-012` 当前已被标记为通过，本轮没有回退这些现有记录
+
+### 下一步建议
+
+1. 先实施 `ADM-001`，完成管理员端一级导航和模块命名切换
+2. 再推进 `ADM-002` 与 `ADM-003`，把资源工作区按体育 / 学术拆开，并为学术空间接入区域分组
+3. 最后处理 `ADM-004`，从主导航收口规则入口并做一次后台主路径回归
+
+### 注意事项
+
+- 本轮只有文档与计划更新，没有修改业务代码
+- 工作区中仍存在未跟踪的 `apps/web/src/ui/pages/admin/workspaces/resources/` 与 `docs/user_test/`，本轮未触碰
+
+## 2026-04-21
+
+### 已完成
+
 - 已完成第二轮用户反馈残余问题 `UTG-013`：
   - 已确认学术空间、活动与报修工单英文页里的中文残留，根因主要不在页面主体，而在共享学生端壳层 `apps/web/src/ui/app-shell.tsx`
   - 学生端顶部品牌文案现在会随 `locale` 切换，英文模式不再固定显示 `CampusBook 智约校园`
