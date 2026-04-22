@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchAdminResources } from "../../../../lib/api/resource-api";
@@ -13,21 +13,15 @@ import {
   createDefaultResourceUnitFormState,
 } from "./resources/resources-workspace-helpers";
 import {
-  getAcademicAreaGroups,
-  getActiveResource,
-  getActiveUnit,
   getDomainResources,
   getLockedResourceType,
-  getPanelResourceId,
-  getVisibleResources,
-  getWorkspaceCopy,
   type ActiveInlinePanel,
   type ResourceWorkspaceDomain,
-  validateResourceForm,
-  validateResourceUnitForm
 } from "./resources/resources-workspace-selectors";
-import { useResourceWorkspaceActions } from "./resources/use-resource-workspace-actions";
+import { useResourceWorkspaceMutationActions } from "./resources/use-resource-workspace-mutation-actions";
 import { useResourceWorkspaceMutations } from "./resources/use-resource-workspace-mutations";
+import { useResourceWorkspacePanelActions } from "./resources/use-resource-workspace-panel-actions";
+import { useResourceWorkspaceView } from "./resources/use-resource-workspace-view";
 
 export function ResourcesWorkspace({
   locale,
@@ -65,34 +59,6 @@ export function ResourcesWorkspace({
     () => getDomainResources(resourcesQuery.data, lockedResourceType),
     [lockedResourceType, resourcesQuery.data]
   );
-  const academicAreaGroups = useMemo(
-    () => getAcademicAreaGroups(domain, domainResources, locale),
-    [domain, domainResources, locale]
-  );
-  const visibleResources = useMemo(
-    () => getVisibleResources(domain, domainResources, academicAreaGroups, academicAreaKey),
-    [academicAreaGroups, academicAreaKey, domain, domainResources]
-  );
-  const activeResource = useMemo(
-    () => getActiveResource(visibleResources, activeInlinePanel),
-    [activeInlinePanel, visibleResources]
-  );
-  const activeUnit = useMemo(
-    () => getActiveUnit(activeResource, activeInlinePanel),
-    [activeInlinePanel, activeResource]
-  );
-  const isCreatingResource = activeInlinePanel?.kind === "createResource";
-  const editingResourceId =
-    activeInlinePanel?.kind === "editResource" ? activeInlinePanel.resourceId : "";
-  const creatingUnitResourceId =
-    activeInlinePanel?.kind === "createUnit" ? activeInlinePanel.resourceId : "";
-  const editingUnitTarget =
-    activeInlinePanel?.kind === "editUnit"
-      ? {
-          resourceId: activeInlinePanel.resourceId,
-          unitId: activeInlinePanel.unitId
-        }
-      : null;
 
   const {
     createResourceMutation,
@@ -113,72 +79,32 @@ export function ResourcesWorkspace({
     setActiveInlinePanel
   });
 
-  useEffect(() => {
-    if (domain !== "academic") {
-      return;
-    }
-
-    const firstArea = academicAreaGroups[0]?.key ?? "";
-
-    if (
-      !academicAreaKey ||
-      !academicAreaGroups.some((group) => group.key === academicAreaKey)
-    ) {
-      setAcademicAreaKey(firstArea);
-    }
-  }, [academicAreaGroups, academicAreaKey, domain]);
-
-  useEffect(() => {
-    if (!lockedResourceType) {
-      return;
-    }
-
-    setResourceCreateForm((current) =>
-      current.type === lockedResourceType
-        ? current
-        : {
-            ...current,
-            type: lockedResourceType
-          }
-    );
-  }, [lockedResourceType]);
-
-  useEffect(() => {
-    const panelResourceId = getPanelResourceId(activeInlinePanel);
-
-    if (!panelResourceId) {
-      return;
-    }
-
-    const resource = visibleResources.find((item) => item.id === panelResourceId);
-
-    if (!resource) {
-      setActiveInlinePanel(null);
-      return;
-    }
-
-    if (
-      activeInlinePanel?.kind === "editUnit" &&
-      !resource.units.some((unit) => unit.id === activeInlinePanel.unitId)
-    ) {
-      setActiveInlinePanel(null);
-    }
-  }, [activeInlinePanel, visibleResources]);
-
-  const isCreateResourceValid = validateResourceForm(resourceCreateForm);
-  const isEditResourceValid =
-    activeInlinePanel?.kind === "editResource" &&
-    Boolean(activeResource) &&
-    validateResourceForm(resourceEditForm);
-  const isCreateResourceUnitValid =
-    activeInlinePanel?.kind === "createUnit" &&
-    Boolean(activeResource) &&
-    validateResourceUnitForm(resourceUnitCreateForm);
-  const isEditResourceUnitValid =
-    activeInlinePanel?.kind === "editUnit" &&
-    Boolean(activeResource && activeUnit) &&
-    validateResourceUnitForm(resourceUnitEditForm);
-  const workspaceCopy = getWorkspaceCopy(domain, locale);
+  const {
+    academicAreaGroups,
+    visibleResources,
+    isCreatingResource,
+    editingResourceId,
+    creatingUnitResourceId,
+    editingUnitTarget,
+    isCreateResourceValid,
+    isEditResourceValid,
+    isCreateResourceUnitValid,
+    isEditResourceUnitValid,
+    workspaceCopy
+  } = useResourceWorkspaceView({
+    locale,
+    domain,
+    resources: domainResources,
+    academicAreaKey,
+    setAcademicAreaKey,
+    activeInlinePanel,
+    setActiveInlinePanel,
+    resourceCreateForm,
+    resourceEditForm,
+    resourceUnitCreateForm,
+    resourceUnitEditForm,
+    setResourceCreateForm
+  });
 
   const {
     handleOpenCreateResource,
@@ -188,7 +114,22 @@ export function ResourcesWorkspace({
     handleOpenCreateResourceUnit,
     handleCancelCreateResourceUnit,
     handleOpenEditResourceUnit,
-    handleCancelEditResourceUnit,
+    handleCancelEditResourceUnit
+  } = useResourceWorkspacePanelActions({
+    visibleResources,
+    lockedResourceType,
+    setActiveInlinePanel,
+    setResourceCreateForm,
+    setResourceEditForm,
+    setResourceUnitCreateForm,
+    setResourceUnitEditForm,
+    createResourceMutation,
+    updateResourceMutation,
+    createResourceUnitMutation,
+    updateResourceUnitMutation
+  });
+
+  const {
     handleToggleResourceStatus,
     handleDeleteResource,
     handleDeleteResourceUnit,
@@ -196,7 +137,7 @@ export function ResourcesWorkspace({
     handleSaveResource,
     handleCreateResourceUnit,
     handleSaveResourceUnit
-  } = useResourceWorkspaceActions({
+  } = useResourceWorkspaceMutationActions({
     locale,
     visibleResources,
     activeInlinePanel,
@@ -205,11 +146,6 @@ export function ResourcesWorkspace({
     resourceEditForm,
     resourceUnitCreateForm,
     resourceUnitEditForm,
-    setActiveInlinePanel,
-    setResourceCreateForm,
-    setResourceEditForm,
-    setResourceUnitCreateForm,
-    setResourceUnitEditForm,
     setStatusFeedbackResourceId,
     setDeleteFeedbackResourceId,
     setDeleteUnitFeedbackResourceId,

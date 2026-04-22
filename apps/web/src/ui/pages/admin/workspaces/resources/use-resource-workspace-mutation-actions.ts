@@ -7,25 +7,17 @@ import type { Dispatch, SetStateAction } from "react";
 import { localeText } from "../../../../../lib/locale";
 import type { Locale } from "../../../../../store/locale-store";
 import type { CreateResourcePayload } from "../../../../../lib/api/resource-api";
-import {
-  alignResourceUnitFormToResource,
-  createDefaultResourceFormState,
-  createDefaultResourceUnitFormState,
-  toResourceFormState,
-  toResourceUnitFormState,
-  type ResourceFormState,
-  type ResourceUnitFormState
+import type {
+  ResourceFormState,
+  ResourceUnitFormState
 } from "./resources-workspace-helpers";
 import type { ActiveInlinePanel } from "./resources-workspace-selectors";
 
 type CreateResourceMutationLike = {
-  reset: () => void;
   mutate: (payload: CreateResourcePayload) => void;
-  isPending: boolean;
 };
 
 type UpdateResourceMutationLike = {
-  reset: () => void;
   mutate: (payload: {
     resourceId: string;
     body: {
@@ -36,7 +28,6 @@ type UpdateResourceMutationLike = {
       location?: string;
     };
   }) => void;
-  isPending: boolean;
 };
 
 type CreateResourceUnitMutationLike = {
@@ -49,7 +40,6 @@ type CreateResourceUnitMutationLike = {
     availabilityMode: "continuous" | "discrete_slot";
     capacity: number;
   }) => void;
-  isPending: boolean;
 };
 
 type UpdateResourceUnitMutationLike = {
@@ -65,28 +55,24 @@ type UpdateResourceUnitMutationLike = {
       capacity: number;
     };
   }) => void;
-  isPending: boolean;
 };
 
 type UpdateResourceStatusMutationLike = {
   reset: () => void;
   mutate: (payload: { resourceId: string; status: "active" | "inactive" }) => void;
-  isPending: boolean;
 };
 
 type DeleteResourceMutationLike = {
   reset: () => void;
   mutate: (resourceId: string) => void;
-  isPending: boolean;
 };
 
 type DeleteResourceUnitMutationLike = {
   reset: () => void;
   mutate: (payload: { resourceId: string; unitId: string }) => void;
-  isPending: boolean;
 };
 
-export function useResourceWorkspaceActions({
+export function useResourceWorkspaceMutationActions({
   locale,
   visibleResources,
   activeInlinePanel,
@@ -95,11 +81,6 @@ export function useResourceWorkspaceActions({
   resourceEditForm,
   resourceUnitCreateForm,
   resourceUnitEditForm,
-  setActiveInlinePanel,
-  setResourceCreateForm,
-  setResourceEditForm,
-  setResourceUnitCreateForm,
-  setResourceUnitEditForm,
   setStatusFeedbackResourceId,
   setDeleteFeedbackResourceId,
   setDeleteUnitFeedbackResourceId,
@@ -119,11 +100,6 @@ export function useResourceWorkspaceActions({
   resourceEditForm: ResourceFormState;
   resourceUnitCreateForm: ResourceUnitFormState;
   resourceUnitEditForm: ResourceUnitFormState;
-  setActiveInlinePanel: Dispatch<SetStateAction<ActiveInlinePanel | null>>;
-  setResourceCreateForm: Dispatch<SetStateAction<ResourceFormState>>;
-  setResourceEditForm: Dispatch<SetStateAction<ResourceFormState>>;
-  setResourceUnitCreateForm: Dispatch<SetStateAction<ResourceUnitFormState>>;
-  setResourceUnitEditForm: Dispatch<SetStateAction<ResourceUnitFormState>>;
   setStatusFeedbackResourceId: Dispatch<SetStateAction<string>>;
   setDeleteFeedbackResourceId: Dispatch<SetStateAction<string>>;
   setDeleteUnitFeedbackResourceId: Dispatch<SetStateAction<string>>;
@@ -137,104 +113,6 @@ export function useResourceWorkspaceActions({
 }) {
   const findResource = (resourceId: string) =>
     visibleResources.find((resource) => resource.id === resourceId) ?? null;
-
-  const findUnit = (resourceId: string, unitId: string) =>
-    findResource(resourceId)?.units.find((unit) => unit.id === unitId) ?? null;
-
-  function handleOpenCreateResource() {
-    createResourceMutation.reset();
-    setResourceCreateForm(createDefaultResourceFormState(lockedResourceType ?? "academic_space"));
-    setActiveInlinePanel({ kind: "createResource" });
-  }
-
-  function handleCancelCreateResource() {
-    createResourceMutation.reset();
-    setResourceCreateForm(createDefaultResourceFormState(lockedResourceType ?? "academic_space"));
-    setActiveInlinePanel((current) => (current?.kind === "createResource" ? null : current));
-  }
-
-  function handleOpenEditResource(resourceId: string) {
-    const resource = findResource(resourceId);
-
-    if (!resource) {
-      return;
-    }
-
-    updateResourceMutation.reset();
-    setResourceEditForm(toResourceFormState(resource));
-    setActiveInlinePanel({ kind: "editResource", resourceId });
-  }
-
-  function handleCancelEditResource(resourceId: string) {
-    const resource = findResource(resourceId);
-
-    if (resource) {
-      setResourceEditForm(toResourceFormState(resource));
-    }
-
-    updateResourceMutation.reset();
-    setActiveInlinePanel((current) =>
-      current?.kind === "editResource" && current.resourceId === resourceId ? null : current
-    );
-  }
-
-  function handleOpenCreateResourceUnit(resourceId: string) {
-    const resource = findResource(resourceId);
-
-    if (!resource) {
-      return;
-    }
-
-    createResourceUnitMutation.reset();
-    setResourceUnitCreateForm(
-      alignResourceUnitFormToResource(createDefaultResourceUnitFormState(), resource)
-    );
-    setActiveInlinePanel({ kind: "createUnit", resourceId });
-  }
-
-  function handleCancelCreateResourceUnit(resourceId: string) {
-    const resource = findResource(resourceId);
-
-    if (resource) {
-      setResourceUnitCreateForm(
-        alignResourceUnitFormToResource(createDefaultResourceUnitFormState(), resource)
-      );
-    }
-
-    createResourceUnitMutation.reset();
-    setActiveInlinePanel((current) =>
-      current?.kind === "createUnit" && current.resourceId === resourceId ? null : current
-    );
-  }
-
-  function handleOpenEditResourceUnit(resourceId: string, unitId: string) {
-    const unit = findUnit(resourceId, unitId);
-
-    if (!unit) {
-      return;
-    }
-
-    updateResourceUnitMutation.reset();
-    setResourceUnitEditForm(toResourceUnitFormState(unit));
-    setActiveInlinePanel({ kind: "editUnit", resourceId, unitId });
-  }
-
-  function handleCancelEditResourceUnit(resourceId: string, unitId: string) {
-    const unit = findUnit(resourceId, unitId);
-
-    if (unit) {
-      setResourceUnitEditForm(toResourceUnitFormState(unit));
-    }
-
-    updateResourceUnitMutation.reset();
-    setActiveInlinePanel((current) =>
-      current?.kind === "editUnit" &&
-      current.resourceId === resourceId &&
-      current.unitId === unitId
-        ? null
-        : current
-    );
-  }
 
   function handleToggleResourceStatus(resourceId: string) {
     const resource = findResource(resourceId);
@@ -375,14 +253,6 @@ export function useResourceWorkspaceActions({
   }
 
   return {
-    handleOpenCreateResource,
-    handleCancelCreateResource,
-    handleOpenEditResource,
-    handleCancelEditResource,
-    handleOpenCreateResourceUnit,
-    handleCancelCreateResourceUnit,
-    handleOpenEditResourceUnit,
-    handleCancelEditResourceUnit,
     handleToggleResourceStatus,
     handleDeleteResource,
     handleDeleteResourceUnit,

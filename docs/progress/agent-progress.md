@@ -34,6 +34,20 @@
     - `pnpm --filter api typecheck`
     - `pnpm --filter api test`
   - 当前 `apps/api` 测试结果：`26 tests / 7 suites / 0 fail`
+- 已完成本轮圈复杂度治理终验与 AST 复查：
+  - 留证文档：`docs/verification/2026-04-22/qa-017-cyclomatic-final-ast-report.md`
+  - 计划内热点均已完成
+  - 当前 AST 汇总：
+    - `over10 = 36`
+    - `over15 = 15`
+    - `over20 = 5`
+    - `over30 = 1`
+  - 当前剩余 `>20` 热点已转移到未纳入本轮计划的：
+    - `RulesWorkspace`
+    - `SpacesPage`
+    - `SportsPage`
+    - `NotificationsWorkspace`
+    - `toOrderDetail`
 - 已继续微调 `docs/demo/product-architecture.md` 的句式表达：
   - 已集中收口高频“不是 / 而是”对立句式，改为更直接的陈述句
   - 已同步恢复文档尾部的“当前完成情况与后续优化 / 总结”章节，避免文案调整时误删尾部内容
