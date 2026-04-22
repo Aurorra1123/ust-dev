@@ -195,12 +195,3 @@ erDiagram
 - 体育设施对有效槽位建立唯一性保护，保证同一场地同一槽位不能被两张有效订单同时占用。
 - 活动报名对同一用户的有效报名做唯一性保护，并用库存字段和 Worker 共同防止超卖。
 
-## 为了可读性省略的表
-
-- `ReservationParticipant`
-- `UserRuleProfile`
-- `PaymentCompensationLog`
-- `Notification`
-- `ServiceRequest`
-
-这些表当前仓库中都已存在，但不是理解主链路所必需的核心实体。
