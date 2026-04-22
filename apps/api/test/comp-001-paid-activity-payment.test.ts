@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 
 import type {
-  ActivityRegistrationStatusResponse,
   MockPaymentStartResponse,
   OrderDetailResponse
 } from "@campusbook/shared-types";
@@ -40,22 +39,15 @@ describe("COMP-001 paid activity payment path", { concurrency: 1 }, () => {
     });
 
     assert.equal(grabResponse.status, 201);
-    await harness.waitForActivityQueueIdle();
-
-    const registrationStatus =
-      await harness.request<ActivityRegistrationStatusResponse>(
-        `/activities/${activityId}/registration-status`,
-        {
-          accessToken
-        }
-      );
-
-    assert.equal(registrationStatus.status, 200);
-    assert.equal(registrationStatus.payload?.status, "pending_confirmation");
-    assert.ok(registrationStatus.payload?.orderId);
+    const registrationStatus = await harness.waitForRegistrationStatus(
+      activityId,
+      accessToken,
+      "pending_confirmation"
+    );
+    assert.ok(registrationStatus.orderId);
 
     const orderDetail = await harness.request<OrderDetailResponse>(
-      `/orders/${registrationStatus.payload?.orderId}`,
+      `/orders/${registrationStatus.orderId}`,
       {
         accessToken
       }
@@ -87,21 +79,15 @@ describe("COMP-001 paid activity payment path", { concurrency: 1 }, () => {
     });
 
     assert.equal(grabResponse.status, 201);
-    await harness.waitForActivityQueueIdle();
-
-    const registrationStatus =
-      await harness.request<ActivityRegistrationStatusResponse>(
-        `/activities/${activityId}/registration-status`,
-        {
-          accessToken
-        }
-      );
-
-    assert.equal(registrationStatus.payload?.status, "pending_confirmation");
-    assert.ok(registrationStatus.payload?.orderId);
+    const registrationStatus = await harness.waitForRegistrationStatus(
+      activityId,
+      accessToken,
+      "pending_confirmation"
+    );
+    assert.ok(registrationStatus.orderId);
 
     const mockPayment = await harness.request<MockPaymentStartResponse>(
-      `/payments/orders/${registrationStatus.payload?.orderId}/mock`,
+      `/payments/orders/${registrationStatus.orderId}/mock`,
       {
         method: "POST",
         accessToken
@@ -132,7 +118,7 @@ describe("COMP-001 paid activity payment path", { concurrency: 1 }, () => {
     );
 
     const confirmedOrder = await harness.request<OrderDetailResponse>(
-      `/orders/${registrationStatus.payload?.orderId}`,
+      `/orders/${registrationStatus.orderId}`,
       {
         accessToken
       }

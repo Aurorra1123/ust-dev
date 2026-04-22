@@ -19,7 +19,9 @@ describe("COMP-006 activity inventory consistency and recovery", { concurrency: 
   let harness: IntegrationHarness;
 
   before(async () => {
-    harness = await createIntegrationHarness();
+    harness = await createIntegrationHarness({
+      initializeFixture: false
+    });
   });
 
   beforeEach(async () => {

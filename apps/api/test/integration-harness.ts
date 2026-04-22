@@ -13,13 +13,12 @@ import { NestFactory } from "@nestjs/core";
 import {
   ActivityStatus,
   ActivityTicketStatus,
-  Prisma,
   PrismaClient,
   UserRole,
   UserStatus
 } from "@prisma/client";
+import type { ActivityRegistrationStatusResponse } from "@campusbook/shared-types";
 import { Queue } from "bullmq";
-import Redis from "ioredis";
 
 import { configureApiApplication } from "../src/bootstrap-api";
 import { createBullmqConnection } from "../src/infrastructure/redis/bullmq";
@@ -75,6 +74,12 @@ export interface IntegrationHarness {
   getWorkerService<T>(token: string | symbol | Type<T> | Abstract<T>): T;
   runExpirePendingOrders(): Promise<TestResponse>;
   waitForActivityQueueIdle(timeoutMs?: number): Promise<void>;
+  waitForRegistrationStatus(
+    activityId: string,
+    accessToken: string,
+    expectedStatus: ActivityRegistrationStatusResponse["status"],
+    timeoutMs?: number
+  ): Promise<ActivityRegistrationStatusResponse>;
 }
 
 interface RequestOptions {
@@ -84,9 +89,18 @@ interface RequestOptions {
   headers?: Record<string, string>;
 }
 
-export async function createIntegrationHarness(): Promise<IntegrationHarness> {
+interface CreateIntegrationHarnessOptions {
+  initializeFixture?: boolean;
+}
+
+let testDatabaseReadyPromise: Promise<void> | null = null;
+
+export async function createIntegrationHarness(
+  options: CreateIntegrationHarnessOptions = {}
+): Promise<IntegrationHarness> {
+  const { initializeFixture = true } = options;
   applyTestEnvironment();
-  runApiCommand(["prisma:migrate:deploy"]);
+  await ensureTestDatabaseReady();
   const [{ AppModule }, { WorkerModule }] = await Promise.all([
     import("../src/app.module"),
     import("../src/worker.module")
@@ -133,18 +147,7 @@ export async function createIntegrationHarness(): Promise<IntegrationHarness> {
 
   async function resetFixture() {
     await waitForActivityQueueIdle();
-    await prisma.$executeRawUnsafe(
-      `SELECT set_config('search_path', current_schema(), false)`
-    );
-    await prisma.$executeRawUnsafe("SELECT pg_advisory_lock(90422026)");
-
-    try {
-      await flushCurrentRedisDb(prisma);
-      await truncateCurrentSchema(prisma);
-      runApiCommand(["seed:demo"]);
-    } finally {
-      await prisma.$executeRawUnsafe("SELECT pg_advisory_unlock(90422026)");
-    }
+    runApiCommand(["seed:demo"]);
   }
 
   async function request<T = unknown>(
@@ -183,6 +186,39 @@ export async function createIntegrationHarness(): Promise<IntegrationHarness> {
       payload,
       headers: response.headers
     };
+  }
+
+  async function waitForRegistrationStatus(
+    activityId: string,
+    accessToken: string,
+    expectedStatus: ActivityRegistrationStatusResponse["status"],
+    timeoutMs = 5_000
+  ) {
+    const deadline = Date.now() + timeoutMs;
+    let lastResponse: TestResponse<ActivityRegistrationStatusResponse> | null = null;
+
+    while (Date.now() < deadline) {
+      const response = await request<ActivityRegistrationStatusResponse>(
+        `/activities/${activityId}/registration-status`,
+        {
+          accessToken
+        }
+      );
+
+      lastResponse = response;
+
+      if (response.status === 200 && response.payload?.status === expectedStatus) {
+        return response.payload;
+      }
+
+      await delay(200);
+    }
+
+    throw new Error(
+      `activity-registration-status-timeout:${activityId}:${expectedStatus}:${
+        lastResponse?.status ?? "unknown"
+      }:${JSON.stringify(lastResponse?.payload ?? null)}`
+    );
   }
 
   async function login(email: string, password = TEST_DEMO_USER_PASSWORD) {
@@ -263,7 +299,9 @@ export async function createIntegrationHarness(): Promise<IntegrationHarness> {
     };
   }
 
-  await resetFixture();
+  if (initializeFixture) {
+    await resetFixture();
+  }
 
   return {
     baseUrl,
@@ -285,6 +323,7 @@ export async function createIntegrationHarness(): Promise<IntegrationHarness> {
         }
       }),
     waitForActivityQueueIdle,
+    waitForRegistrationStatus,
     async close() {
       await waitForActivityQueueIdle().catch(() => undefined);
       await apiApp.close();
@@ -328,6 +367,21 @@ function applyTestEnvironment() {
   process.env.API_PORT = "0";
 }
 
+async function ensureTestDatabaseReady() {
+  if (!testDatabaseReadyPromise) {
+    testDatabaseReadyPromise = Promise.resolve().then(() => {
+      runApiCommand(["prisma:migrate:deploy"]);
+    });
+  }
+
+  try {
+    await testDatabaseReadyPromise;
+  } catch (error) {
+    testDatabaseReadyPromise = null;
+    throw error;
+  }
+}
+
 function runApiCommand(args: string[]) {
   execFileSync("pnpm", ["--filter", "api", ...args], {
     cwd: resolveRepoRoot(),
@@ -350,52 +404,6 @@ function runApiCommand(args: string[]) {
       NODE_ENV: "test"
     }
   });
-}
-
-async function flushCurrentRedisDb(prisma: PrismaClient) {
-  await prisma.$queryRaw`SELECT 1`;
-
-  const redis = new Redis(TEST_REDIS_URL, {
-    lazyConnect: true,
-    maxRetriesPerRequest: 1,
-    enableOfflineQueue: false
-  });
-
-  try {
-    if (redis.status === "wait") {
-      await redis.connect();
-    }
-
-    await redis.flushdb();
-  } finally {
-    if (redis.status === "ready" || redis.status === "connect") {
-      await redis.quit();
-    } else {
-      redis.disconnect(false);
-    }
-  }
-}
-
-async function truncateCurrentSchema(prisma: PrismaClient) {
-  const tables = await prisma.$queryRaw<Array<{ tablename: string }>>(Prisma.sql`
-    SELECT "tablename"
-    FROM "pg_tables"
-    WHERE "schemaname" = current_schema()
-      AND "tablename" <> '_prisma_migrations'
-    ORDER BY "tablename" ASC
-  `);
-
-  if (tables.length === 0) {
-    return;
-  }
-
-  const tableNames = tables
-    .map((table) => `"${table.tablename.replace(/"/g, "\"\"")}"`)
-    .join(", ");
-
-  await prisma.$executeRawUnsafe(
-    `TRUNCATE TABLE ${tableNames} RESTART IDENTITY CASCADE`
-  );
 }
 
 function resolveRepoRoot() {

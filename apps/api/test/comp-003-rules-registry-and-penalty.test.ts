@@ -18,7 +18,9 @@ describe("COMP-003 rules registry and penalty chain", { concurrency: 1 }, () => 
   let harness: IntegrationHarness;
 
   before(async () => {
-    harness = await createIntegrationHarness();
+    harness = await createIntegrationHarness({
+      initializeFixture: false
+    });
   });
 
   beforeEach(async () => {

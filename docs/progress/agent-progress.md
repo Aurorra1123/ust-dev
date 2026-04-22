@@ -6,6 +6,32 @@
 
 ### 已完成
 
+- 已修复 `apps/api` 集成测试夹具的稳定性问题：
+  - `apps/api/test/integration-harness.ts`
+  - `resetFixture()` 不再在持有 PostgreSQL advisory lock 时调用 `seed:demo`，已消除与 `seed-demo-data.ts` 的同锁自锁死
+  - `prisma:migrate:deploy` 已收口为单次测试进程内只执行一次
+  - 新增 `initializeFixture` 开关，带 `beforeEach(resetFixture)` 的 suite 不再额外执行一次多余初始化
+  - 新增 `waitForRegistrationStatus()`，不再把“活动队列空了”误判为“报名与订单已稳定可查询”
+- 已同步收口相关测试文件：
+  - `apps/api/test/comp-001-paid-activity-payment.test.ts`
+  - `apps/api/test/comp-002-ghost-payment-race.test.ts`
+  - `apps/api/test/comp-003-rules-registry-and-penalty.test.ts`
+  - `apps/api/test/comp-004-security-headers.test.ts`
+  - `apps/api/test/comp-005-business-regressions.test.ts`
+  - `apps/api/test/comp-006-activity-inventory-recovery.test.ts`
+- 已完成本轮 API 测试修复验证：
+  - `pnpm --filter api lint`
+  - `pnpm --filter api typecheck`
+  - `pnpm --filter api test`
+  - 结果为 `25 tests / 7 suites / 25 pass / 0 fail`
+- 已记录本轮按 suite 输出可确认的通过项：
+  - `COMP-001 paid activity payment path`
+  - `COMP-002 ghost payment race`
+  - `COMP-003 rules registry and penalty chain`
+  - `COMP-004 security headers`
+  - `COMP-005 business regressions`
+  - `COMP-006 activity inventory consistency and recovery`
+  - `Guardrail-0 API regressions`
 - 已完成非支付方向的边界演示与答辩材料补充：
   - `docs/verification/2026-04-22/qa-009-non-payment-boundary-demo-checklist.md`
   - `docs/architecture/rules-engine-answer-sheet-2026-04-22.md`

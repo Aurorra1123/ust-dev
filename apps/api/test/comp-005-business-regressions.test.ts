@@ -4,7 +4,6 @@ import { setTimeout as delay } from "node:timers/promises";
 
 import type {
   AcademicReservationResponse,
-  ActivityRegistrationStatusResponse,
   AppRule,
   MockPaymentStartResponse,
   OrderDetailResponse
@@ -20,7 +19,9 @@ describe("COMP-005 business regressions", { concurrency: 1 }, () => {
   let harness: IntegrationHarness;
 
   before(async () => {
-    harness = await createIntegrationHarness();
+    harness = await createIntegrationHarness({
+      initializeFixture: false
+    });
   });
 
   beforeEach(async () => {
@@ -101,7 +102,11 @@ describe("COMP-005 business regressions", { concurrency: 1 }, () => {
     });
 
     assert.equal(firstGrab.status, 201);
-    await harness.waitForActivityQueueIdle();
+    await harness.waitForRegistrationStatus(
+      activity.id,
+      studentToken,
+      "confirmed"
+    );
 
     const secondGrab = await harness.request(`/activities/${activity.id}/grab`, {
       method: "POST",
@@ -234,22 +239,15 @@ async function createPendingPaidOrder(harness: IntegrationHarness) {
   });
 
   assert.equal(grabResponse.status, 201);
-  await harness.waitForActivityQueueIdle();
-
-  const registrationStatus =
-    await harness.request<ActivityRegistrationStatusResponse>(
-      `/activities/${activityId}/registration-status`,
-      {
-        accessToken
-      }
-    );
-
-  assert.equal(registrationStatus.status, 200);
-  assert.equal(registrationStatus.payload?.status, "pending_confirmation");
-  assert.ok(registrationStatus.payload?.orderId);
+  const registrationStatus = await harness.waitForRegistrationStatus(
+    activityId,
+    accessToken,
+    "pending_confirmation"
+  );
+  assert.ok(registrationStatus.orderId);
 
   const mockPayment = await harness.request<MockPaymentStartResponse>(
-    `/payments/orders/${registrationStatus.payload.orderId}/mock`,
+    `/payments/orders/${registrationStatus.orderId}/mock`,
     {
       method: "POST",
       accessToken
@@ -261,7 +259,7 @@ async function createPendingPaidOrder(harness: IntegrationHarness) {
 
   return {
     accessToken,
-    orderId: registrationStatus.payload.orderId
+    orderId: registrationStatus.orderId
   };
 }
 

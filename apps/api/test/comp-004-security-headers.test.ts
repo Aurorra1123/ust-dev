@@ -10,7 +10,9 @@ describe("COMP-004 security headers", { concurrency: 1 }, () => {
   let harness: IntegrationHarness;
 
   before(async () => {
-    harness = await createIntegrationHarness();
+    harness = await createIntegrationHarness({
+      initializeFixture: false
+    });
   });
 
   beforeEach(async () => {
