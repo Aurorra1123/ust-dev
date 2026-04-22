@@ -173,6 +173,10 @@ export function ruleTypeLabel(ruleType: RuleType, locale: Locale) {
       return localeText(locale, "最长预约时长", "Maximum Duration");
     case "allowed_user_roles":
       return localeText(locale, "允许用户角色", "Allowed User Roles");
+    case "max_active_reservations_per_category":
+      return localeText(locale, "最大可预约次数", "Maximum Active Reservations");
+    case "no_show_credit_penalty":
+      return localeText(locale, "爽约扣分处罚", "No-show Penalty");
   }
 }
 

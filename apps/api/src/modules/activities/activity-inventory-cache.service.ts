@@ -93,15 +93,22 @@ export class ActivityInventoryCacheService {
     remaining: number
   ) {
     const client = await this.redisService.connect();
-    const created = await client.set(
-      getActivityTicketRemainingKey(ticketId),
-      String(Math.max(remaining, 0)),
-      "NX"
+    const existing = await client.exists(getActivityTicketRemainingKey(ticketId));
+
+    if (existing === 1) {
+      return;
+    }
+
+    const pendingClaims = await this.countPendingClaimsForTicket(
+      activityId,
+      ticketId
     );
 
-    if (created === "OK") {
-      await this.reconcileTicketRemaining(activityId, ticketId, remaining);
-    }
+    await client.set(
+      getActivityTicketRemainingKey(ticketId),
+      String(Math.max(remaining - pendingClaims, 0)),
+      "NX"
+    );
   }
 
   async reconcileTicketRemaining(

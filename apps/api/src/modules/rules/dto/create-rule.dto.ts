@@ -6,7 +6,13 @@ export class CreateRuleDto {
   @IsNotEmpty()
   name!: string;
 
-  @IsIn(["min_credit_score", "max_duration_minutes", "allowed_user_roles"])
+  @IsIn([
+    "min_credit_score",
+    "max_duration_minutes",
+    "allowed_user_roles",
+    "max_active_reservations_per_category",
+    "no_show_credit_penalty"
+  ])
   ruleType!: RuleType;
 
   @IsObject()

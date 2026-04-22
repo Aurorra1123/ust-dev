@@ -18,14 +18,13 @@ import type { AuthUser, OrderDetailResponse } from "@campusbook/shared-types";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import { ActivityInventoryCacheService } from "../activities/activity-inventory-cache.service";
+import { RulesService } from "../rules/rules.service";
 import {
   buildReservationCheckInWindow,
   getReservationAttendanceEvaluateAt,
-  getReservationBanDeadline,
   getReservationCategoryFromOrder,
   getReservationStartTimeFromOrder,
-  mapReservationCategory,
-  maxReservationPolicyDate
+  mapReservationCategory
 } from "../reservation/shared/reservation-policy";
 import { OrderExpirationQueueService } from "./order-expiration-queue.service";
 import { ReservationAttendanceQueueService } from "./reservation-attendance-queue.service";
@@ -99,7 +98,8 @@ export class OrdersService {
     private readonly orderExpirationQueueService: OrderExpirationQueueService,
     @Inject(forwardRef(() => ActivityInventoryCacheService))
     private readonly activityInventoryCacheService: ActivityInventoryCacheService,
-    private readonly reservationAttendanceQueueService: ReservationAttendanceQueueService
+    private readonly reservationAttendanceQueueService: ReservationAttendanceQueueService,
+    private readonly rulesService: RulesService
   ) {}
 
   async listOrders(actor: AuthUser): Promise<OrderDetailResponse[]> {
@@ -491,8 +491,13 @@ export class OrdersService {
 
     const reservationCategory = getReservationCategoryFromOrder(order);
     const reservationStartTime = getReservationStartTimeFromOrder(order);
+    const reservationResourceId =
+      order.academicReservation?.resourceId ??
+      order.sportsReservationSlots[0]?.resourceId ??
+      order.items[0]?.resourceId ??
+      null;
 
-    if (!reservationCategory || !reservationStartTime) {
+    if (!reservationCategory || !reservationStartTime || !reservationResourceId) {
       return null;
     }
 
@@ -567,45 +572,16 @@ export class OrdersService {
         });
       }
 
-      for (const participant of order.reservationParticipants) {
-        const restriction = await tx.userReservationRestriction.upsert({
-          where: {
-            userId_category: {
-              userId: participant.userId,
-              category: reservationCategory
-            }
-          },
-          update: {
-            violationCount: {
-              increment: 1
-            },
-            lastViolatedAt: new Date()
-          },
-          create: {
-            userId: participant.userId,
-            category: reservationCategory,
-            violationCount: 1,
-            lastViolatedAt: new Date()
-          }
-        });
-
-        if (restriction.violationCount > 2) {
-          await tx.userReservationRestriction.update({
-            where: {
-              userId_category: {
-                userId: participant.userId,
-                category: reservationCategory
-              }
-            },
-            data: {
-              bannedUntil: maxReservationPolicyDate(
-                restriction.bannedUntil,
-                getReservationBanDeadline(new Date())
-              )
-            }
-          });
-        }
-      }
+      await this.rulesService.applyReservationNoShowRules({
+        tx,
+        resourceId: reservationResourceId,
+        orderId: order.id,
+        participantUserIds: order.reservationParticipants.map(
+          (participant) => participant.userId
+        ),
+        reservationCategory,
+        occurredAt: new Date()
+      });
 
       const latestOrder = await tx.order.findUnique({
         where: { id: order.id },

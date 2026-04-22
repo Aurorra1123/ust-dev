@@ -4,6 +4,10 @@ import {
   NotFoundException
 } from "@nestjs/common";
 import {
+  OrderBizType,
+  OrderStatus,
+  ReservationCategory as PrismaReservationCategory,
+  ResourceType,
   RuleStatus as PrismaRuleStatus,
   UserRole as PrismaUserRole,
   type Prisma
@@ -11,15 +15,18 @@ import {
 import type {
   AppRule,
   RuleStatus,
-  UserRole
+  UserRole,
+  ReservationCategory
 } from "@campusbook/shared-types";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import { CreateRuleDto } from "./dto/create-rule.dto";
 import { UpdateRuleDto } from "./dto/update-rule.dto";
 import {
+  applyNoShowRule,
   assertRuleSatisfied,
-  normalizeRuleDefinition
+  normalizeRuleDefinition,
+  supportsRuleEvaluationScope
 } from "./rule-engine";
 
 @Injectable()
@@ -42,11 +49,18 @@ export class RulesService {
   }
 
   async createRule(payload: CreateRuleDto): Promise<AppRule> {
+    const normalized = normalizeRuleDefinition({
+      id: "__draft__",
+      name: payload.name,
+      ruleType: payload.ruleType,
+      expression: payload.expression as Prisma.JsonValue
+    });
+
     const created = await this.prismaService.rule.create({
       data: {
-        name: payload.name,
-        ruleType: payload.ruleType,
-        expression: payload.expression as Prisma.InputJsonValue,
+        name: normalized.name,
+        ruleType: normalized.ruleType,
+        expression: normalized.expression as Prisma.InputJsonValue,
         status: mapSharedRuleStatus(payload.status ?? "active")
       },
       include: {
@@ -58,16 +72,20 @@ export class RulesService {
   }
 
   async updateRule(id: string, payload: UpdateRuleDto): Promise<AppRule> {
-    await this.ensureRuleExists(id);
+    const existing = await this.ensureRuleExists(id);
+    const normalized = normalizeRuleDefinition({
+      id: existing.id,
+      name: payload.name ?? existing.name,
+      ruleType: payload.ruleType ?? existing.ruleType,
+      expression: (payload.expression as Prisma.JsonValue | undefined) ?? existing.expression
+    });
 
     const updated = await this.prismaService.rule.update({
       where: { id },
       data: {
-        ...(payload.name ? { name: payload.name } : {}),
-        ...(payload.ruleType ? { ruleType: payload.ruleType } : {}),
-        ...(payload.expression
-          ? { expression: payload.expression as Prisma.InputJsonValue }
-          : {}),
+        name: normalized.name,
+        ruleType: normalized.ruleType,
+        expression: normalized.expression as Prisma.InputJsonValue,
         ...(payload.status ? { status: mapSharedRuleStatus(payload.status) } : {})
       },
       include: {
@@ -166,6 +184,72 @@ export class RulesService {
     };
   }
 
+  async assertActivityRules(params: {
+    activityId: string;
+    userId: string;
+  }) {
+    const [activity, user, rules] = await Promise.all([
+      this.prismaService.activity.findUnique({
+        where: {
+          id: params.activityId
+        },
+        select: {
+          id: true
+        }
+      }),
+      this.prismaService.user.findUnique({
+        where: { id: params.userId },
+        select: {
+          role: true,
+          creditScore: true
+        }
+      }),
+      this.prismaService.rule.findMany({
+        where: {
+          status: PrismaRuleStatus.ACTIVE
+        },
+        orderBy: {
+          createdAt: "asc"
+        }
+      })
+    ]);
+
+    if (!activity) {
+      throw new NotFoundException("activity-not-found");
+    }
+
+    if (!user) {
+      throw new NotFoundException("user-not-found");
+    }
+
+    for (const candidate of rules) {
+      if (
+        !supportsRuleEvaluationScope(
+          candidate.ruleType,
+          "activity_registration"
+        )
+      ) {
+        continue;
+      }
+
+      const rule = normalizeRuleDefinition({
+        id: candidate.id,
+        name: candidate.name,
+        ruleType: candidate.ruleType,
+        expression: candidate.expression
+      });
+
+      await assertRuleSatisfied(rule, {
+        scope: "activity_registration",
+        userId: params.userId,
+        userRole: mapPrismaRoleToSharedRole(user.role),
+        creditScore: user.creditScore,
+        requestedDurationMinutes: 0,
+        activeReservationCount: 0
+      });
+    }
+  }
+
   async assertReservationRules(params: {
     resourceId: string;
     userId: string;
@@ -201,6 +285,11 @@ export class RulesService {
       throw new NotFoundException("user-not-found");
     }
 
+    const activeReservationCount = await this.countActiveReservationOrders(
+      params.userId,
+      mapResourceTypeToCategory(resource.type)
+    );
+
     for (const binding of resource.ruleBindings) {
       if (binding.rule.status !== PrismaRuleStatus.ACTIVE) {
         continue;
@@ -213,11 +302,60 @@ export class RulesService {
         expression: binding.rule.expression
       });
 
-      assertRuleSatisfied(rule, {
+      await assertRuleSatisfied(rule, {
+        scope: "reservation",
+        userId: params.userId,
         userRole: mapPrismaRoleToSharedRole(user.role),
         creditScore: user.creditScore,
-        requestedDurationMinutes: params.requestedDurationMinutes
+        requestedDurationMinutes: params.requestedDurationMinutes,
+        activeReservationCount
       });
+    }
+  }
+
+  async applyReservationNoShowRules(params: {
+    tx: Prisma.TransactionClient;
+    resourceId: string;
+    orderId: string;
+    participantUserIds: string[];
+    reservationCategory: PrismaReservationCategory;
+    occurredAt: Date;
+  }) {
+    const bindings = await params.tx.resourceRuleBinding.findMany({
+      where: {
+        resourceId: params.resourceId
+      },
+      include: {
+        rule: true
+      },
+      orderBy: {
+        createdAt: "asc"
+      }
+    });
+
+    for (const binding of bindings) {
+      if (binding.rule.status !== PrismaRuleStatus.ACTIVE) {
+        continue;
+      }
+
+      const rule = normalizeRuleDefinition({
+        id: binding.rule.id,
+        name: binding.rule.name,
+        ruleType: binding.rule.ruleType,
+        expression: binding.rule.expression
+      });
+
+      for (const userId of params.participantUserIds) {
+        await applyNoShowRule(rule, {
+          tx: params.tx,
+          userId,
+          orderId: params.orderId,
+          reservationCategory: mapPrismaCategoryToSharedCategory(
+            params.reservationCategory
+          ),
+          occurredAt: params.occurredAt
+        });
+      }
     }
   }
 
@@ -243,6 +381,32 @@ export class RulesService {
     }
 
     return resource;
+  }
+
+  private async countActiveReservationOrders(
+    userId: string,
+    category: PrismaReservationCategory
+  ) {
+    return this.prismaService.order.count({
+      where: {
+        userId,
+        bizType: OrderBizType.RESOURCE_RESERVATION,
+        status: {
+          in: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]
+        },
+        ...(category === PrismaReservationCategory.ACADEMIC_SPACE
+          ? {
+              academicReservation: {
+                is: {}
+              }
+            }
+          : {
+              sportsReservationSlots: {
+                some: {}
+              }
+            })
+      }
+    });
   }
 }
 
@@ -283,4 +447,18 @@ function mapPrismaRuleStatus(value: PrismaRuleStatus): RuleStatus {
 
 function mapPrismaRoleToSharedRole(value: PrismaUserRole): UserRole {
   return value === PrismaUserRole.ADMIN ? "admin" : "student";
+}
+
+function mapResourceTypeToCategory(value: ResourceType) {
+  return value === ResourceType.ACADEMIC_SPACE
+    ? PrismaReservationCategory.ACADEMIC_SPACE
+    : PrismaReservationCategory.SPORTS_FACILITY;
+}
+
+function mapPrismaCategoryToSharedCategory(
+  value: PrismaReservationCategory
+): ReservationCategory {
+  return value === PrismaReservationCategory.ACADEMIC_SPACE
+    ? "academic_space"
+    : "sports_facility";
 }

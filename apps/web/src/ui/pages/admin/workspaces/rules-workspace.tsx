@@ -146,7 +146,11 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
       .length ?? 0;
   const isEditorValid =
     editor.name.trim().length > 0 &&
-    (editor.ruleType !== "allowed_user_roles" || editor.allowedRoles.length > 0);
+    (editor.ruleType !== "allowed_user_roles" || editor.allowedRoles.length > 0) &&
+    (editor.ruleType !== "max_active_reservations_per_category" ||
+      editor.maxActiveReservations > 0) &&
+    (editor.ruleType !== "no_show_credit_penalty" ||
+      (editor.noShowScoreDelta > 0 && editor.noShowBanDays >= 0));
 
   function handleSaveRule() {
     const body = {

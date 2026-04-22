@@ -2,6 +2,7 @@ import { Module, forwardRef } from "@nestjs/common";
 
 import { AuthModule } from "../auth/auth.module";
 import { OrdersModule } from "../orders/orders.module";
+import { RulesModule } from "../rules/rules.module";
 import {
   ActivitiesController,
   AdminActivitiesController
@@ -13,7 +14,7 @@ import { ActivityRegistrationService } from "./activity-registration.service";
 import { ActivitiesService } from "./activities.service";
 
 @Module({
-  imports: [AuthModule, forwardRef(() => OrdersModule)],
+  imports: [AuthModule, forwardRef(() => OrdersModule), RulesModule],
   controllers: [ActivitiesController, AdminActivitiesController],
   providers: [
     ActivitiesService,

@@ -6,6 +6,26 @@
 
 ### 已完成
 
+- 已完成 `COMP-003`，把规则系统升级为强类型 handler registry：
+  - 已接入 `max_active_reservations_per_category`
+  - 已接入 `no_show_credit_penalty`
+  - 既有 `min_credit_score / max_duration_minutes / allowed_user_roles` 已统一纳入 registry
+- 已让三类规则进入真实业务主链路：
+  - 活动报名资格
+  - 最大可预约次数限制
+  - 爽约扣分与禁用处罚
+- 已让真实处罚链路写入：
+  - `User.creditScore`
+  - `UserCreditLog`
+  - `UserRuleProfile`
+  - `UserReservationRestriction`
+- 已新增 ADR 与验证记录：
+  - `docs/adr/0023-rule-engine-uses-typed-handler-registry.md`
+  - `docs/verification/2026-04-22/qa-005-comp-003-rules-registry-and-penalty.md`
+- 在 `COMP-003` 验证中顺手修复了一处活动库存初始化竞态，Guardrail `API-011` 已重新回绿
+  - 根因是库存 key 首次初始化后又被旧快照覆盖
+  - 现已收口为“先统计 live pending，再单次 NX 初始化”
+
 - 已完成 `COMP-006`，把活动库存一致性、`totalQuota` 与 Redis 自愈收口成可验证闭环：
   - 创建或更新活动时强校验 `totalQuota == sum(ticket.stock)`
   - 新增票种后会自动同步 `totalQuota`
@@ -73,6 +93,8 @@
 
 ### 当前状态
 
+- `COMP-003` 已完成，规则引擎和处罚闭环已经有真实回归。
+- 当前下一阶段应进入 `COMP-004`，收口前端 a11y、性能、安全实现与留证。
 - `COMP-006` 已完成，活动库存一致性与自愈已经有真实回归。
 - 当前下一阶段应进入 `COMP-003`，把规则引擎升级为 registry，并让资格、额度、处罚进入真实链路。
 - `COMP-002` 已完成，幽灵支付对撞已经有真实回归和补偿日志留痕。
@@ -85,15 +107,15 @@
 
 ### 下一步建议
 
-1. 开始 `COMP-003`，把当前规则执行器从固定分支升级成可注册 handler registry
-2. 先接入活动资格、预约次数或总时长限制、爽约处罚三类高价值规则
-3. 让 `UserCreditLog` 与 `UserRuleProfile` 进入真实业务链路，并补自动化验证
+1. 开始 `COMP-004`，补学术、体育、活动与订单关键页的键盘可达和错误提示
+2. 补基础安全头、a11y 留证与性能留证
+3. 在 `COMP-004` 完成后进入 `COMP-005`，把已有业务链路转成更完整的验收门槛
 
 ### 注意事项
 
 - 本轮没有触碰 `docs/user_test/`
 - 为避免测试进程悬挂和多套应用并发拉起，本轮把 `apps/api` 的测试脚本收口为串行 `node:test` 并在结果产出后强制退出
-- 当前本地已完成 `COMP-006` 代码改动，但尚未开始 `COMP-003`
+- 当前本地已完成 `COMP-003` 代码改动，但尚未开始 `COMP-004`
 
 ### 已完成
 

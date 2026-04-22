@@ -15,7 +15,9 @@ export type RuleStatus = "active" | "inactive";
 export type RuleType =
   | "min_credit_score"
   | "max_duration_minutes"
-  | "allowed_user_roles";
+  | "allowed_user_roles"
+  | "max_active_reservations_per_category"
+  | "no_show_credit_penalty";
 export type ServiceRequestStatus =
   | "submitted"
   | "received"
@@ -492,6 +494,8 @@ export interface RuleExpression {
   min?: number;
   max?: number;
   roles?: UserRole[];
+  scoreDelta?: number;
+  banDays?: number;
 }
 
 export interface AppRule {

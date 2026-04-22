@@ -26,6 +26,7 @@ import type {
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import type { AuthenticatedUser } from "../auth/auth.types";
 import { OrderExpirationQueueService } from "../orders/order-expiration-queue.service";
+import { RulesService } from "../rules/rules.service";
 import { ActivityInventoryCacheService } from "./activity-inventory-cache.service";
 import {
   ACTIVITY_REGISTRATION_PENDING_TTL_MS,
@@ -43,6 +44,7 @@ export class ActivityRegistrationService {
     private readonly prismaService: PrismaService,
     private readonly activityInventoryCacheService: ActivityInventoryCacheService,
     private readonly activityRegistrationQueueService: ActivityRegistrationQueueService,
+    private readonly rulesService: RulesService,
     @Inject(forwardRef(() => OrderExpirationQueueService))
     private readonly orderExpirationQueueService: OrderExpirationQueueService
   ) {}
@@ -55,6 +57,10 @@ export class ActivityRegistrationService {
     const user = await this.getActiveUser(currentUser.id);
     const ticket = await this.getAvailableTicket(activityId, payload.ticketId);
     await this.assertNotRegistered(activityId, user.id);
+    await this.rulesService.assertActivityRules({
+      activityId,
+      userId: user.id
+    });
 
     await this.activityInventoryCacheService.ensureTicketRemaining(
       activityId,

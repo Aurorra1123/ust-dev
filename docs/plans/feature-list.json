@@ -714,7 +714,7 @@
       "至少支持活动报名资格、爽约扣分、可预约次数或总时长限制中的三类规则",
       "UserCreditLog 与 UserRuleProfile 进入真实业务链路，并存在自动化验证或等价留证"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "COMP-004",

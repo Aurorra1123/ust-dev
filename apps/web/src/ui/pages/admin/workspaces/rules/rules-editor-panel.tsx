@@ -120,6 +120,12 @@ export function RulesEditorPanel({
             <option value="allowed_user_roles">
               {ruleTypeLabel("allowed_user_roles", locale)}
             </option>
+            <option value="max_active_reservations_per_category">
+              {ruleTypeLabel("max_active_reservations_per_category", locale)}
+            </option>
+            <option value="no_show_credit_penalty">
+              {ruleTypeLabel("no_show_credit_penalty", locale)}
+            </option>
           </select>
 
           {editor.ruleType === "max_duration_minutes" ? (
@@ -184,6 +190,57 @@ export function RulesEditorPanel({
                   </label>
                 );
               })}
+            </div>
+          ) : null}
+
+          {editor.ruleType === "max_active_reservations_per_category" ? (
+            <input
+              type="number"
+              min={1}
+              className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+              value={editor.maxActiveReservations}
+              onChange={(event) =>
+                setEditor((current) => ({
+                  ...current,
+                  maxActiveReservations: Number(event.target.value)
+                }))
+              }
+              placeholder={localeText(
+                locale,
+                "最多可持有的有效预约数",
+                "Maximum active reservations"
+              )}
+            />
+          ) : null}
+
+          {editor.ruleType === "no_show_credit_penalty" ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <input
+                type="number"
+                min={1}
+                className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                value={editor.noShowScoreDelta}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    noShowScoreDelta: Number(event.target.value)
+                  }))
+                }
+                placeholder={localeText(locale, "扣减信用分", "Credit score deduction")}
+              />
+              <input
+                type="number"
+                min={0}
+                className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                value={editor.noShowBanDays}
+                onChange={(event) =>
+                  setEditor((current) => ({
+                    ...current,
+                    noShowBanDays: Number(event.target.value)
+                  }))
+                }
+                placeholder={localeText(locale, "禁用天数", "Ban days")}
+              />
             </div>
           ) : null}
         </div>
