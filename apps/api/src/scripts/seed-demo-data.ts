@@ -2,6 +2,7 @@ import {
   ActivityStatus,
   ActivityTicketStatus,
   NotificationStatus,
+  Prisma,
   PrismaClient,
   ResourceAvailabilityMode,
   ResourceStatus,
@@ -11,6 +12,7 @@ import {
   UserRole,
   UserStatus
 } from "@prisma/client";
+import Redis from "ioredis";
 
 process.env.DATABASE_URL ??=
   "postgresql://campusbook:campusbook@127.0.0.1:5432/campusbook?schema=public";
@@ -18,6 +20,17 @@ process.env.DATABASE_URL ??=
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.$executeRawUnsafe(
+    `SELECT set_config('search_path', current_schema(), false)`
+  );
+  await prisma.$executeRawUnsafe("SELECT pg_advisory_lock(90422026)");
+
+  let redisFlushed = false;
+
+  try {
+    await truncateCurrentSchema();
+    redisFlushed = await flushCurrentRedisDb();
+
   const now = new Date();
   const saleStartTime = addDays(now, -1);
   const saleEndTime = addDays(now, 14);
@@ -285,6 +298,7 @@ async function main() {
       activityId: "activity_demo_open_day",
       name: "普通入场名额",
       stock: 180,
+      reserved: 0,
       priceCents: 0,
       status: ActivityTicketStatus.ACTIVE
     },
@@ -293,6 +307,7 @@ async function main() {
       activityId: "activity_demo_open_day",
       name: "普通入场名额",
       stock: 180,
+      reserved: 0,
       priceCents: 0,
       status: ActivityTicketStatus.ACTIVE
     }
@@ -304,6 +319,7 @@ async function main() {
       activityId: "activity_demo_open_day",
       name: "优先通行名额",
       stock: 40,
+      reserved: 0,
       priceCents: 1500,
       status: ActivityTicketStatus.ACTIVE
     },
@@ -312,6 +328,7 @@ async function main() {
       activityId: "activity_demo_open_day",
       name: "优先通行名额",
       stock: 40,
+      reserved: 0,
       priceCents: 1500,
       status: ActivityTicketStatus.ACTIVE
     }
@@ -350,6 +367,7 @@ async function main() {
       activityId: "activity_demo_workshop_draft",
       name: "工作坊席位",
       stock: 30,
+      reserved: 0,
       priceCents: 0,
       status: ActivityTicketStatus.ACTIVE
     },
@@ -358,6 +376,7 @@ async function main() {
       activityId: "activity_demo_workshop_draft",
       name: "工作坊席位",
       stock: 30,
+      reserved: 0,
       priceCents: 0,
       status: ActivityTicketStatus.ACTIVE
     }
@@ -588,6 +607,8 @@ async function main() {
   console.log(
     JSON.stringify(
       {
+        resetDatabase: true,
+        flushedRedis: redisFlushed,
         seededResources: [
           "res_academic_demo",
           "res_sports_demo",
@@ -622,6 +643,9 @@ async function main() {
       2
     )
   );
+  } finally {
+    await prisma.$executeRawUnsafe("SELECT pg_advisory_unlock(90422026)");
+  }
 }
 
 function addDays(value: Date, days: number) {
@@ -630,6 +654,57 @@ function addDays(value: Date, days: number) {
 
 function addHours(value: Date, hours: number) {
   return new Date(value.getTime() + hours * 60 * 60 * 1000);
+}
+
+async function flushCurrentRedisDb() {
+  const redisUrl = process.env.REDIS_URL;
+
+  if (!redisUrl) {
+    return false;
+  }
+
+  const redis = new Redis(redisUrl, {
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false
+  });
+
+  try {
+    if (redis.status === "wait") {
+      await redis.connect();
+    }
+
+    await redis.flushdb();
+    return true;
+  } finally {
+    if (redis.status === "ready" || redis.status === "connect") {
+      await redis.quit();
+    } else {
+      redis.disconnect(false);
+    }
+  }
+}
+
+async function truncateCurrentSchema() {
+  const tables = await prisma.$queryRaw<Array<{ tablename: string }>>(Prisma.sql`
+    SELECT "tablename"
+    FROM "pg_tables"
+    WHERE "schemaname" = current_schema()
+      AND "tablename" <> '_prisma_migrations'
+    ORDER BY "tablename" ASC
+  `);
+
+  if (tables.length === 0) {
+    return;
+  }
+
+  const tableNames = tables
+    .map((table) => `"${table.tablename.replace(/"/g, "\"\"")}"`)
+    .join(", ");
+
+  await prisma.$executeRawUnsafe(
+    `TRUNCATE TABLE ${tableNames} RESTART IDENTITY CASCADE`
+  );
 }
 
 main()

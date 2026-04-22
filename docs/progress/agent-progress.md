@@ -6,6 +6,14 @@
 
 ### 已完成
 
+- 已收口演示环境重置链路，避免正式 demo 数据继续被历史联调数据污染：
+  - `apps/api/src/scripts/seed-demo-data.ts` 现已在 seed 前清空当前 schema 业务数据并清空当前 Redis DB
+  - 正式 demo 数据改为“重置后再灌基线”，不再与历史资源、订单、预约和限制记录并存
+- 已修复 demo 登录会覆盖正式展示名的问题：
+  - `apps/api/src/modules/auth/auth.service.ts` 不再在 demo/admin 登录时把现有用户姓名覆写成 `demo` / `admin`
+  - 若库里还没有正式 demo 用户，官方 demo 邮箱首次创建时会落正式展示名
+- 已新增 ADR，冻结 demo seed 的长期策略：
+  - `docs/adr/0027-demo-seed-resets-the-demo-environment-before-curation.md`
 - 已根据最终终审结论，把“最后阶段冲分计划”正式记录到：
   - `docs/plans/final-score-boost-plan-2026-04-22.md`
 - 本轮计划只收口最终答辩前的高收益修补项，重点锁定：

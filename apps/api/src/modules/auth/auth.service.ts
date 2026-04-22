@@ -166,13 +166,12 @@ export class AuthService {
     const user = await this.prismaService.user.upsert({
       where: { email },
       update: {
-        name: inferNameFromEmail(email),
         role: mapSharedRoleToPrismaRole(role),
         status: UserStatus.ACTIVE
       },
       create: {
         email,
-        name: inferNameFromEmail(email),
+        name: inferDemoNameFromEmail(email),
         role: mapSharedRoleToPrismaRole(role),
         status: UserStatus.ACTIVE
       }
@@ -233,6 +232,20 @@ export class AuthService {
 
 function inferNameFromEmail(email: string) {
   return email.split("@")[0] || "student";
+}
+
+function inferDemoNameFromEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (normalizedEmail === "demo@campusbook.top") {
+    return "陈思远";
+  }
+
+  if (normalizedEmail === "admin@campusbook.top") {
+    return "梁老师";
+  }
+
+  return inferNameFromEmail(normalizedEmail);
 }
 
 function mapSharedRoleToPrismaRole(role: SharedUserRole) {
