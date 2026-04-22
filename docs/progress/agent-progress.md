@@ -6,6 +6,15 @@
 
 ### 已完成
 
+- 已按低负载热刷新方式把线上网页端切到当前最新前端产物：
+  - 本地 `apps/web/dist/index.html` 引用 `index-vV6iQsm-.js`
+  - 线上更新前 `https://campusbook.top` 仍返回旧 bundle `index-euDLdD1b.js`
+  - 已备份当前 `web` 容器静态目录到 `/tmp/infra-web-html-backup-20260422-1`
+  - 已执行 `docker cp apps/web/dist/. infra-web-1:/usr/share/nginx/html/`
+  - 更新后 `https://campusbook.top` 与 `https://www.campusbook.top` 均已返回 `index-vV6iQsm-.js`
+  - `https://api.campusbook.top/health` 继续返回 `200`
+- 已新增本轮线上网页端热更新留证：
+  - `docs/verification/2026-04-22/qa-012-live-web-hot-update.md`
 - 已修复 `apps/api` 集成测试夹具的稳定性问题：
   - `apps/api/test/integration-harness.ts`
   - `resetFixture()` 不再在持有 PostgreSQL advisory lock 时调用 `seed:demo`，已消除与 `seed-demo-data.ts` 的同锁自锁死
