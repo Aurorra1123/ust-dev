@@ -6,6 +6,17 @@
 
 ### 已完成
 
+- 已为评审版产品说明文档补充英文界面截图：
+  - 新增目录 `docs/demo/screenshots/`
+  - 已生成并插入：
+    - `portal-home.png`
+    - `academic-booking.png`
+    - `sports-booking.png`
+    - `campus-activities.png`
+    - `order-center.png`
+    - `admin-workspace.png`
+  - `docs/demo/product-architecture.md` 已在项目概述、产品设计、学术空间、体育设施、校园活动、订单状态等章节插入对应截图
+  - 截图基于当前线上站点 `https://campusbook.top` 真实页面，统一使用英文界面导出
 - 已将 AST 圈复杂度治理结果同步写入根 `README.md`：
   - 已新增“AST 圈复杂度记录”章节
   - 已写入最终 AST 汇总指标、计划内已收口热点、当前剩余 `>20` 热点
