@@ -1,21 +1,15 @@
 import type { ResourceDetailResponse } from "@campusbook/shared-types";
 
-import { formatDateTime } from "../../../lib/date";
 import { getErrorMessage } from "../../../lib/http/errors";
 import { localeText } from "../../../lib/locale";
 import type { SessionStatus } from "../../../store/session-store";
+import { CompanionEmailsField } from "../booking/companion-emails-field";
 import { StatePanel } from "../../user-experience-kit";
-import {
-  formatNameList,
-  legendToneClass,
-  type CellState
-} from "./sports-helpers";
-
-type BookingTarget = {
-  id: string;
-  label: string;
-  detail: string;
-};
+import { GroupedBookingNotice } from "./grouped-booking-notice";
+import { SelectedSlotsCard } from "./selected-slots-card";
+import { SportsBookingModeSwitch } from "./sports-booking-mode-switch";
+import { SportsLegendCard } from "./sports-legend-card";
+import { SportsTargetSelect, type BookingTarget } from "./sports-target-select";
 
 export function SportsBookingPanel({
   locale,
@@ -62,184 +56,44 @@ export function SportsBookingPanel({
         onSubmit();
       }}
     >
-      <div className="flex gap-2">
-        <button
-          type="button"
-          className={`rounded-full px-4 py-2 text-sm transition ${
-            mode === "unit" ? "bg-ember text-white" : "bg-sand text-ink"
-          }`}
-          onClick={() => onModeChange("unit")}
-          aria-pressed={mode === "unit"}
-        >
-          {localeText(locale, "单场地", "Single Court")}
-        </button>
-        {hasGroupedBooking ? (
-          <button
-            type="button"
-            className={`rounded-full px-4 py-2 text-sm transition ${
-              mode === "group" ? "bg-ember text-white" : "bg-sand text-ink"
-            }`}
-            onClick={() => onModeChange("group")}
-            aria-pressed={mode === "group"}
-          >
-            {localeText(locale, "组合预订", "Grouped Booking")}
-          </button>
-        ) : null}
-      </div>
-      {hasGroupedBooking ? (
-        <p className="text-sm text-slate">
-          {mode === "group"
-            ? localeText(
-                locale,
-                "当前按整组场地一起预订，提交后会同时锁定所有成员场地。",
-                "This mode books the full court set together. Submitting will lock every included court."
-              )
-            : localeText(
-                locale,
-                "只有当你需要同时占用一组关联场地时，再切到组合预订。",
-                "Switch to grouped booking only when you need to reserve a linked set of courts together."
-              )}
-        </p>
-      ) : null}
+      <SportsBookingModeSwitch
+        locale={locale}
+        mode={mode}
+        hasGroupedBooking={hasGroupedBooking}
+        onModeChange={onModeChange}
+      />
 
-      <label className="grid gap-2 text-sm text-ink/75">
-        {localeText(locale, "目标", "Target")}
-        <select
-          id="sports-booking-target"
-          className="rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
-          value={targetId}
-          onChange={(event) => onTargetChange(event.target.value)}
-          aria-describedby="sports-target-help"
-        >
-          {availableTargets.map((target) => (
-            <option key={target.id} value={target.id}>
-              {target.label} · {target.detail}
-            </option>
-          ))}
-        </select>
-      </label>
-      <p id="sports-target-help" className="text-xs leading-6 text-slate">
-        {localeText(
-          locale,
-          "键盘可用方向键切换目标，在时间表中用 Tab 聚焦时段按钮并按 Enter 或 Space 选择。",
-          "Use the arrow keys to switch targets. In the schedule, focus slot buttons with Tab and select them with Enter or Space."
-        )}
-      </p>
+      <SportsTargetSelect
+        locale={locale}
+        targetId={targetId}
+        availableTargets={availableTargets}
+        onTargetChange={onTargetChange}
+      />
 
-      {mode === "group" && selectedGroup ? (
-        <div className="rounded-[22px] border border-ember/15 bg-[#fff7ef] px-4 py-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
-            {localeText(locale, "组合说明", "Grouped Booking")}
-          </p>
-          <p className="mt-3 text-sm font-semibold text-ink">{selectedGroup.name}</p>
-          <p className="mt-2 text-sm text-slate">
-            {selectedGroup.description ||
-              localeText(
-                locale,
-                "该组合用于一次性锁定一组关联场地。",
-                "This set is used to reserve multiple linked courts in one booking."
-              )}
-          </p>
-          <div className="mt-4 grid gap-3 text-sm text-slate">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
-                {localeText(locale, "成员场地", "Included Courts")}
-              </p>
-              <p className="mt-2 text-sm font-medium text-ink">
-                {formatNameList(selectedGroupMemberNames, locale)}
-              </p>
-            </div>
-            <p>
-              {localeText(
-                locale,
-                "选择一个时段会同时占用整组场地；只要其中任一成员场地已占用、进行中或关闭，该时段就不能选。",
-                "Selecting one slot reserves the entire set. If any included court is occupied, in progress, or closed, that slot cannot be chosen."
-              )}
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="rounded-[22px] border border-navy/10 bg-sand px-4 py-4">
-        <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
-          {localeText(locale, "已选时段", "Selected Slots")}
-        </p>
-        {slotStarts.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {slotStarts.map((slotStartIso) => (
-              <button
-                key={slotStartIso}
-                type="button"
-                className="rounded-full bg-ember/10 px-3 py-2 text-xs text-ember"
-                onClick={() => onToggleSlot(slotStartIso)}
-                aria-label={localeText(
-                  locale,
-                  `移除已选时段 ${formatDateTime(slotStartIso)}`,
-                  `Remove selected slot ${formatDateTime(slotStartIso)}`
-                )}
-              >
-                {formatDateTime(slotStartIso)}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-3 text-sm text-slate">
-            {localeText(locale, "请在时间表中选择时段。", "Select time slots from the table.")}
-          </p>
-        )}
-      </div>
-
-      {mode === "group" && selectedGroup ? (
-        <div className="rounded-[22px] border border-navy/10 bg-sand px-4 py-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
-            {localeText(locale, "提交效果", "Booking Effect")}
-          </p>
-          <p className="mt-3 text-sm text-slate">
-            {localeText(
-              locale,
-              `提交后会同时预约 ${formatNameList(selectedGroupMemberNames, locale)}。`,
-              `Submitting will reserve ${formatNameList(selectedGroupMemberNames, locale)} together.`
-            )}
-          </p>
-        </div>
-      ) : null}
-
-      <div className="rounded-[22px] border border-navy/10 bg-sand px-4 py-4">
-        <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
-          {localeText(locale, "状态说明", "Legend")}
-        </p>
-        <div className="mt-3 grid gap-2 text-sm text-slate">
-          <SportsLegendItem label={localeText(locale, "可预约", "Available")} tone="available" />
-          <SportsLegendItem label={localeText(locale, "已占用", "Occupied")} tone="occupied" />
-          <SportsLegendItem
-            label={localeText(locale, "进行中", "In Progress")}
-            tone="in_progress"
-          />
-          <SportsLegendItem
-            label={localeText(locale, "已选中", "Selected")}
-            tone="selected"
-          />
-          <SportsLegendItem label={localeText(locale, "不可约", "Closed")} tone="closed" />
-        </div>
-      </div>
-
-      <label className="grid gap-2 text-sm text-ink/75">
-        {localeText(locale, "同行人邮箱", "Companion Emails")}
-        <textarea
-          id="sports-companion-emails"
-          className="min-h-[88px] rounded-2xl border border-navy/10 bg-sand px-4 py-3 outline-none transition focus:border-moss"
-          value={companionEmailsText}
-          onChange={(event) => onCompanionEmailsChange(event.target.value)}
-          aria-describedby="sports-companion-help"
+      {mode === "group" ? (
+        <GroupedBookingNotice
+          locale={locale}
+          selectedGroup={selectedGroup}
+          selectedGroupMemberNames={selectedGroupMemberNames}
         />
-      </label>
-      <p id="sports-companion-help" className="text-xs leading-6 text-slate">
-        {localeText(
-          locale,
-          "可选。输入多个邮箱时可使用逗号、空格或换行分隔。",
-          "Optional. Separate multiple emails with commas, spaces, or line breaks."
-        )}
-      </p>
+      ) : null}
+
+      <SelectedSlotsCard
+        locale={locale}
+        slotStarts={slotStarts}
+        onToggleSlot={onToggleSlot}
+        selectedGroupMemberNames={selectedGroupMemberNames}
+        showGroupEffect={mode === "group" && Boolean(selectedGroup)}
+      />
+
+      <SportsLegendCard locale={locale} />
+
+      <CompanionEmailsField
+        locale={locale}
+        idPrefix="sports"
+        value={companionEmailsText}
+        onChange={onCompanionEmailsChange}
+      />
 
       {error ? (
         <StatePanel
@@ -266,20 +120,5 @@ export function SportsBookingPanel({
           : localeText(locale, "请先登录后预约", "Sign in before booking")}
       </button>
     </form>
-  );
-}
-
-function SportsLegendItem({
-  label,
-  tone
-}: {
-  label: string;
-  tone: CellState;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className={`h-4 w-4 rounded-full ${legendToneClass(tone)}`} />
-      <span>{label}</span>
-    </div>
   );
 }

@@ -14,6 +14,15 @@
     - `pnpm --filter web lint`
     - `pnpm --filter web typecheck`
     - `pnpm --filter web build`
+- 已完成圈复杂度治理第二批预约面板拆分并通过校验：
+  - 留证文档：`docs/verification/2026-04-22/qa-015-cyclomatic-batch-2-booking-panels.md`
+  - 已拆分学术预约时间字段、校验提示、状态说明、占用记录、关闭记录
+  - 已拆分体育预约模式切换、目标选择、组合说明、已选时段、状态说明
+  - 已提取共享 `CompanionEmailsField`
+  - 已执行并通过：
+    - `pnpm --filter web lint`
+    - `pnpm --filter web typecheck`
+    - `pnpm --filter web build`
 - 已继续微调 `docs/demo/product-architecture.md` 的句式表达：
   - 已集中收口高频“不是 / 而是”对立句式，改为更直接的陈述句
   - 已同步恢复文档尾部的“当前完成情况与后续优化 / 总结”章节，避免文案调整时误删尾部内容
