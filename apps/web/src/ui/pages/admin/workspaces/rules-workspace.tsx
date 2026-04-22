@@ -242,8 +242,8 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
       title={localeText(locale, "规则配置", "Rule Config")}
       description={localeText(
         locale,
-        "规则相关控制集中收口到这里处理；资源页只做资源维护，这里只做规则创建、编辑、启停和绑定。",
-        "All rule-related controls are centralized here. Resource pages now focus on maintenance, while this page handles rule creation, editing, activation, and bindings."
+        "查看并维护预约规则，并将规则绑定到对应资源。",
+        "View and maintain booking rules, then bind them to the related resources."
       )}
     >
       <div className="mb-4 flex flex-wrap gap-2">
@@ -269,8 +269,8 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
           title={localeText(locale, "正在载入规则配置", "Loading rule configuration")}
           description={localeText(
             locale,
-            "页面正在整理规则定义和当前业务域资源。",
-            "Collecting rule definitions and resources for the current domain."
+            "正在载入规则和资源信息。",
+            "Loading rules and resource information."
           )}
         />
       ) : rulesQuery.isError || resourcesQuery.isError ? (

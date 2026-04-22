@@ -46,8 +46,8 @@ export function RulesSummaryPanel({
           <p>
             {localeText(
               locale,
-              "最长预约时长规则适合直接收口“最多 60 分钟”这类限制。",
-              "Use maximum duration rules to enforce limits such as 60 minutes."
+              "最长预约时长规则可用于限制单次预约时长，例如最多 60 分钟。",
+              "Use maximum duration rules to limit a single booking, for example to 60 minutes."
             )}
           </p>
           <p>

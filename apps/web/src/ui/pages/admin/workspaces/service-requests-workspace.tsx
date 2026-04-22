@@ -72,11 +72,11 @@ export function ServiceRequestsWorkspace({ locale }: { locale: Locale }) {
 
   return (
     <PageSection
-      title={localeText(locale, "工单工作区", "Service Request Workspace")}
+      title={localeText(locale, "工单维修", "Service Repairs")}
       description={localeText(
         locale,
-        "这里集中查看学生报修记录、处理状态与管理员备注。",
-        "Review student repair tickets, statuses, and admin notes here."
+        "查看报修工单，更新处理进度和管理员备注。",
+        "Review repair tickets, then update their progress and admin notes."
       )}
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),380px]">
@@ -84,13 +84,13 @@ export function ServiceRequestsWorkspace({ locale }: { locale: Locale }) {
           {requestsQuery.isLoading ? (
             <StatePanel
               tone="loading"
-              title={localeText(locale, "正在载入工单工作区", "Loading service requests")}
+              title={localeText(locale, "正在载入工单维修", "Loading service repairs")}
               description={localeText(locale, "请稍候。", "Please wait.")}
             />
           ) : requestsQuery.isError ? (
             <StatePanel
               tone="danger"
-              title={localeText(locale, "工单工作区暂时无法加载", "Service request workspace is unavailable")}
+              title={localeText(locale, "工单维修暂时无法加载", "Service repairs are unavailable")}
               description={getErrorMessage(requestsQuery.error)}
             />
           ) : !requestsQuery.data?.length ? (
@@ -98,8 +98,8 @@ export function ServiceRequestsWorkspace({ locale }: { locale: Locale }) {
               title={localeText(locale, "当前还没有工单", "No service requests yet")}
               description={localeText(
                 locale,
-                "学生提交后会直接进入这里。",
-                "Student submissions will appear here."
+                "新的报修提交后会出现在这里。",
+                "New repair submissions will appear here."
               )}
             />
           ) : (

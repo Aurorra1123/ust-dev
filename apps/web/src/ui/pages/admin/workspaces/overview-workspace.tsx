@@ -65,8 +65,8 @@ export function OverviewWorkspace({
         title={localeText(locale, "运营总揽", "Operations Hub")}
         description={localeText(
           locale,
-          "教师工作台首页优先展示今天要进入的模块和需要先处理的事项。",
-          "The admin homepage prioritizes where to go next and what needs attention first."
+          "汇总今天需要关注的业务入口和待办事项，方便快速进入对应模块。",
+          "This page highlights the business areas and to-dos that may need attention today."
         )}
       >
         <StatePanel
@@ -87,8 +87,8 @@ export function OverviewWorkspace({
         title={localeText(locale, "运营总揽", "Operations Hub")}
         description={localeText(
           locale,
-          "教师工作台首页优先展示今天要进入的模块和需要先处理的事项。",
-          "The admin homepage prioritizes where to go next and what needs attention first."
+          "汇总今天需要关注的业务入口和待办事项，方便快速进入对应模块。",
+          "This page highlights the business areas and to-dos that may need attention today."
         )}
       >
         <StatePanel
@@ -105,8 +105,8 @@ export function OverviewWorkspace({
       title={localeText(locale, "运营总揽", "Operations Hub")}
       description={localeText(
         locale,
-        "先判断今天该去哪个业务域处理事务，再直接进入对应模块，不把首页当作统计大屏。",
-        "Decide which domain needs work today, then jump straight into it instead of using the homepage as a dashboard."
+        "汇总今天需要关注的业务入口和待办事项，方便快速进入对应模块。",
+        "This page highlights the business areas and to-dos that may need attention today."
       )}
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">

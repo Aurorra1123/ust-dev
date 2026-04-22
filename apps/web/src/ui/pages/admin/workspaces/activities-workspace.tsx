@@ -160,11 +160,11 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
 
   return (
     <PageSection
-      title={localeText(locale, "活动工作区", "Activity Workspace")}
+      title={localeText(locale, "活动管理", "Activity Management")}
       description={localeText(
         locale,
-        "这里负责活动、票种和活动状态维护。左侧先选活动，中间看当前详情，右侧做创建或加票操作。",
-        "Manage activities, ticket types, and status here. Pick an activity on the left, review it in the middle, and create or extend it on the right."
+        "查看活动列表，维护活动信息、票种和发布状态。",
+        "Review activities and maintain their details, ticket types, and publishing status."
       )}
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),360px]">
@@ -172,17 +172,17 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
           {activitiesQuery.isLoading ? (
             <StatePanel
               tone="loading"
-              title={localeText(locale, "正在载入活动工作区", "Loading activity workspace")}
+              title={localeText(locale, "正在载入活动管理", "Loading activity management")}
               description={localeText(
                 locale,
-                "页面正在整理当前活动、票种与状态信息。",
-                "Collecting activities, tickets, and status information."
+                "正在载入活动和票种信息。",
+                "Loading activities and ticket information."
               )}
             />
           ) : activitiesQuery.isError ? (
             <StatePanel
               tone="danger"
-              title={localeText(locale, "活动工作区暂时无法加载", "Activity workspace is unavailable")}
+              title={localeText(locale, "活动管理暂时无法加载", "Activity management is unavailable")}
               description={getErrorMessage(activitiesQuery.error)}
             />
           ) : (
@@ -318,8 +318,8 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
             <p className="mt-2 text-sm leading-7 text-slate">
               {localeText(
                 locale,
-                "首屏只保留最常见的标题、地点和总额度。系统会默认生成一张首票；售卖时间、活动时间和发布状态继续放在可选展开区。",
-                "The first screen keeps only the most common title, location, and quota fields. The system creates the first ticket by default, while sales time, event time, and publishing status stay in the optional expanded area."
+                "填写活动名称、地点和额度后即可创建活动，也可以继续补充票种和时间安排。",
+                "Start with the activity title, location, and quota, then continue with ticket and schedule details."
               )}
             </p>
             <div className="mt-4 grid gap-4">
@@ -471,8 +471,8 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
                         label={localeText(locale, "首票价格（分）", "First Ticket Price (cents)")}
                         hint={localeText(
                           locale,
-                          "价格字段以分为单位，`0` 表示免费票。若后续接支付链路，这个值会直接参与订单金额计算。",
-                          "The price is stored in cents, and `0` means the ticket is free. This value directly affects order amounts if payment is enabled later."
+                          "价格字段以分为单位，`0` 表示免费票。",
+                          "The price is stored in cents, and `0` means the ticket is free."
                         )}
                       >
                         <input
@@ -502,8 +502,8 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
                     <p className="mt-2 text-sm text-slate">
                       {localeText(
                         locale,
-                        "描述、售卖时间、活动时间和发布状态都放在这里，默认状态为草稿，不会占满首屏。",
-                        "Description, schedule, event time, and publish status stay here. The default status is draft, so they do not crowd the first screen."
+                        "可继续补充描述、售卖时间、活动时间和发布状态。",
+                        "Use this section for description, schedule, event time, and publish status."
                       )}
                     </p>
                   </div>

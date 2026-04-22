@@ -108,11 +108,11 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
 
   return (
     <PageSection
-      title={localeText(locale, "通知工作区", "Notification Workspace")}
+      title={localeText(locale, "通知发布", "Notice Publishing")}
       description={localeText(
         locale,
-        "这里负责编辑和发布学生首页通知，学生端与管理员端共用同一条数据链路。",
-        "Create and publish homepage notices here. The student and admin views share the same data source."
+        "查看、编辑并发布首页通知。",
+        "Review, edit, and publish notices shown on the homepage."
       )}
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),380px]">
@@ -120,13 +120,13 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
           {notificationsQuery.isLoading ? (
             <StatePanel
               tone="loading"
-              title={localeText(locale, "正在载入通知工作区", "Loading notification workspace")}
+              title={localeText(locale, "正在载入通知发布", "Loading notice publishing")}
               description={localeText(locale, "请稍候。", "Please wait.")}
             />
           ) : notificationsQuery.isError ? (
             <StatePanel
               tone="danger"
-              title={localeText(locale, "通知工作区暂时无法加载", "Notification workspace is unavailable")}
+              title={localeText(locale, "通知发布暂时无法加载", "Notice publishing is unavailable")}
               description={getErrorMessage(notificationsQuery.error)}
             />
           ) : !notificationsQuery.data?.length ? (
@@ -134,8 +134,8 @@ export function NotificationsWorkspace({ locale }: { locale: Locale }) {
               title={localeText(locale, "当前还没有通知", "No notices yet")}
               description={localeText(
                 locale,
-                "可以直接在右侧创建并发布第一条通知。",
-                "Create and publish the first notice from the right panel."
+                "可以创建并发布第一条通知。",
+                "Create and publish the first notice."
               )}
             />
           ) : (

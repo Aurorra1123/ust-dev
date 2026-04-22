@@ -583,19 +583,19 @@ export function ResourcesWorkspace({
     domain === "sports"
       ? localeText(
           locale,
-          "这里专门维护体育场馆与场地单元。已创建对象直接在原卡片内编辑，新增入口收口为虚线框。",
-          "Maintain sports venues and court units here. Existing records are edited in place, while creation stays behind dashed entry cards."
+          "查看并维护体育场馆、场地单元和开放状态。",
+          "View and maintain sports venues, bookable units, and availability status."
         )
       : domain === "academic"
         ? localeText(
             locale,
-            "这里专门维护学术空间与房间单元。你可以先按 E1/E2/E3/E4 等区域查看，再在对应卡片内直接维护。",
-            "Maintain academic spaces and room units here. Review spaces by E1/E2/E3/E4-style areas first, then edit the matching cards in place."
+            "查看并维护学术空间、房间单元和区域分布。",
+            "View and maintain academic spaces, room units, and area distribution."
           )
         : localeText(
             locale,
-            "这里专门处理资源和资源单元的基础维护，已创建对象直接就地编辑，新增操作收口为虚线入口。",
-            "This workspace now focuses only on resource and unit maintenance, with inline editing for existing records and dashed entry points for creation."
+            "查看并维护资源及其预约单元。",
+            "View and maintain resources together with their bookable units."
           );
   const loadingTitle =
     domain === "sports"
@@ -607,19 +607,19 @@ export function ResourcesWorkspace({
     domain === "sports"
       ? localeText(
           locale,
-          "页面正在整理当前可维护的体育场馆与场地单元。",
-          "The page is loading sports venues and court units."
+          "正在载入体育场馆和场地信息。",
+          "Loading sports venues and court information."
         )
       : domain === "academic"
         ? localeText(
             locale,
-            "页面正在整理当前可维护的学术空间、区域分组和房间单元。",
-            "The page is loading academic spaces, area groups, and room units."
+            "正在载入学术空间和房间信息。",
+            "Loading academic spaces and room information."
           )
         : localeText(
             locale,
-            "页面正在整理当前可维护的资源与资源单元。",
-            "The page is loading resources and resource units."
+            "正在载入资源和单元信息。",
+            "Loading resources and unit information."
           );
   const errorTitle =
     domain === "sports"
@@ -650,7 +650,7 @@ export function ResourcesWorkspace({
                 {localeText(locale, "区域索引", "Area Index")}
               </p>
               <h3 className="mt-2 text-lg font-semibold text-ink">
-                {localeText(locale, "先按区域查看学术空间", "Review academic spaces by area first")}
+                {localeText(locale, "按区域查看学术空间", "Browse Academic Spaces by Area")}
               </h3>
               <div className="mt-4 flex flex-wrap gap-2">
                 {academicAreaGroups.map((group) => (

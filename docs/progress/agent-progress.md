@@ -6,6 +6,13 @@
 
 ### 已完成
 
+- 已清理管理员端 demo 展示中的方案痕迹文案：
+  - `apps/web/src/ui/pages/admin/index.tsx` 与各工作区页头说明已改为正式业务文案
+  - 运营总揽、体育场馆、学术空间、规则配置、活动管理、通知发布、工单维修不再显示“左侧/右侧/收口/虚线入口”等实现过程描述
+  - 资源页与活动页内少量会暴露设计过程的辅助说明也已同步收口
+- 已验证本轮前端文案调整：
+  - `pnpm --filter web build`
+  - `pnpm --filter web lint`
 - 已收口演示环境重置链路，避免正式 demo 数据继续被历史联调数据污染：
   - `apps/api/src/scripts/seed-demo-data.ts` 现已在 seed 前清空当前 schema 业务数据并清空当前 Redis DB
   - 正式 demo 数据改为“重置后再灌基线”，不再与历史资源、订单、预约和限制记录并存

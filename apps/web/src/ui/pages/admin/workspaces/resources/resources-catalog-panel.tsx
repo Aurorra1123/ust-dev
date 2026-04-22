@@ -127,8 +127,8 @@ export function ResourcesCatalogPanel({
           title={localeText(locale, "当前还没有资源", "No resources yet")}
           description={localeText(
             locale,
-            "先通过下方虚线入口新增资源。创建后就可以直接在资源卡片内继续编辑、启停、删除和维护资源单元。",
-            "Start with the dashed entry below to create a resource. After that, you can edit, activate, deactivate, delete, and maintain units directly on the card."
+            "可通过下方入口新增资源，创建后继续补充单元、位置和开放状态。",
+            "Use the entry below to create the first resource, then continue with units, location, and status."
           )}
         />
       ) : null}
@@ -327,8 +327,8 @@ export function ResourcesCatalogPanel({
                   <p className="mt-2 text-sm leading-7 text-slate">
                     {localeText(
                       locale,
-                      "已创建单元直接在行内编辑；新增单元通过列表底部的虚线入口展开。",
-                      "Edit existing units inline and use the dashed entry at the bottom to add new ones."
+                      "在这里查看、编辑和补充该资源的预约单元。",
+                      "Review, edit, and add the bookable units for this resource here."
                     )}
                   </p>
                 </div>
@@ -498,7 +498,7 @@ export function ResourcesCatalogPanel({
                       "在当前资源卡片内直接补齐房间、场地或其他预约单元。",
                       "Add rooms, courts, or other bookable units directly inside the current resource card."
                     )}
-                    buttonLabel={localeText(locale, "展开新增单元", "Open Unit Form")}
+                    buttonLabel={localeText(locale, "新增资源单元", "Add Resource Unit")}
                     onClick={() => onStartCreateResourceUnit(resource.id)}
                   />
                 )}
@@ -574,10 +574,10 @@ export function ResourcesCatalogPanel({
           title={localeText(locale, "新增资源", "Add Resource")}
           description={localeText(
             locale,
-            "新增入口收口为一个虚线卡片。创建后，后续编辑、启停和资源单元维护都留在对象原位置完成。",
-            "Creation now lives behind one dashed card. After that, edits, activation changes, and unit maintenance all stay attached to the original object."
+            "新增体育场馆或学术空间资源，创建后可继续补充预约单元。",
+            "Add a new sports venue or academic space, then continue with its bookable units."
           )}
-          buttonLabel={localeText(locale, "展开新增资源", "Open Resource Form")}
+          buttonLabel={localeText(locale, "新增资源", "Add Resource")}
           onClick={onStartCreateResource}
         />
       )}
