@@ -85,9 +85,31 @@ const orderDetailInclude = {
   }
 } satisfies Prisma.OrderInclude;
 
+const orderTransitionInclude = {
+  academicReservation: true,
+  activityRegistration: true,
+  sportsReservationSlots: true
+} satisfies Prisma.OrderInclude;
+
 type OrderWithRelations = Prisma.OrderGetPayload<{
   include: typeof orderDetailInclude;
 }>;
+
+type OrderTransitionRecord = Prisma.OrderGetPayload<{
+  include: typeof orderTransitionInclude;
+}>;
+
+type OrderTransitionParams = {
+  actor?: AuthUser;
+  requireOwnerOrAdmin?: boolean;
+  nextStatus: OrderStatus;
+  allowedFrom: OrderStatus[];
+  reason: string;
+  transactionWork?: (
+    tx: Prisma.TransactionClient,
+    order: OrderTransitionRecord
+  ) => Promise<void>;
+};
 
 @Injectable()
 export class OrdersService {
@@ -270,141 +292,70 @@ export class OrdersService {
     }
   }
 
-  private async transitionOrder(
-    orderId: string,
-    params: {
-      actor?: AuthUser;
-      requireOwnerOrAdmin?: boolean;
-      nextStatus: OrderStatus;
-      allowedFrom: OrderStatus[];
-      reason: string;
-      transactionWork?: (
-        tx: Prisma.TransactionClient,
-        order: NonNullable<
-          Awaited<ReturnType<PrismaService["order"]["findUnique"]>>
-        >
-      ) => Promise<void>;
-    }
-  ) {
+  private async transitionOrder(orderId: string, params: OrderTransitionParams) {
+    const order = await this.loadOrderForTransition(orderId);
+
+    this.assertTransitionActor(order.userId, params);
+    this.assertTransitionAllowed(order.status, params);
+
+    const latest = await this.runOrderTransitionTransaction(order, params);
+
+    await this.syncExpirationAfterTransition(order.id, params.nextStatus);
+    await this.syncReservationAttendanceAfterTransition(
+      order.id,
+      latest,
+      params.nextStatus
+    );
+    await this.syncActivityCacheAfterTransition(order, params.nextStatus);
+
+    return toOrderDetail(latest);
+  }
+
+  private async loadOrderForTransition(orderId: string) {
     const order = await this.prismaService.order.findUnique({
       where: { id: orderId },
-      include: {
-        academicReservation: true,
-        activityRegistration: true,
-        sportsReservationSlots: true
-      }
+      include: orderTransitionInclude
     });
 
     if (!order) {
       throw new NotFoundException("order-not-found");
     }
 
-    if (params.requireOwnerOrAdmin) {
-      if (!params.actor) {
-        throw new ForbiddenException("missing-order-actor");
-      }
+    return order;
+  }
 
-      this.assertOrderOwnerOrAdmin(order.userId, params.actor);
+  private assertTransitionActor(orderUserId: string, params: OrderTransitionParams) {
+    if (!params.requireOwnerOrAdmin) {
+      return;
     }
 
-    if (!params.allowedFrom.includes(order.status)) {
+    if (!params.actor) {
+      throw new ForbiddenException("missing-order-actor");
+    }
+
+    this.assertOrderOwnerOrAdmin(orderUserId, params.actor);
+  }
+
+  private assertTransitionAllowed(
+    currentStatus: OrderStatus,
+    params: OrderTransitionParams
+  ) {
+    if (!params.allowedFrom.includes(currentStatus)) {
       throw new BadRequestException(
-        `invalid-order-transition:${order.status}->${params.nextStatus}`
+        `invalid-order-transition:${currentStatus}->${params.nextStatus}`
       );
     }
+  }
 
-    const latest = await this.prismaService.$transaction(async (tx) => {
-      const updatedCount = await tx.order.updateMany({
-        where: {
-          id: order.id,
-          version: order.version,
-          status: order.status
-        },
-        data: {
-          status: params.nextStatus,
-          expireAt:
-            params.nextStatus === OrderStatus.PENDING_CONFIRMATION ? order.expireAt : null,
-          version: {
-            increment: 1
-          }
-        }
-      });
-
-      if (updatedCount.count !== 1) {
-        throw new ConflictException("order-transition-conflict");
-      }
-
-      await tx.orderStatusLog.create({
-        data: {
-          orderId: order.id,
-          fromStatus: order.status,
-          toStatus: params.nextStatus,
-          reason: params.reason
-        }
-      });
-
-      if (order.academicReservation) {
-        await tx.academicReservation.update({
-          where: {
-            orderId: order.id
-          },
-          data: {
-            status: params.nextStatus
-          }
-        });
-      }
-
-      if (order.sportsReservationSlots.length > 0) {
-        await tx.sportsReservationSlot.updateMany({
-          where: {
-            orderId: order.id
-          },
-          data: {
-            status: params.nextStatus
-          }
-        });
-      }
-
-      if (order.activityRegistration) {
-        if (params.nextStatus === OrderStatus.CANCELLED) {
-          const updatedRows = await tx.$executeRaw`
-            UPDATE "ActivityTicket"
-            SET "reserved" = "reserved" - 1,
-                "updatedAt" = CURRENT_TIMESTAMP
-            WHERE "id" = ${order.activityRegistration.activityTicketId}
-              AND "reserved" > 0
-          `;
-
-          if (Number(updatedRows) !== 1) {
-            throw new ConflictException("activity-ticket-release-conflict");
-          }
-        }
-
-        await tx.activityRegistration.update({
-          where: {
-            orderId: order.id
-          },
-          data: {
-            status: params.nextStatus
-          }
-        });
-      }
-
-      if (
-        params.nextStatus === OrderStatus.CANCELLED &&
-        order.status === OrderStatus.PENDING_CONFIRMATION &&
-        order.totalAmountCents > 0
-      ) {
-        await tx.paymentRecord.updateMany({
-          where: {
-            orderId: order.id,
-            payStatus: PrismaPaymentStatus.PENDING
-          },
-          data: {
-            payStatus: PrismaPaymentStatus.FAILED
-          }
-        });
-      }
+  private async runOrderTransitionTransaction(
+    order: OrderTransitionRecord,
+    params: OrderTransitionParams
+  ) {
+    return this.prismaService.$transaction(async (tx) => {
+      await this.performOptimisticOrderTransition(tx, order, params.nextStatus);
+      await this.createOrderTransitionLog(tx, order, params);
+      await this.syncOrderChildrenStatus(tx, order, params.nextStatus);
+      await this.markPendingPaymentsFailedIfNeeded(tx, order, params.nextStatus);
 
       if (params.transactionWork) {
         await params.transactionWork(tx, order);
@@ -421,62 +372,200 @@ export class OrdersService {
 
       return latestOrder;
     });
+  }
 
-    if (params.nextStatus !== OrderStatus.PENDING_CONFIRMATION) {
-      try {
-        await this.orderExpirationQueueService.removeExpiration(order.id);
-      } catch (error) {
-        this.logger.warn(
-          `Failed to remove expiration job for order ${order.id}: ${
-            error instanceof Error ? error.message : "unknown-error"
-          }`
-        );
+  private async performOptimisticOrderTransition(
+    tx: Prisma.TransactionClient,
+    order: OrderTransitionRecord,
+    nextStatus: OrderStatus
+  ) {
+    const updatedCount = await tx.order.updateMany({
+      where: {
+        id: order.id,
+        version: order.version,
+        status: order.status
+      },
+      data: {
+        status: nextStatus,
+        expireAt: nextStatus === OrderStatus.PENDING_CONFIRMATION ? order.expireAt : null,
+        version: {
+          increment: 1
+        }
       }
+    });
+
+    if (updatedCount.count !== 1) {
+      throw new ConflictException("order-transition-conflict");
+    }
+  }
+
+  private async createOrderTransitionLog(
+    tx: Prisma.TransactionClient,
+    order: OrderTransitionRecord,
+    params: OrderTransitionParams
+  ) {
+    await tx.orderStatusLog.create({
+      data: {
+        orderId: order.id,
+        fromStatus: order.status,
+        toStatus: params.nextStatus,
+        reason: params.reason
+      }
+    });
+  }
+
+  private async syncOrderChildrenStatus(
+    tx: Prisma.TransactionClient,
+    order: OrderTransitionRecord,
+    nextStatus: OrderStatus
+  ) {
+    if (order.academicReservation) {
+      await tx.academicReservation.update({
+        where: {
+          orderId: order.id
+        },
+        data: {
+          status: nextStatus
+        }
+      });
     }
 
+    if (order.sportsReservationSlots.length > 0) {
+      await tx.sportsReservationSlot.updateMany({
+        where: {
+          orderId: order.id
+        },
+        data: {
+          status: nextStatus
+        }
+      });
+    }
+
+    if (!order.activityRegistration) {
+      return;
+    }
+
+    if (nextStatus === OrderStatus.CANCELLED) {
+      await this.releaseActivityTicketReservation(tx, order.activityRegistration.activityTicketId);
+    }
+
+    await tx.activityRegistration.update({
+      where: {
+        orderId: order.id
+      },
+      data: {
+        status: nextStatus
+      }
+    });
+  }
+
+  private async releaseActivityTicketReservation(
+    tx: Prisma.TransactionClient,
+    activityTicketId: string
+  ) {
+    const updatedRows = await tx.$executeRaw`
+      UPDATE "ActivityTicket"
+      SET "reserved" = "reserved" - 1,
+          "updatedAt" = CURRENT_TIMESTAMP
+      WHERE "id" = ${activityTicketId}
+        AND "reserved" > 0
+    `;
+
+    if (Number(updatedRows) !== 1) {
+      throw new ConflictException("activity-ticket-release-conflict");
+    }
+  }
+
+  private async markPendingPaymentsFailedIfNeeded(
+    tx: Prisma.TransactionClient,
+    order: OrderTransitionRecord,
+    nextStatus: OrderStatus
+  ) {
+    if (
+      nextStatus !== OrderStatus.CANCELLED ||
+      order.status !== OrderStatus.PENDING_CONFIRMATION ||
+      order.totalAmountCents <= 0
+    ) {
+      return;
+    }
+
+    await tx.paymentRecord.updateMany({
+      where: {
+        orderId: order.id,
+        payStatus: PrismaPaymentStatus.PENDING
+      },
+      data: {
+        payStatus: PrismaPaymentStatus.FAILED
+      }
+    });
+  }
+
+  private async syncExpirationAfterTransition(orderId: string, nextStatus: OrderStatus) {
+    if (nextStatus === OrderStatus.PENDING_CONFIRMATION) {
+      return;
+    }
+
+    try {
+      await this.orderExpirationQueueService.removeExpiration(orderId);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to remove expiration job for order ${orderId}: ${
+          error instanceof Error ? error.message : "unknown-error"
+        }`
+      );
+    }
+  }
+
+  private async syncReservationAttendanceAfterTransition(
+    orderId: string,
+    latest: OrderWithRelations,
+    nextStatus: OrderStatus
+  ) {
     const reservationStartTime = getReservationStartTimeFromOrder(latest);
 
-    if (reservationStartTime) {
-      try {
-        if (params.nextStatus === OrderStatus.CONFIRMED) {
-          await this.reservationAttendanceQueueService.scheduleAttendanceEvaluation(
-            order.id,
-            getReservationAttendanceEvaluateAt(reservationStartTime)
-          );
-        } else {
-          await this.reservationAttendanceQueueService.removeAttendanceEvaluation(
-            order.id
-          );
-        }
-      } catch (error) {
-        this.logger.warn(
-          `Failed to synchronize reservation attendance job for order ${order.id}: ${
-            error instanceof Error ? error.message : "unknown-error"
-          }`
-        );
-      }
+    if (!reservationStartTime) {
+      return;
     }
 
-    if (
-      params.nextStatus === OrderStatus.CANCELLED &&
-      order.activityRegistration
-    ) {
-      try {
-        await this.activityInventoryCacheService.releaseConfirmedReservation(
-          order.activityRegistration.activityId,
-          order.activityRegistration.activityTicketId,
-          order.userId
+    try {
+      if (nextStatus === OrderStatus.CONFIRMED) {
+        await this.reservationAttendanceQueueService.scheduleAttendanceEvaluation(
+          orderId,
+          getReservationAttendanceEvaluateAt(reservationStartTime)
         );
-      } catch (error) {
-        this.logger.warn(
-          `Failed to refresh activity cache for order ${order.id}: ${
-            error instanceof Error ? error.message : "unknown-error"
-          }`
-        );
+      } else {
+        await this.reservationAttendanceQueueService.removeAttendanceEvaluation(orderId);
       }
+    } catch (error) {
+      this.logger.warn(
+        `Failed to synchronize reservation attendance job for order ${orderId}: ${
+          error instanceof Error ? error.message : "unknown-error"
+        }`
+      );
+    }
+  }
+
+  private async syncActivityCacheAfterTransition(
+    order: OrderTransitionRecord,
+    nextStatus: OrderStatus
+  ) {
+    if (nextStatus !== OrderStatus.CANCELLED || !order.activityRegistration) {
+      return;
     }
 
-    return toOrderDetail(latest);
+    try {
+      await this.activityInventoryCacheService.releaseConfirmedReservation(
+        order.activityRegistration.activityId,
+        order.activityRegistration.activityTicketId,
+        order.userId
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Failed to refresh activity cache for order ${order.id}: ${
+          error instanceof Error ? error.message : "unknown-error"
+        }`
+      );
+    }
   }
 
   async finalizeReservationAttendance(orderId: string) {

@@ -40,6 +40,37 @@ const ACADEMIC_BUFFER_MINUTES = 5;
 const ACADEMIC_BUFFER_BEFORE_MINUTES = 5;
 const SPORTS_SLOT_MINUTES = 60;
 
+type SportsReservationTarget = {
+  hasGroup: boolean;
+  parentResource: {
+    id: string;
+    name: string;
+    type: ResourceType;
+    releaseRules: Array<{
+      frequency: "DAILY" | "WEEKLY" | "MONTHLY";
+      dayOfWeek: number | null;
+      dayOfMonth: number | null;
+      hour: number;
+      minute: number;
+      isActive: boolean;
+    }>;
+    bookingClosures: Array<{
+      startsAt: Date;
+      endsAt: Date | null;
+      reason: string | null;
+      isActive: boolean;
+    }>;
+  };
+  resourceUnits: Array<{
+    id: string;
+    resourceId: string;
+    availabilityMode: ResourceAvailabilityMode;
+    resource: {
+      type: ResourceType;
+    };
+  }>;
+};
+
 @Injectable()
 export class ReservationService {
   private readonly logger = new Logger(ReservationService.name);
@@ -228,6 +259,74 @@ export class ReservationService {
     const companionUsers = (await this.resolveCompanionUsers(payload.companionEmails)).filter(
       (companion) => companion.id !== user.id
     );
+    const normalizedSlots = normalizeSportsSlots(payload.slotStarts);
+    const reservationTarget = await this.resolveSportsReservationTarget(payload);
+
+    const firstSlotStart = normalizedSlots[0]!.start;
+    const lastSlotEnd = normalizedSlots[normalizedSlots.length - 1]!.end;
+
+    this.assertSportsReservationTarget(reservationTarget.parentResource);
+    this.assertResourceChannelOpen(
+      reservationTarget.parentResource,
+      firstSlotStart,
+      lastSlotEnd
+    );
+
+    await this.assertReservationCategoryAvailable(
+      [user, ...companionUsers],
+      ReservationCategory.SPORTS_FACILITY
+    );
+
+    this.assertSportsReservationUnits(reservationTarget.resourceUnits);
+
+    await this.rulesService.assertReservationRules({
+      resourceId: reservationTarget.parentResource.id,
+      userId: user.id,
+      requestedDurationMinutes: normalizedSlots.length * SPORTS_SLOT_MINUTES
+    });
+
+    if (
+      await this.findSportsReservationConflict(
+        reservationTarget.resourceUnits,
+        normalizedSlots
+      )
+    ) {
+      throw new ConflictException("sports-reservation-conflict");
+    }
+
+    try {
+      const created = await this.createSportsReservationOrder({
+        userId: user.id,
+        companionUsers,
+        hasGroup: reservationTarget.hasGroup,
+        parentResourceId: reservationTarget.parentResource.id,
+        resourceUnits: reservationTarget.resourceUnits,
+        normalizedSlots
+      });
+
+      await this.scheduleAttendanceEvaluation(
+        created.orderId,
+        normalizedSlots[0]!.start
+      );
+      return created;
+    } catch (error) {
+      if (
+        isPrismaUniqueConstraintError(error, [
+          "sports_active_slot_unique",
+          "resourceUnitId",
+          "slotStart"
+        ])
+      ) {
+        throw new ConflictException("sports-reservation-conflict");
+      }
+
+      throw error;
+    }
+  }
+
+  private async resolveSportsReservationTarget(
+    payload: SportsReservationRequest
+  ): Promise<SportsReservationTarget> {
     const hasUnit = Boolean(payload.resourceUnitId);
     const hasGroup = Boolean(payload.resourceGroupId);
 
@@ -236,8 +335,6 @@ export class ReservationService {
         "provide-exactly-one-of-resourceUnitId-or-resourceGroupId"
       );
     }
-
-    const normalizedSlots = normalizeSportsSlots(payload.slotStarts);
 
     const reservationTarget = hasUnit
       ? await this.prismaService.resourceUnit.findUnique({
@@ -256,7 +353,7 @@ export class ReservationService {
     const reservationGroup = hasGroup
       ? await this.prismaService.resourceGroup.findUnique({
           where: { id: payload.resourceGroupId },
-        include: {
+          include: {
             resource: {
               include: {
                 releaseRules: true,
@@ -295,24 +392,24 @@ export class ReservationService {
       throw new BadRequestException("resource-group-is-empty");
     }
 
-    const parentResource = hasUnit
-      ? reservationTarget!.resource
-      : reservationGroup!.resource;
+    return {
+      hasGroup,
+      parentResource: hasUnit ? reservationTarget!.resource : reservationGroup!.resource,
+      resourceUnits
+    };
+  }
 
+  private assertSportsReservationTarget(
+    parentResource: SportsReservationTarget["parentResource"]
+  ) {
     if (parentResource.type !== ResourceType.SPORTS_FACILITY) {
       throw new BadRequestException("reservation-target-is-not-sports-facility");
     }
+  }
 
-    const firstSlotStart = normalizedSlots[0]!.start;
-    const lastSlotEnd = normalizedSlots[normalizedSlots.length - 1]!.end;
-
-    this.assertResourceChannelOpen(parentResource, firstSlotStart, lastSlotEnd);
-
-    await this.assertReservationCategoryAvailable(
-      [user, ...companionUsers],
-      ReservationCategory.SPORTS_FACILITY
-    );
-
+  private assertSportsReservationUnits(
+    resourceUnits: SportsReservationTarget["resourceUnits"]
+  ) {
     for (const unit of resourceUnits) {
       if (unit.resource.type !== ResourceType.SPORTS_FACILITY) {
         throw new BadRequestException("resource-unit-is-not-sports-facility");
@@ -322,138 +419,139 @@ export class ReservationService {
         throw new BadRequestException("resource-unit-is-not-slot-based");
       }
     }
+  }
 
-    await this.rulesService.assertReservationRules({
-      resourceId: parentResource.id,
-      userId: user.id,
-      requestedDurationMinutes: normalizedSlots.length * SPORTS_SLOT_MINUTES
-    });
-
-    const existingConflict =
-      await this.prismaService.sportsReservationSlot.findFirst({
-        where: {
-          resourceUnitId: {
-            in: resourceUnits.map((unit) => unit.id)
-          },
-          slotStart: {
-            in: normalizedSlots.map((slot) => slot.start)
-          },
-          status: {
-            in: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]
-          }
+  private async findSportsReservationConflict(
+    resourceUnits: SportsReservationTarget["resourceUnits"],
+    normalizedSlots: Array<{ start: Date; end: Date }>
+  ) {
+    return this.prismaService.sportsReservationSlot.findFirst({
+      where: {
+        resourceUnitId: {
+          in: resourceUnits.map((unit) => unit.id)
         },
-        select: {
-          id: true
+        slotStart: {
+          in: normalizedSlots.map((slot) => slot.start)
+        },
+        status: {
+          in: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED]
+        }
+      },
+      select: {
+        id: true
+      }
+    });
+  }
+
+  private async createSportsReservationOrder(params: {
+    userId: string;
+    companionUsers: Array<{ id: string }>;
+    hasGroup: boolean;
+    parentResourceId: string;
+    resourceUnits: SportsReservationTarget["resourceUnits"];
+    normalizedSlots: Array<{ start: Date; end: Date }>;
+  }): Promise<SportsReservationResponse> {
+    return this.prismaService.$transaction(async (tx) => {
+      const order = await tx.order.create({
+        data: {
+          userId: params.userId,
+          bizType: OrderBizType.RESOURCE_RESERVATION,
+          status: OrderStatus.CONFIRMED,
+          totalAmountCents: 0
         }
       });
 
-    if (existingConflict) {
-      throw new ConflictException("sports-reservation-conflict");
-    }
+      const orderItems = params.resourceUnits.flatMap((unit) =>
+        params.normalizedSlots.map((slot) => ({
+          orderId: order.id,
+          resourceId: unit.resourceId,
+          resourceUnitId: unit.id,
+          startTime: slot.start,
+          endTime: slot.end,
+          quantity: 1,
+          slotCount: 1,
+          bufferBeforeMin: 0,
+          bufferAfterMin: 0
+        }))
+      );
 
-    try {
-      const created = await this.prismaService.$transaction(async (tx) => {
-        const order = await tx.order.create({
-          data: {
-            userId: user.id,
-            bizType: OrderBizType.RESOURCE_RESERVATION,
-            status: OrderStatus.CONFIRMED,
-            totalAmountCents: 0
-          }
-        });
+      const sportsSlots = params.resourceUnits.flatMap((unit) =>
+        params.normalizedSlots.map((slot) => ({
+          orderId: order.id,
+          userId: params.userId,
+          resourceId: unit.resourceId,
+          resourceUnitId: unit.id,
+          slotStart: slot.start,
+          slotEnd: slot.end,
+          status: OrderStatus.CONFIRMED
+        }))
+      );
 
-        const orderItems = resourceUnits.flatMap((unit) =>
-          normalizedSlots.map((slot) => ({
-            orderId: order.id,
-            resourceId: unit.resourceId,
-            resourceUnitId: unit.id,
-            startTime: slot.start,
-            endTime: slot.end,
-            quantity: 1,
-            slotCount: 1,
-            bufferBeforeMin: 0,
-            bufferAfterMin: 0
-          }))
-        );
-
-        const sportsSlots = resourceUnits.flatMap((unit) =>
-          normalizedSlots.map((slot) => ({
-            orderId: order.id,
-            userId: user.id,
-            resourceId: unit.resourceId,
-            resourceUnitId: unit.id,
-            slotStart: slot.start,
-            slotEnd: slot.end,
-            status: OrderStatus.CONFIRMED
-          }))
-        );
-
-        await tx.orderItem.createMany({
-          data: orderItems
-        });
-
-        await tx.orderStatusLog.create({
-          data: {
-            orderId: order.id,
-            toStatus: OrderStatus.CONFIRMED,
-            reason: hasGroup
-              ? "sports-group-reservation-created"
-              : "sports-reservation-created"
-          }
-        });
-
-        await tx.sportsReservationSlot.createMany({
-          data: sportsSlots
-        });
-
-        await tx.reservationParticipant.createMany({
-          data: [
-            {
-              orderId: order.id,
-              userId: user.id,
-              isHost: true
-            },
-            ...companionUsers.map((companion) => ({
-              orderId: order.id,
-              userId: companion.id,
-              isHost: false
-            }))
-          ]
-        });
-
-        return {
-          response: {
-            orderId: order.id,
-            orderNo: order.orderNo,
-            userId: user.id,
-            resourceId: parentResource.id,
-            resourceUnitIds: resourceUnits.map((unit) => unit.id),
-            slotStarts: normalizedSlots.map((slot) => slot.start.toISOString()),
-            slotEnds: normalizedSlots.map((slot) => slot.end.toISOString()),
-            slotCount: sportsSlots.length,
-            status: "confirmed" as const
-          }
-        };
+      await tx.orderItem.createMany({
+        data: orderItems
       });
 
-      await this.scheduleAttendanceEvaluation(
-        created.response.orderId,
-        normalizedSlots[0]!.start
-      );
-      return created.response;
-    } catch (error) {
-      if (
-        isPrismaUniqueConstraintError(error, [
-          "sports_active_slot_unique",
-          "resourceUnitId",
-          "slotStart"
-        ])
-      ) {
-        throw new ConflictException("sports-reservation-conflict");
-      }
+      await tx.orderStatusLog.create({
+        data: {
+          orderId: order.id,
+          toStatus: OrderStatus.CONFIRMED,
+          reason: params.hasGroup
+            ? "sports-group-reservation-created"
+            : "sports-reservation-created"
+        }
+      });
 
-      throw error;
-    }
+      await tx.sportsReservationSlot.createMany({
+        data: sportsSlots
+      });
+
+      await tx.reservationParticipant.createMany({
+        data: [
+          {
+            orderId: order.id,
+            userId: params.userId,
+            isHost: true
+          },
+          ...params.companionUsers.map((companion) => ({
+            orderId: order.id,
+            userId: companion.id,
+            isHost: false
+          }))
+        ]
+      });
+
+      return this.buildSportsReservationResponse({
+        orderId: order.id,
+        orderNo: order.orderNo,
+        userId: params.userId,
+        parentResourceId: params.parentResourceId,
+        resourceUnits: params.resourceUnits,
+        normalizedSlots: params.normalizedSlots,
+        slotCount: sportsSlots.length
+      });
+    });
+  }
+
+  private buildSportsReservationResponse(params: {
+    orderId: string;
+    orderNo: string;
+    userId: string;
+    parentResourceId: string;
+    resourceUnits: SportsReservationTarget["resourceUnits"];
+    normalizedSlots: Array<{ start: Date; end: Date }>;
+    slotCount: number;
+  }): SportsReservationResponse {
+    return {
+      orderId: params.orderId,
+      orderNo: params.orderNo,
+      userId: params.userId,
+      resourceId: params.parentResourceId,
+      resourceUnitIds: params.resourceUnits.map((unit) => unit.id),
+      slotStarts: params.normalizedSlots.map((slot) => slot.start.toISOString()),
+      slotEnds: params.normalizedSlots.map((slot) => slot.end.toISOString()),
+      slotCount: params.slotCount,
+      status: "confirmed"
+    };
   }
 
   async checkInReservation(

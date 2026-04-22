@@ -339,42 +339,17 @@ function normalizeActivityTimeline(
   },
   allowPartial = false
 ) {
-  const saleStartTime = payload.saleStartTime
-    ? new Date(payload.saleStartTime)
-    : undefined;
-  const saleEndTime = payload.saleEndTime ? new Date(payload.saleEndTime) : undefined;
-  const eventStartTime = payload.eventStartTime
-    ? new Date(payload.eventStartTime)
-    : payload.eventStartTime === undefined
-      ? undefined
-      : null;
-  const eventEndTime = payload.eventEndTime
-    ? new Date(payload.eventEndTime)
-    : payload.eventEndTime === undefined
-      ? undefined
-      : null;
+  const saleStartTime = parseOptionalDate(payload.saleStartTime);
+  const saleEndTime = parseOptionalDate(payload.saleEndTime);
+  const eventStartTime = parseNullableDate(payload.eventStartTime);
+  const eventEndTime = parseNullableDate(payload.eventEndTime);
 
-  for (const value of [saleStartTime, saleEndTime, eventStartTime, eventEndTime]) {
-    if (value instanceof Date && Number.isNaN(value.getTime())) {
-      throw new BadRequestException("invalid-activity-time");
-    }
-  }
-
-  if (!allowPartial && (!saleStartTime || !saleEndTime)) {
-    throw new BadRequestException("missing-sale-time");
-  }
-
-  if (saleStartTime && saleEndTime && saleEndTime <= saleStartTime) {
-    throw new BadRequestException("sale-end-must-be-after-sale-start");
-  }
-
-  if (
-    eventStartTime instanceof Date &&
-    eventEndTime instanceof Date &&
-    eventEndTime <= eventStartTime
-  ) {
-    throw new BadRequestException("event-end-must-be-after-event-start");
-  }
+  assertValidActivityDate(saleStartTime);
+  assertValidActivityDate(saleEndTime);
+  assertValidActivityDate(eventStartTime);
+  assertValidActivityDate(eventEndTime);
+  assertSaleTimeline(saleStartTime, saleEndTime, allowPartial);
+  assertEventTimeline(eventStartTime, eventEndTime);
 
   return {
     saleStartTime,
@@ -382,6 +357,51 @@ function normalizeActivityTimeline(
     eventStartTime,
     eventEndTime
   };
+}
+
+function parseOptionalDate(value?: string) {
+  return value ? new Date(value) : undefined;
+}
+
+function parseNullableDate(value?: string) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return value ? new Date(value) : null;
+}
+
+function assertValidActivityDate(value: Date | null | undefined) {
+  if (value instanceof Date && Number.isNaN(value.getTime())) {
+    throw new BadRequestException("invalid-activity-time");
+  }
+}
+
+function assertSaleTimeline(
+  saleStartTime: Date | undefined,
+  saleEndTime: Date | undefined,
+  allowPartial: boolean
+) {
+  if (!allowPartial && (!saleStartTime || !saleEndTime)) {
+    throw new BadRequestException("missing-sale-time");
+  }
+
+  if (saleStartTime && saleEndTime && saleEndTime <= saleStartTime) {
+    throw new BadRequestException("sale-end-must-be-after-sale-start");
+  }
+}
+
+function assertEventTimeline(
+  eventStartTime: Date | null | undefined,
+  eventEndTime: Date | null | undefined
+) {
+  if (
+    eventStartTime instanceof Date &&
+    eventEndTime instanceof Date &&
+    eventEndTime <= eventStartTime
+  ) {
+    throw new BadRequestException("event-end-must-be-after-event-start");
+  }
 }
 
 function mapSharedActivityStatus(value: ActivityStatus) {

@@ -23,6 +23,17 @@
     - `pnpm --filter web lint`
     - `pnpm --filter web typecheck`
     - `pnpm --filter web build`
+- 已完成圈复杂度治理第三批后端函数拆分并通过校验：
+  - 留证文档：`docs/verification/2026-04-22/qa-016-cyclomatic-batch-3-backend-services.md`
+  - 已拆分：
+    - `normalizeActivityTimeline`
+    - `OrdersService.transitionOrder`
+    - `ReservationService.createSportsReservation`
+  - 已执行并通过：
+    - `pnpm --filter api lint`
+    - `pnpm --filter api typecheck`
+    - `pnpm --filter api test`
+  - 当前 `apps/api` 测试结果：`26 tests / 7 suites / 0 fail`
 - 已继续微调 `docs/demo/product-architecture.md` 的句式表达：
   - 已集中收口高频“不是 / 而是”对立句式，改为更直接的陈述句
   - 已同步恢复文档尾部的“当前完成情况与后续优化 / 总结”章节，避免文案调整时误删尾部内容
