@@ -156,6 +156,15 @@ export function activityStatusLabel(
   }
 }
 
+export function availabilityModeLabel(
+  mode: "continuous" | "discrete_slot",
+  locale: Locale
+) {
+  return mode === "continuous"
+    ? localeText(locale, "连续时间段", "Continuous Timeline")
+    : localeText(locale, "离散时段", "Discrete Slots");
+}
+
 export function ruleTypeLabel(ruleType: RuleType, locale: Locale) {
   switch (ruleType) {
     case "min_credit_score":

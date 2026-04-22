@@ -25,7 +25,9 @@ import { CreateResourceUnitDto } from "./dto/create-resource-unit.dto";
 import { UpdateResourceBookingClosureDto } from "./dto/update-resource-booking-closure.dto";
 import { UpdateResourceDto } from "./dto/update-resource.dto";
 import { UpdateResourceReleaseRuleDto } from "./dto/update-resource-release-rule.dto";
+import { UpdateResourceUnitDto } from "./dto/update-resource-unit.dto";
 import {
+  mapPrismaAvailabilityMode,
   mapPrismaReleaseFrequency,
   mapSharedAvailabilityMode,
   mapSharedReleaseFrequency,
@@ -115,6 +117,52 @@ export class ResourceWriteService {
           availabilityMode: mapSharedAvailabilityMode(payload.availabilityMode),
           capacity: payload.capacity,
           sortOrder: payload.sortOrder ?? 0
+        }
+      });
+    } catch (error) {
+      handlePrismaConflict(error, "resource-unit-code-conflict");
+      throw error;
+    }
+
+    return this.resourceReadService.getAdminResourceDetail(resourceId);
+  }
+
+  async updateResourceUnit(
+    resourceId: string,
+    unitId: string,
+    payload: UpdateResourceUnitDto
+  ): Promise<AdminResourceDetailResponse> {
+    const resource = await this.ensureResourceExists(resourceId);
+    const existingUnit = await this.prismaService.resourceUnit.findFirst({
+      where: {
+        id: unitId,
+        resourceId
+      }
+    });
+
+    if (!existingUnit) {
+      throw new NotFoundException("resource-unit-not-found");
+    }
+
+    validateUnitAvailabilityMode(
+      resource.type,
+      payload.availabilityMode ?? mapPrismaAvailabilityMode(existingUnit.availabilityMode)
+    );
+
+    try {
+      await this.prismaService.resourceUnit.update({
+        where: {
+          id: unitId
+        },
+        data: {
+          ...(payload.code !== undefined ? { code: payload.code } : {}),
+          ...(payload.name !== undefined ? { name: payload.name } : {}),
+          ...(payload.unitType !== undefined ? { unitType: payload.unitType } : {}),
+          ...(payload.availabilityMode !== undefined
+            ? { availabilityMode: mapSharedAvailabilityMode(payload.availabilityMode) }
+            : {}),
+          ...(payload.capacity !== undefined ? { capacity: payload.capacity } : {}),
+          ...(payload.sortOrder !== undefined ? { sortOrder: payload.sortOrder } : {})
         }
       });
     } catch (error) {

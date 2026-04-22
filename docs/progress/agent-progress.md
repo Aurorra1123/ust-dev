@@ -6,6 +6,51 @@
 
 ### 已完成
 
+- 已完成管理员端剩余两项正式任务 `ADM-008` 与 `ADM-009`：
+  - `ADM-008`
+    - 资源页已补齐资源基础信息编辑能力
+    - 资源单元已补齐编辑能力，不再停留在只能新增和删除
+    - 资源与资源单元表单中的关键字段都已补常驻说明，不再主要依赖 `placeholder`
+    - 后端已补最小资源单元更新接口，未改数据库 schema
+  - `ADM-009`
+    - 活动创建首屏已继续收口，只突出标题、地点、总额度
+    - 售卖时间、活动时间、总额度、首票价格与新增票种价格都已补常驻说明
+    - 自定义首票与进阶设置仍维持折叠结构，没有把页面重新拉回重表单状态
+- 已完成本地校验并留证：
+  - `pnpm --filter api lint`
+  - `pnpm --filter api typecheck`
+  - `pnpm --filter api build`
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - 新增验证记录：`docs/verification/2026-04-22/adm-008-adm-009-admin-form-crud-and-activity-lightweighting.md`
+
+### 当前状态
+
+- `feature-list.json` 中当前正式开发任务已全部完成，没有剩余 `passes: false` 的正式项
+- 管理员端当前基线已经形成三层稳定边界：
+  - 资源页：资源与资源单元基础 CRUD
+  - 规则页：规则配置与按业务域绑定
+  - 活动页：保留主链路，但首屏认知负担继续收口
+
+### 下一步建议
+
+1. 若继续做演示完善，可补管理员端三类截图：
+   - 资源编辑与资源单元编辑
+   - 规则配置双域切换
+   - 活动创建首屏与进阶设置展开态
+2. 若继续做产品回访，可再决定是否要把规则模型长期补成显式业务域字段，而不是只靠前端分域显示
+
+### 注意事项
+
+- 本轮没有修改数据库 schema，也没有新增迁移
+- 本轮沿用 `docs/adr/0017-admin-form-scope-reduced-to-core-operations.md`，没有新增 ADR
+- 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
+
+## 2026-04-22
+
+### 已完成
+
 - 已在 `docs/architecture/architecture-diagrams.md` 中补充两张基于当前 Prisma schema 的 ER 图：
   - 完整业务 ER 图
   - 面向汇报的简化版核心 ER 图

@@ -33,6 +33,7 @@ import { ResourceReservationStatusQueryDto } from "./dto/resource-reservation-st
 import { UpdateResourceBookingClosureDto } from "./dto/update-resource-booking-closure.dto";
 import { UpdateResourceDto } from "./dto/update-resource.dto";
 import { UpdateResourceReleaseRuleDto } from "./dto/update-resource-release-rule.dto";
+import { UpdateResourceUnitDto } from "./dto/update-resource-unit.dto";
 import { ResourceReadService } from "./resource-read.service";
 import { ResourceStatusService } from "./resource-status.service";
 import { ResourceWriteService } from "./resource-write.service";
@@ -105,6 +106,15 @@ export class AdminResourceController {
     @Body() payload: CreateResourceUnitDto
   ): Promise<AdminResourceDetailResponse> {
     return this.resourceWriteService.createResourceUnit(id, payload);
+  }
+
+  @Patch(":resourceId/units/:unitId")
+  updateResourceUnit(
+    @Param("resourceId") resourceId: string,
+    @Param("unitId") unitId: string,
+    @Body() payload: UpdateResourceUnitDto
+  ): Promise<AdminResourceDetailResponse> {
+    return this.resourceWriteService.updateResourceUnit(resourceId, unitId, payload);
   }
 
   @Delete(":id")

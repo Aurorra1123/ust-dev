@@ -75,6 +75,34 @@ export function createDefaultResourceUnitFormState(): ResourceUnitFormState {
   };
 }
 
+export function toResourceFormState(
+  resource: Pick<
+    AdminResourceDetailResponse,
+    "type" | "code" | "name" | "description" | "location" | "status"
+  >
+): ResourceFormState {
+  return {
+    type: resource.type,
+    code: resource.code,
+    name: resource.name,
+    description: resource.description ?? "",
+    location: resource.location ?? "",
+    status: resource.status
+  };
+}
+
+export function toResourceUnitFormState(
+  unit: AdminResourceDetailResponse["units"][number]
+): ResourceUnitFormState {
+  return {
+    code: unit.code,
+    name: unit.name,
+    unitType: unit.unitType,
+    availabilityMode: unit.availabilityMode,
+    capacity: unit.capacity ?? 1
+  };
+}
+
 export function alignResourceUnitFormToResource(
   current: ResourceUnitFormState,
   resource: AdminResourceDetailResponse
@@ -168,8 +196,20 @@ export function formatResourceMutationError(error: unknown, locale: Locale) {
     case "resource-delete-blocked-existing-records":
       return localeText(
         locale,
-        "该资源仍有关联的资源单元、规则绑定或历史预约记录，不能直接删除。请先停用资源，或先清理未被引用的配置。",
-        "This resource still has linked units, rule bindings, or reservation history. Deactivate it first, or remove unused configuration before deleting."
+        "该资源仍有关联的资源单元、规则绑定或历史预约记录，不能直接删除。请先停用资源，或到规则配置中解绑相关规则后再删除。",
+        "This resource still has linked units, rule bindings, or reservation history. Deactivate it first, or remove the related bindings in rule configuration before deleting."
+      );
+    case "resource-code-conflict":
+      return localeText(
+        locale,
+        "资源编码已存在，请更换一个唯一的 code。",
+        "The resource code already exists. Use a unique code."
+      );
+    case "resource-unit-code-conflict":
+      return localeText(
+        locale,
+        "资源单元编码已存在，请更换一个唯一的 code。",
+        "The resource unit code already exists. Use a unique code."
       );
     case "resource-unit-delete-blocked-existing-records":
       return localeText(

@@ -8,7 +8,8 @@ import {
   deleteResource,
   deleteResourceUnit,
   fetchAdminResources,
-  updateResource
+  updateResource,
+  updateResourceUnit
 } from "../../../../lib/api/resource-api";
 import { getErrorMessage } from "../../../../lib/http/errors";
 import { localeText } from "../../../../lib/locale";
@@ -24,7 +25,9 @@ import {
   buildAcademicAreaGroups,
   createDefaultResourceFormState,
   createDefaultResourceUnitFormState,
-  extractAcademicAreaKey
+  extractAcademicAreaKey,
+  toResourceFormState,
+  toResourceUnitFormState
 } from "./resources/resources-workspace-helpers";
 
 type ResourceWorkspaceDomain = "all" | "sports" | "academic";
@@ -47,11 +50,18 @@ export function ResourcesWorkspace({
         ? "academic_space"
         : null;
   const [resourceId, setResourceId] = useState("");
+  const [selectedUnitId, setSelectedUnitId] = useState("");
   const [academicAreaKey, setAcademicAreaKey] = useState("");
-  const [resourceForm, setResourceForm] = useState(() =>
+  const [resourceCreateForm, setResourceCreateForm] = useState(() =>
     createDefaultResourceFormState(lockedResourceType ?? "academic_space")
   );
-  const [resourceUnitForm, setResourceUnitForm] = useState(
+  const [resourceEditForm, setResourceEditForm] = useState(() =>
+    createDefaultResourceFormState(lockedResourceType ?? "academic_space")
+  );
+  const [resourceUnitCreateForm, setResourceUnitCreateForm] = useState(
+    createDefaultResourceUnitFormState
+  );
+  const [resourceUnitEditForm, setResourceUnitEditForm] = useState(
     createDefaultResourceUnitFormState
   );
 
@@ -109,7 +119,7 @@ export function ResourcesWorkspace({
       return;
     }
 
-    setResourceForm((current) =>
+    setResourceCreateForm((current) =>
       current.type === lockedResourceType
         ? current
         : {
@@ -123,23 +133,59 @@ export function ResourcesWorkspace({
     visibleResources.find((resource) => resource.id === resourceId) ??
     visibleResources[0] ??
     null;
+  const selectedUnit =
+    selectedResource?.units.find((unit) => unit.id === selectedUnitId) ??
+    selectedResource?.units[0] ??
+    null;
   const isCreateResourceValid =
-    resourceForm.code.trim().length > 0 && resourceForm.name.trim().length > 0;
+    resourceCreateForm.code.trim().length > 0 &&
+    resourceCreateForm.name.trim().length > 0;
+  const isEditResourceValid =
+    Boolean(selectedResource) &&
+    resourceEditForm.code.trim().length > 0 &&
+    resourceEditForm.name.trim().length > 0;
   const isCreateResourceUnitValid =
     Boolean(selectedResource) &&
-    resourceUnitForm.code.trim().length > 0 &&
-    resourceUnitForm.name.trim().length > 0 &&
-    resourceUnitForm.unitType.trim().length > 0;
+    resourceUnitCreateForm.code.trim().length > 0 &&
+    resourceUnitCreateForm.name.trim().length > 0 &&
+    resourceUnitCreateForm.unitType.trim().length > 0 &&
+    resourceUnitCreateForm.capacity > 0;
+  const isEditResourceUnitValid =
+    Boolean(selectedResource && selectedUnit) &&
+    resourceUnitEditForm.code.trim().length > 0 &&
+    resourceUnitEditForm.name.trim().length > 0 &&
+    resourceUnitEditForm.unitType.trim().length > 0 &&
+    resourceUnitEditForm.capacity > 0;
+
+  useEffect(() => {
+    if (!selectedResource) {
+      setSelectedUnitId("");
+      return;
+    }
+
+    if (!selectedResource.units.some((unit) => unit.id === selectedUnitId)) {
+      setSelectedUnitId(selectedResource.units[0]?.id ?? "");
+    }
+  }, [selectedResource, selectedUnitId]);
 
   useEffect(() => {
     if (!selectedResource) {
       return;
     }
 
-    setResourceUnitForm((current) =>
+    setResourceUnitCreateForm((current) =>
       alignResourceUnitFormToResource(current, selectedResource)
     );
+    setResourceEditForm(toResourceFormState(selectedResource));
   }, [selectedResource]);
+
+  useEffect(() => {
+    if (!selectedUnit) {
+      return;
+    }
+
+    setResourceUnitEditForm(toResourceUnitFormState(selectedUnit));
+  }, [selectedUnit]);
 
   const createResourceMutation = useMutation({
     mutationFn: createResource,
@@ -149,6 +195,32 @@ export function ResourcesWorkspace({
       }
 
       setResourceId(resource.id);
+      setResourceCreateForm(createDefaultResourceFormState(lockedResourceType ?? resource.type));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["resources"] })
+      ]);
+    }
+  });
+
+  const updateResourceMutation = useMutation({
+    mutationFn: (payload: {
+      resourceId: string;
+      body: {
+        type: ResourceType;
+        code: string;
+        name: string;
+        description?: string;
+        location?: string;
+      };
+    }) => updateResource(payload.resourceId, payload.body),
+    onSuccess: async (resource) => {
+      if (domain === "academic") {
+        setAcademicAreaKey(extractAcademicAreaKey(resource.code));
+      }
+
+      setResourceId(resource.id);
+      setResourceEditForm(toResourceFormState(resource));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
         queryClient.invalidateQueries({ queryKey: ["resources"] })
@@ -169,7 +241,43 @@ export function ResourcesWorkspace({
 
       return createResourceUnit(targetResourceId, unitPayload);
     },
-    onSuccess: async () => {
+    onSuccess: async (resource, variables) => {
+      setResourceId(resource.id);
+      setSelectedUnitId(
+        resource.units.find((unit) => unit.code === variables.code)?.id ?? ""
+      );
+      setResourceUnitCreateForm(
+        alignResourceUnitFormToResource(createDefaultResourceUnitFormState(), resource)
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
+        queryClient.invalidateQueries({ queryKey: ["resources"] })
+      ]);
+    }
+  });
+
+  const updateResourceUnitMutation = useMutation({
+    mutationFn: (payload: {
+      resourceId: string;
+      unitId: string;
+      body: {
+        code: string;
+        name: string;
+        unitType: string;
+        availabilityMode: "continuous" | "discrete_slot";
+        capacity: number;
+      };
+    }) => updateResourceUnit(payload.resourceId, payload.unitId, payload.body),
+    onSuccess: async (resource, variables) => {
+      setResourceId(resource.id);
+      setSelectedUnitId(variables.unitId);
+      const updatedUnit =
+        resource.units.find((unit) => unit.id === variables.unitId) ?? null;
+
+      if (updatedUnit) {
+        setResourceUnitEditForm(toResourceUnitFormState(updatedUnit));
+      }
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
         queryClient.invalidateQueries({ queryKey: ["resources"] })
@@ -283,8 +391,25 @@ export function ResourcesWorkspace({
 
   function handleCreateResource() {
     createResourceMutation.mutate({
-      ...resourceForm,
-      type: lockedResourceType ?? resourceForm.type
+      ...resourceCreateForm,
+      type: lockedResourceType ?? resourceCreateForm.type
+    });
+  }
+
+  function handleSaveResource() {
+    if (!selectedResource) {
+      return;
+    }
+
+    updateResourceMutation.mutate({
+      resourceId: selectedResource.id,
+      body: {
+        type: lockedResourceType ?? resourceEditForm.type,
+        code: resourceEditForm.code.trim(),
+        name: resourceEditForm.name.trim(),
+        description: resourceEditForm.description.trim() || undefined,
+        location: resourceEditForm.location.trim() || undefined
+      }
     });
   }
 
@@ -295,7 +420,29 @@ export function ResourcesWorkspace({
 
     createResourceUnitMutation.mutate({
       resourceId: selectedResource.id,
-      ...resourceUnitForm
+      code: resourceUnitCreateForm.code.trim(),
+      name: resourceUnitCreateForm.name.trim(),
+      unitType: resourceUnitCreateForm.unitType.trim(),
+      availabilityMode: resourceUnitCreateForm.availabilityMode,
+      capacity: resourceUnitCreateForm.capacity
+    });
+  }
+
+  function handleSaveResourceUnit() {
+    if (!selectedResource || !selectedUnit) {
+      return;
+    }
+
+    updateResourceUnitMutation.mutate({
+      resourceId: selectedResource.id,
+      unitId: selectedUnit.id,
+      body: {
+        code: resourceUnitEditForm.code.trim(),
+        name: resourceUnitEditForm.name.trim(),
+        unitType: resourceUnitEditForm.unitType.trim(),
+        availabilityMode: resourceUnitEditForm.availabilityMode,
+        capacity: resourceUnitEditForm.capacity
+      }
     });
   }
 
@@ -389,7 +536,7 @@ export function ResourcesWorkspace({
           description={getErrorMessage(resourcesQuery.error)}
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),340px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),380px]">
           <div className="grid gap-4">
             {domain === "academic" && academicAreaGroups.length ? (
               <div className="rounded-[26px] border border-navy/10 bg-white px-5 py-5">
@@ -429,6 +576,8 @@ export function ResourcesWorkspace({
                 <ResourcesDetailPanel
                   locale={locale}
                   selectedResource={selectedResource}
+                  selectedUnitId={selectedUnitId}
+                  onSelectUnit={setSelectedUnitId}
                   onToggleResourceStatus={handleToggleResourceStatus}
                   onDeleteResource={handleDeleteResource}
                   onDeleteResourceUnit={handleDeleteResourceUnit}
@@ -445,17 +594,28 @@ export function ResourcesWorkspace({
           <ResourcesActionsPanel
             locale={locale}
             selectedResource={selectedResource}
-            resourceForm={resourceForm}
-            setResourceForm={setResourceForm}
-            resourceUnitForm={resourceUnitForm}
-            setResourceUnitForm={setResourceUnitForm}
+            selectedUnit={selectedUnit}
+            resourceCreateForm={resourceCreateForm}
+            setResourceCreateForm={setResourceCreateForm}
+            resourceEditForm={resourceEditForm}
+            setResourceEditForm={setResourceEditForm}
+            resourceUnitCreateForm={resourceUnitCreateForm}
+            setResourceUnitCreateForm={setResourceUnitCreateForm}
+            resourceUnitEditForm={resourceUnitEditForm}
+            setResourceUnitEditForm={setResourceUnitEditForm}
             lockedResourceType={lockedResourceType}
             createResourceMutation={createResourceMutation}
+            updateResourceMutation={updateResourceMutation}
             createResourceUnitMutation={createResourceUnitMutation}
+            updateResourceUnitMutation={updateResourceUnitMutation}
             isCreateResourceValid={isCreateResourceValid}
+            isEditResourceValid={isEditResourceValid}
             isCreateResourceUnitValid={isCreateResourceUnitValid}
+            isEditResourceUnitValid={isEditResourceUnitValid}
             onCreateResource={handleCreateResource}
+            onSaveResource={handleSaveResource}
             onCreateResourceUnit={handleCreateResourceUnit}
+            onSaveResourceUnit={handleSaveResourceUnit}
           />
         </div>
       )}

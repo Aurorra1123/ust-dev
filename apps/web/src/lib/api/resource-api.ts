@@ -36,6 +36,15 @@ export interface CreateResourceUnitPayload {
   sortOrder?: number;
 }
 
+export interface UpdateResourceUnitPayload {
+  code?: string;
+  name?: string;
+  unitType?: string;
+  availabilityMode?: "continuous" | "discrete_slot";
+  capacity?: number;
+  sortOrder?: number;
+}
+
 export function fetchResources(type?: ResourceType) {
   const suffix = type ? `?type=${type}` : "";
   return requestJson<ResourceListItem[]>(`/resources${suffix}`, {
@@ -104,6 +113,20 @@ export function createResourceUnit(
     `/admin/resources/${resourceId}/units`,
     {
       method: "POST",
+      body: payload
+    }
+  );
+}
+
+export function updateResourceUnit(
+  resourceId: string,
+  unitId: string,
+  payload: UpdateResourceUnitPayload
+) {
+  return requestJson<AdminResourceDetailResponse>(
+    `/admin/resources/${resourceId}/units/${unitId}`,
+    {
+      method: "PATCH",
       body: payload
     }
   );

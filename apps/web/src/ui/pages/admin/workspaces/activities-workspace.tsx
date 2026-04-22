@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import {
@@ -317,46 +318,73 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
             <p className="mt-2 text-sm leading-7 text-slate">
               {localeText(
                 locale,
-                "先填写标题和总额度即可创建常见免费单票活动。系统会默认生成一张免费票，库存跟随总额度。",
-                "Start with the title and quota to create a common free single-ticket activity. The system will generate one free ticket and match its stock to the total quota."
+                "首屏只保留最常见的标题、地点和总额度。系统会默认生成一张首票；售卖时间、活动时间和发布状态继续放在可选展开区。",
+                "The first screen keeps only the most common title, location, and quota fields. The system creates the first ticket by default, while sales time, event time, and publishing status stay in the optional expanded area."
               )}
             </p>
-            <div className="mt-4 grid gap-3">
-              <input
-                className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                value={activityForm.title}
-                onChange={(event) =>
-                  setActivityForm((current) => ({
-                    ...current,
-                    title: event.target.value
-                  }))
-                }
-                placeholder={localeText(locale, "活动标题", "Activity title")}
-              />
-              <input
-                className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                value={activityForm.location}
-                onChange={(event) =>
-                  setActivityForm((current) => ({
-                    ...current,
-                    location: event.target.value
-                  }))
-                }
-                placeholder={localeText(locale, "活动地点", "Location")}
-              />
-              <input
-                className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-                type="number"
-                min={1}
-                value={activityForm.totalQuota}
-                onChange={(event) =>
-                  setActivityForm((current) => ({
-                    ...current,
-                    totalQuota: Number(event.target.value)
-                  }))
-                }
-                placeholder={localeText(locale, "总额度", "Total quota")}
-              />
+            <div className="mt-4 grid gap-4">
+              <FieldBlock
+                label={localeText(locale, "活动标题", "Activity Title")}
+                hint={localeText(
+                  locale,
+                  "标题是列表和详情页里最先被看到的信息，建议直接表达活动主题。",
+                  "The title is the first thing shown in both the list and details, so make the activity topic immediately clear."
+                )}
+              >
+                <input
+                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
+                  value={activityForm.title}
+                  onChange={(event) =>
+                    setActivityForm((current) => ({
+                      ...current,
+                      title: event.target.value
+                    }))
+                  }
+                  placeholder={localeText(locale, "活动标题", "Activity title")}
+                />
+              </FieldBlock>
+              <FieldBlock
+                label={localeText(locale, "活动地点", "Location")}
+                hint={localeText(
+                  locale,
+                  "地点建议写到学生能直接找到的粒度，例如教学楼房间、球场区域或报告厅名称。",
+                  "Use a student-facing location such as a room, court area, or auditorium name."
+                )}
+              >
+                <input
+                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
+                  value={activityForm.location}
+                  onChange={(event) =>
+                    setActivityForm((current) => ({
+                      ...current,
+                      location: event.target.value
+                    }))
+                  }
+                  placeholder={localeText(locale, "活动地点", "Location")}
+                />
+              </FieldBlock>
+              <FieldBlock
+                label={localeText(locale, "总额度", "Total Quota")}
+                hint={localeText(
+                  locale,
+                  "总额度决定默认首票库存，也影响活动详情页展示。若只是单票活动，通常可以与首票库存保持一致。",
+                  "The total quota determines the default first-ticket stock and is shown on the activity details page. For a single-ticket activity, it usually matches the first ticket stock."
+                )}
+              >
+                <input
+                  className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
+                  type="number"
+                  min={1}
+                  value={activityForm.totalQuota}
+                  onChange={(event) =>
+                    setActivityForm((current) => ({
+                      ...current,
+                      totalQuota: Number(event.target.value)
+                    }))
+                  }
+                  placeholder={localeText(locale, "总额度", "Total quota")}
+                />
+              </FieldBlock>
               <div className="rounded-[22px] border border-navy/10 bg-white px-4 py-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -395,44 +423,73 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
                 </div>
 
                 {customizeFirstTicket ? (
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <input
-                      className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                      value={firstTicketForm.name}
-                      onChange={(event) =>
-                        setFirstTicketForm((current) => ({
-                          ...current,
-                          name: event.target.value
-                        }))
-                      }
-                      placeholder={localeText(locale, "首个票种名称", "First ticket type")}
-                    />
-                    <input
-                      className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                      type="number"
-                      min={1}
-                      value={firstTicketForm.stock}
-                      onChange={(event) =>
-                        setFirstTicketForm((current) => ({
-                          ...current,
-                          stock: Number(event.target.value)
-                        }))
-                      }
-                      placeholder={localeText(locale, "票数", "Ticket stock")}
-                    />
-                    <input
-                      className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                      type="number"
-                      min={0}
-                      value={firstTicketForm.priceCents}
-                      onChange={(event) =>
-                        setFirstTicketForm((current) => ({
-                          ...current,
-                          priceCents: Number(event.target.value)
-                        }))
-                      }
-                      placeholder={localeText(locale, "价格分", "Price in cents")}
-                    />
+                  <div className="mt-4 grid gap-4">
+                    <FieldBlock
+                      label={localeText(locale, "首个票种名称", "First Ticket Name")}
+                      hint={localeText(
+                        locale,
+                        "名称会直接展示给学生，建议写成“普通票”“入场票”等能直接理解的叫法。",
+                        "This name is shown directly to students, so prefer clear labels such as General Ticket or Entry Ticket."
+                      )}
+                    >
+                      <input
+                        className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                        value={firstTicketForm.name}
+                        onChange={(event) =>
+                          setFirstTicketForm((current) => ({
+                            ...current,
+                            name: event.target.value
+                          }))
+                        }
+                        placeholder={localeText(locale, "首个票种名称", "First ticket type")}
+                      />
+                    </FieldBlock>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldBlock
+                        label={localeText(locale, "首票库存", "First Ticket Stock")}
+                        hint={localeText(
+                          locale,
+                          "库存决定第一张票能卖多少张，若不需要分票种，通常与总额度保持一致。",
+                          "This determines how many tickets the first ticket type can sell. If you do not split types, it usually matches the total quota."
+                        )}
+                      >
+                        <input
+                          className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                          type="number"
+                          min={1}
+                          value={firstTicketForm.stock}
+                          onChange={(event) =>
+                            setFirstTicketForm((current) => ({
+                              ...current,
+                              stock: Number(event.target.value)
+                            }))
+                          }
+                          placeholder={localeText(locale, "票数", "Ticket stock")}
+                        />
+                      </FieldBlock>
+                      <FieldBlock
+                        label={localeText(locale, "首票价格（分）", "First Ticket Price (cents)")}
+                        hint={localeText(
+                          locale,
+                          "价格字段以分为单位，`0` 表示免费票。若后续接支付链路，这个值会直接参与订单金额计算。",
+                          "The price is stored in cents, and `0` means the ticket is free. This value directly affects order amounts if payment is enabled later."
+                        )}
+                      >
+                        <input
+                          className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                          type="number"
+                          min={0}
+                          value={firstTicketForm.priceCents}
+                          onChange={(event) =>
+                            setFirstTicketForm((current) => ({
+                              ...current,
+                              priceCents: Number(event.target.value)
+                            }))
+                          }
+                          placeholder={localeText(locale, "价格分", "Price in cents")}
+                        />
+                      </FieldBlock>
+                    </div>
                   </div>
                 ) : null}
               </div>
@@ -463,78 +520,132 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
                 </div>
 
                 {showAdvancedSettings ? (
-                  <div className="mt-4 grid gap-3">
-                    <textarea
-                      className="min-h-[96px] rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                      value={activityForm.description}
-                      onChange={(event) =>
-                        setActivityForm((current) => ({
-                          ...current,
-                          description: event.target.value
-                        }))
-                      }
-                      placeholder={localeText(locale, "活动描述", "Description")}
-                    />
-                    <select
-                      className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                      value={activityForm.status}
-                      onChange={(event) =>
-                        setActivityForm((current) => ({
-                          ...current,
-                          status: event.target.value as "draft" | "published"
-                        }))
-                      }
+                  <div className="mt-4 grid gap-4">
+                    <FieldBlock
+                      label={localeText(locale, "活动描述", "Description")}
+                      hint={localeText(
+                        locale,
+                        "描述适合补充议程、适用对象、注意事项或报名说明。",
+                        "Use the description for agenda, target audience, notes, or registration guidance."
+                      )}
                     >
-                      <option value="draft">{localeText(locale, "草稿", "Draft")}</option>
-                      <option value="published">{localeText(locale, "已发布", "Published")}</option>
-                    </select>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <input
-                        className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                        type="datetime-local"
-                        value={activityForm.saleStartTime}
+                      <textarea
+                        className="min-h-[96px] rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                        value={activityForm.description}
                         onChange={(event) =>
                           setActivityForm((current) => ({
                             ...current,
-                            saleStartTime: event.target.value
+                            description: event.target.value
                           }))
                         }
+                        placeholder={localeText(locale, "活动描述", "Description")}
                       />
-                      <input
+                    </FieldBlock>
+                    <FieldBlock
+                      label={localeText(locale, "发布状态", "Publish Status")}
+                      hint={localeText(
+                        locale,
+                        "默认保持草稿更安全；确认信息完整后再直接创建为已发布状态。",
+                        "Keeping the activity as a draft is safer by default. Publish only after the core information is complete."
+                      )}
+                    >
+                      <select
                         className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                        type="datetime-local"
-                        value={activityForm.saleEndTime}
+                        value={activityForm.status}
                         onChange={(event) =>
                           setActivityForm((current) => ({
                             ...current,
-                            saleEndTime: event.target.value
+                            status: event.target.value as "draft" | "published"
                           }))
                         }
-                      />
+                      >
+                        <option value="draft">{localeText(locale, "草稿", "Draft")}</option>
+                        <option value="published">{localeText(locale, "已发布", "Published")}</option>
+                      </select>
+                    </FieldBlock>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldBlock
+                        label={localeText(locale, "售卖开始时间", "Sales Start Time")}
+                        hint={localeText(
+                          locale,
+                          "这是学生最早可以开始抢票或报名的时间。",
+                          "This is the earliest time when students can start buying or registering."
+                        )}
+                      >
+                        <input
+                          className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                          type="datetime-local"
+                          value={activityForm.saleStartTime}
+                          onChange={(event) =>
+                            setActivityForm((current) => ({
+                              ...current,
+                              saleStartTime: event.target.value
+                            }))
+                          }
+                        />
+                      </FieldBlock>
+                      <FieldBlock
+                        label={localeText(locale, "售卖结束时间", "Sales End Time")}
+                        hint={localeText(
+                          locale,
+                          "超过这个时间后，前端不应继续允许学生下单。",
+                          "Students should no longer be able to place orders after this time."
+                        )}
+                      >
+                        <input
+                          className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                          type="datetime-local"
+                          value={activityForm.saleEndTime}
+                          onChange={(event) =>
+                            setActivityForm((current) => ({
+                              ...current,
+                              saleEndTime: event.target.value
+                            }))
+                          }
+                        />
+                      </FieldBlock>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <input
-                        className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                        type="datetime-local"
-                        value={activityForm.eventStartTime}
-                        onChange={(event) =>
-                          setActivityForm((current) => ({
-                            ...current,
-                            eventStartTime: event.target.value
-                          }))
-                        }
-                      />
-                      <input
-                        className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
-                        type="datetime-local"
-                        value={activityForm.eventEndTime}
-                        onChange={(event) =>
-                          setActivityForm((current) => ({
-                            ...current,
-                            eventEndTime: event.target.value
-                          }))
-                        }
-                      />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldBlock
+                        label={localeText(locale, "活动开始时间", "Event Start Time")}
+                        hint={localeText(
+                          locale,
+                          "用于告诉学生活动何时正式开始，也影响详情页的时间展示。",
+                          "This tells students when the activity starts and affects the detail page schedule display."
+                        )}
+                      >
+                        <input
+                          className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                          type="datetime-local"
+                          value={activityForm.eventStartTime}
+                          onChange={(event) =>
+                            setActivityForm((current) => ({
+                              ...current,
+                              eventStartTime: event.target.value
+                            }))
+                          }
+                        />
+                      </FieldBlock>
+                      <FieldBlock
+                        label={localeText(locale, "活动结束时间", "Event End Time")}
+                        hint={localeText(
+                          locale,
+                          "用于形成完整活动时间范围，便于后续通知、详情和回溯展示。",
+                          "This completes the activity time range for notices, details, and historical review."
+                        )}
+                      >
+                        <input
+                          className="rounded-2xl border border-white/70 bg-mist px-4 py-3 text-sm outline-none transition focus:border-moss"
+                          type="datetime-local"
+                          value={activityForm.eventEndTime}
+                          onChange={(event) =>
+                            setActivityForm((current) => ({
+                              ...current,
+                              eventEndTime: event.target.value
+                            }))
+                          }
+                        />
+                      </FieldBlock>
                     </div>
                   </div>
                 ) : null}
@@ -577,45 +688,72 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
               {selectedActivity?.title ||
                 localeText(locale, "请先选择左侧活动", "Select an activity from the left")}
             </p>
-            <div className="mt-4 grid gap-3">
-              <input
-                className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                value={ticketForm.name}
-                onChange={(event) =>
-                  setTicketForm((current) => ({
-                    ...current,
-                    name: event.target.value
-                  }))
-                }
-                placeholder={localeText(locale, "新增票种名称", "New ticket type")}
-              />
-              <div className="grid gap-3 sm:grid-cols-2">
+            <div className="mt-4 grid gap-4">
+              <FieldBlock
+                label={localeText(locale, "新增票种名称", "New Ticket Type")}
+                hint={localeText(
+                  locale,
+                  "只有确实需要分档售卖时再新增票种，名称会直接展示在学生端。",
+                  "Add another ticket type only when you really need tiered sales. The name is shown directly to students."
+                )}
+              >
                 <input
                   className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="number"
-                  min={1}
-                  value={ticketForm.stock}
+                  value={ticketForm.name}
                   onChange={(event) =>
                     setTicketForm((current) => ({
                       ...current,
-                      stock: Number(event.target.value)
+                      name: event.target.value
                     }))
                   }
-                  placeholder={localeText(locale, "库存", "Stock")}
+                  placeholder={localeText(locale, "新增票种名称", "New ticket type")}
                 />
-                <input
-                  className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                  type="number"
-                  min={0}
-                  value={ticketForm.priceCents}
-                  onChange={(event) =>
-                    setTicketForm((current) => ({
-                      ...current,
-                      priceCents: Number(event.target.value)
-                    }))
-                  }
-                  placeholder={localeText(locale, "价格分", "Price in cents")}
-                />
+              </FieldBlock>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FieldBlock
+                  label={localeText(locale, "库存", "Stock")}
+                  hint={localeText(
+                    locale,
+                    "库存表示这个票种最多还能售卖多少张，不应超过实际可分配额度。",
+                    "Stock is the maximum number of tickets this type can still sell and should not exceed the real allocatable quota."
+                  )}
+                >
+                  <input
+                    className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                    type="number"
+                    min={1}
+                    value={ticketForm.stock}
+                    onChange={(event) =>
+                      setTicketForm((current) => ({
+                        ...current,
+                        stock: Number(event.target.value)
+                      }))
+                    }
+                    placeholder={localeText(locale, "库存", "Stock")}
+                  />
+                </FieldBlock>
+                <FieldBlock
+                  label={localeText(locale, "票价（分）", "Ticket Price (cents)")}
+                  hint={localeText(
+                    locale,
+                    "价格字段统一用分存储，`0` 代表免费票。",
+                    "Ticket prices are stored in cents, and `0` means the ticket is free."
+                  )}
+                >
+                  <input
+                    className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
+                    type="number"
+                    min={0}
+                    value={ticketForm.priceCents}
+                    onChange={(event) =>
+                      setTicketForm((current) => ({
+                        ...current,
+                        priceCents: Number(event.target.value)
+                      }))
+                    }
+                    placeholder={localeText(locale, "价格分", "Price in cents")}
+                  />
+                </FieldBlock>
               </div>
             </div>
             <MutationState
@@ -673,5 +811,25 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
         </div>
       </div>
     </PageSection>
+  );
+}
+
+function FieldBlock({
+  label,
+  hint,
+  children
+}: {
+  label: string;
+  hint: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="grid gap-2">
+      <div>
+        <p className="text-sm font-medium text-ink">{label}</p>
+        <p className="mt-1 text-xs leading-6 text-slate">{hint}</p>
+      </div>
+      {children}
+    </div>
   );
 }
