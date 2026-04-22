@@ -169,8 +169,9 @@
 
 #### `ACT-001` 强化 `totalQuota` 约束
 
-- 创建/更新活动时校验：
-  - `totalQuota >= sum(ticket.stock)` 或明确规定 `totalQuota == sum(ticket.stock)`
+- 创建/更新活动时强制校验：
+  - `totalQuota == sum(ticket.stock)`
+- 不再保留 `totalQuota >= sum(ticket.stock)` 的双口径解释。
 - 报名与展示都以统一口径计算剩余容量。
 - 管理端保存活动时必须实时提示额度不一致。
 

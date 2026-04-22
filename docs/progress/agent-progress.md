@@ -6,6 +6,35 @@
 
 ### 已完成
 
+- 已根据方案对齐 review 再次补齐主计划中的三个剩余缺口：
+  - 为 `COMP-005` 增加前置 `Guardrail-0`，先保护当前已命中的学术缓冲、体育 slot/组合和活动唯一性
+  - 把 `COMP-005` 从“核心样例测试”扩大为“真实交付门槛”，补入 `judge-up` 幂等、worker / delayed job / 库存恢复失效发现、smoke 覆盖学术 / 体育 / 规则命中
+  - 冻结 `totalQuota` 规则为 `totalQuota == sum(ticket.stock)`，不再保留双口径
+- 已新增 ADR，记录活动总额度的最终业务决策：
+  - `docs/adr/0020-activity-totalquota-must-equal-ticket-stock-sum.md`
+- 已同步更新：
+  - `docs/plans/competition-gap-closure-plan-2026-04-22.md`
+  - `docs/plans/feature-list.json`
+  - `docs/review/2026-04-22-pdf-requirement-improvement-plan.md`
+
+### 当前状态
+
+- 当前主计划已覆盖主要改动需求，并与最终验收问题、测试计划、PDF 整改计划在主线上完成对齐。
+- 现阶段剩余的不再是“文档是否收口”，而是按既定顺序开始真实开发与验证。
+
+### 下一步建议
+
+1. 先按 `Guardrail-0` 落保护性回归，避免后续业务整改把现有强项改坏
+2. 再开始 `COMP-001`，唤醒付费活动票待支付主链路
+3. 随后进入 `COMP-002` 与 `COMP-006`，分别收口幽灵支付和活动库存一致性
+
+### 注意事项
+
+- 本轮只继续补 plan 对齐，没有修改业务代码、数据库 schema 或部署脚本
+- 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
+
+### 已完成
+
 - 已把最近 4 次 `docs` 提交里的比赛整改方案正式收束为单一主 backlog：
   - `docs/plans/competition-gap-closure-plan-2026-04-22.md`
 - 已新增 ADR，明确为什么后续只保留一份主执行计划，以及为什么新增单独的库存整改任务：
