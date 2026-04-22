@@ -6,6 +6,11 @@
 
 ### 已完成
 
+- 已继续收口 demo 文档开头说明语句：
+  - `docs/demo/business-flow-diagram.md`
+  - `docs/demo/database-er-diagram.md`
+  - `docs/demo/product-architecture.md`
+  - 已删除这三份文档开头的“本文只…… / 本文面向……”说明语句，统一直接进入正文
 - 已微调 demo 架构图文案：
   - `docs/demo/core-architecture-diagram.md`
   - 已删除“本文只展示当前仓库已经实现的运行时架构，不展开开发过程。”这句说明，保持评审材料更直接
