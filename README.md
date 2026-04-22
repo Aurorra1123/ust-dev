@@ -137,3 +137,37 @@ pnpm dev:web
 - [docs/core-architecture-diagram.md](docs/core-architecture-diagram.md)：核心架构图
 - [docs/business-flow-diagram.md](docs/business-flow-diagram.md)：业务流程图
 - [docs/database-er-diagram.md](docs/database-er-diagram.md)：数据库 ER 图
+
+## AST 圈复杂度记录
+
+基于 `2026-04-22` 的一轮 AST 扫描，本仓库已完成一次面向高复杂度页面、预约面板和后端核心服务函数的复杂度治理。
+
+本轮计划内已完成收口的热点包括：
+
+- `ResourcesWorkspace`
+- `OrderDetailPage`
+- `ActivitiesWorkspace`
+- `ActivitiesPage`
+- `RulesEditorPanel`
+- `SpacesBookingPanel`
+- `SportsBookingPanel`
+- `ReservationService.createSportsReservation`
+- `OrdersService.transitionOrder`
+- `normalizeActivityTimeline`
+
+最终 AST 汇总结果：
+
+- `analyzedFiles = 162`
+- `analyzedFunctions = 1278`
+- `over10 = 36`
+- `over15 = 15`
+- `over20 = 5`
+- `over30 = 1`
+
+当前剩余 `>20` 热点：
+
+1. `RulesWorkspace` `38`
+2. `SpacesPage` `28`
+3. `SportsPage` `27`
+4. `NotificationsWorkspace` `24`
+5. `toOrderDetail` `21`
