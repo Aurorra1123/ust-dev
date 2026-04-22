@@ -6,6 +6,20 @@
 
 ### 已完成
 
+- 已修复首页 / 登录页顶部重复登录入口问题：
+  - `apps/web/src/ui/app-shell.tsx`
+  - 未登录状态下不再同时显示“导航里的登录入口”和“右上角登录按钮”
+  - 当前保留右上角主按钮，匿名态顶部导航为空时不再渲染导航容器
+- 已完成本轮前端校验与线上热更新：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - 已备份当前 `web` 容器静态目录到 `/tmp/infra-web-html-backup-20260422-2`
+  - 已执行 `docker cp apps/web/dist/. infra-web-1:/usr/share/nginx/html/`
+  - `https://campusbook.top` 当前已返回新 bundle `index-Cx2yqS3m.js`
+  - `https://api.campusbook.top/health` 继续返回 `200`
+- 已新增本轮留证：
+  - `docs/verification/2026-04-22/qa-013-remove-duplicate-login-entry.md`
 - 已按低负载热刷新方式把线上网页端切到当前最新前端产物：
   - 本地 `apps/web/dist/index.html` 引用 `index-vV6iQsm-.js`
   - 线上更新前 `https://campusbook.top` 仍返回旧 bundle `index-euDLdD1b.js`

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { logout, refreshSession } from "../lib/api/auth-api";
-import { isEnglishLocale, localeText } from "../lib/locale";
+import { localeText } from "../lib/locale";
 import { useLocaleStore } from "../store/locale-store";
 import { useSessionStore } from "../store/session-store";
 
@@ -14,7 +14,6 @@ export function AppShell() {
   const locale = useLocaleStore((state) => state.locale);
   const setLocale = useLocaleStore((state) => state.setLocale);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const isEnglish = isEnglishLocale(locale);
 
   useEffect(() => {
     if (sessionStatus !== "unknown") {
@@ -44,7 +43,7 @@ export function AppShell() {
     }
 
     if (sessionStatus !== "authenticated") {
-      return [{ label: isEnglish ? "Sign In" : "登录入口", to: "/login" }];
+      return [];
     }
 
     return [
@@ -58,7 +57,7 @@ export function AppShell() {
       },
       { label: localeText(locale, "我的订单", "Orders"), to: "/orders" }
     ];
-  }, [isEnglish, locale, sessionStatus, user?.role]);
+  }, [locale, sessionStatus, user?.role]);
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -138,32 +137,34 @@ export function AppShell() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">
-          <nav
-            className="flex gap-2 overflow-x-auto"
-            aria-label={localeText(locale, "主导航", "Primary navigation")}
-          >
-            {navigationItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={
-                  item.to === "/" || item.to === "/orders"
-                }
-                className={({ isActive }) =>
-                  [
-                    "whitespace-nowrap rounded-full border px-4 py-2 text-sm transition",
-                    isActive
-                      ? "border-ember bg-ember text-white"
-                      : "border-navy/10 bg-sand text-ink hover:border-moss"
-                  ].join(" ")
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
+        {navigationItems.length > 0 ? (
+          <div className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">
+            <nav
+              className="flex gap-2 overflow-x-auto"
+              aria-label={localeText(locale, "主导航", "Primary navigation")}
+            >
+              {navigationItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={
+                    item.to === "/" || item.to === "/orders"
+                  }
+                  className={({ isActive }) =>
+                    [
+                      "whitespace-nowrap rounded-full border px-4 py-2 text-sm transition",
+                      isActive
+                        ? "border-ember bg-ember text-white"
+                        : "border-navy/10 bg-sand text-ink hover:border-moss"
+                    ].join(" ")
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
+        ) : null}
       </header>
 
       <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
