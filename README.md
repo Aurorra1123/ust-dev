@@ -4,10 +4,7 @@
 
 ## 在线体验
 
-- 学生端：[https://campusbook.top/](https://campusbook.top/)
-- 管理端：[https://campusbook.top/admin](https://campusbook.top/admin)
-- API 健康检查：[https://api.campusbook.top/health](https://api.campusbook.top/health)
-
+- [https://campusbook.top/](https://campusbook.top/)
 建议先用学生账号体验预约、活动和订单流程，再用管理员账号查看后台工作台。
 
 ## 项目简介
