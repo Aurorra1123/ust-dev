@@ -6,6 +6,10 @@
 
 ### 已完成
 
+- 已将 AST 圈复杂度治理结果同步写入根 `README.md`：
+  - 已新增“AST 圈复杂度记录”章节
+  - 已写入最终 AST 汇总指标、计划内已收口热点、当前剩余 `>20` 热点
+  - 已链接到 `docs/verification/2026-04-22/qa-017-cyclomatic-final-ast-report.md`
 - 已完成圈复杂度治理第一批前端拆分并通过校验：
   - 留证文档：`docs/verification/2026-04-22/qa-014-cyclomatic-batch-1-frontend-refactor.md`
   - 已拆分 `OrderDetailPage / ActivitiesPage / ActivitiesWorkspace / ResourcesWorkspace / ResourcesCatalogPanel / RulesEditorPanel`
