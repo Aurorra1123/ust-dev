@@ -17,7 +17,7 @@
     "judge:up": "bash scripts/judge-up.sh",
     "smoke:judge": "node scripts/smoke-judge.mjs",
     "smoke:live": "node scripts/smoke-live.mjs",
-    "verify:comp-004": "node scripts/comp-004-audit.mjs",
+    "verify:comp-004": "pnpm --filter web test:quality",
     "tls:renew": "bash scripts/renew-https-certs.sh",
     "tls:renew:dry-run": "bash scripts/renew-https-certs.sh --dry-run"
   },

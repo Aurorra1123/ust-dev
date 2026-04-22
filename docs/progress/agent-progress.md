@@ -11,7 +11,7 @@
   - `docs/architecture/rules-engine-answer-sheet-2026-04-22.md`
   - `docs/verification/2026-04-22/qa-010-frontend-quality-evidence.md`
 - 已补充前端质量留证：
-  - 运行 `node scripts/comp-004-audit.mjs`
+  - 运行 `pnpm --filter web test:quality`
   - 审计结果为 `status: ok`
   - 已把源码审计结果与本轮分包结果整理进 `QA-010`
 - 已更新架构文档索引：
@@ -144,7 +144,7 @@
   - `docs/adr/0024-share-api-bootstrap-and-minimal-web-csp-baseline.md`
   - `docs/verification/2026-04-22/qa-006-comp-004-frontend-a11y-security.md`
 - 已新增 `COMP-004` 轻量审计与安全头回归：
-  - `scripts/comp-004-audit.mjs`
+  - `apps/web/test/comp-004-audit.mjs`
   - `apps/api/test/comp-004-security-headers.test.ts`
 
 - 已完成 `COMP-003`，把规则系统升级为强类型 handler registry：

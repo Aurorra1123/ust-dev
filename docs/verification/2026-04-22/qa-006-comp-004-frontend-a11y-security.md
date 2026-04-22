@@ -29,7 +29,7 @@
   - `infra/docker/web-default.conf`
 - 新增验证入口：
   - `apps/api/test/comp-004-security-headers.test.ts`
-  - `scripts/comp-004-audit.mjs`
+  - `apps/web/test/comp-004-audit.mjs`
 
 ## 关键行为
 

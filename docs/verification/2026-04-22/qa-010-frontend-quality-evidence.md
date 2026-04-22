@@ -14,7 +14,7 @@
 pnpm --filter web typecheck
 pnpm --filter web build
 pnpm --filter api typecheck
-node scripts/comp-004-audit.mjs
+pnpm --filter web test:quality
 ```
 
 ## 验证结果
@@ -51,7 +51,7 @@ dist/assets/index-*.js                   276.80 kB
 
 ### 3. 源码审计结果
 
-`node scripts/comp-004-audit.mjs` 输出：
+`pnpm --filter web test:quality` 输出：
 
 ```json
 {

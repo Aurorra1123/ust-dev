@@ -195,7 +195,7 @@
 
 #### 关键触点
 
-- `scripts/comp-004-audit.mjs`
+- `apps/web/test/comp-004-audit.mjs`
 - `docs/verification/2026-04-22/`
 
 #### 完成标准

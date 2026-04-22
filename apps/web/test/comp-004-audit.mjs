@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 const checks = [
   {
@@ -12,7 +15,7 @@ const checks = [
   {
     id: "a11y-skip-link",
     file: "apps/web/src/ui/app-shell.tsx",
-    includes: ['href="#main-content"', 'Primary navigation', 'aria-pressed={locale === "zh-CN"}']
+    includes: ['href="#main-content"', "Primary navigation", 'aria-pressed={locale === "zh-CN"}']
   },
   {
     id: "a11y-state-panel-live-region",
@@ -66,7 +69,7 @@ const checks = [
 ];
 
 function read(relativePath) {
-  return readFileSync(join(process.cwd(), relativePath), "utf8");
+  return readFileSync(join(repoRoot, relativePath), "utf8");
 }
 
 function auditSourceChecks() {
@@ -84,7 +87,7 @@ function auditSourceChecks() {
 }
 
 function auditBuildArtifacts() {
-  const distRoot = join(process.cwd(), "apps/web/dist");
+  const distRoot = join(repoRoot, "apps/web/dist");
   const assetsRoot = join(distRoot, "assets");
   const htmlPath = join(distRoot, "index.html");
   const htmlSizeBytes = statSync(htmlPath).size;
