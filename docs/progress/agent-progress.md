@@ -6,6 +6,11 @@
 
 ### 已完成
 
+- 已新增面向评委提交口径的正式说明文档目录与文档：
+  - `docs/demo/README.md`
+  - `docs/demo/competition-architecture-and-product-report-2026-04-22.md`
+  - 文档已按评委阅读场景重写语气，收口为“项目概述 / 产品设计 / 核心业务 / 架构设计 / 数据建模 / 高并发与一致性 / 状态机 / 前端体验 / 工程化 / 当前完成情况 / 总结”结构
+  - 本轮仅新增文档与进度记录，未修改业务代码、数据库 schema 或部署脚本
 - 已完成 demo 认证暴露面收口与学术缓冲统一，并记录 ADR：
   - `docs/adr/0028-lock-demo-auth-surface-and-unify-academic-buffer.md`
   - 前端运行时 `config.js` 不再下发学生/管理员密码，只保留演示邮箱
