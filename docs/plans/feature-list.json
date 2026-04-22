@@ -739,5 +739,17 @@
       "judge smoke 或等价验收脚本包含“红鸟音乐节 5 元普通票”从待支付到支付确认的完整样例"
     ],
     "passes": false
+  },
+  {
+    "id": "COMP-006",
+    "category": "activity",
+    "priority": "P0",
+    "description": "补齐活动库存一致性、Redis 补偿自愈与 totalQuota 口径收口",
+    "acceptance": [
+      "创建或更新活动时会对 totalQuota 与票种库存关系做强校验，系统只保留一种明确口径",
+      "Redis 预扣与补偿具备归属校验、冷恢复与异常回查能力，不再依赖无主回补",
+      "存在多用户超库存抢票、Redis key 丢失或 worker 中断等场景下仍不超卖的验证证据"
+    ],
+    "passes": false
   }
 ]

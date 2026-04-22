@@ -3,45 +3,45 @@
 本文件用于跨会话交接，任何一次较完整的工作结束前都应更新。
 
 ## 2026-04-22
+
 ### 已完成
 
-- 已新增“面向比赛 PDF 要求的整改计划”文档：
-  - `docs/review/2026-04-22-pdf-requirement-improvement-plan.md`
-- 新文档已把以下输入收口为一份执行计划：
-  - 比赛 PDF 硬要求
-  - 核心偏题审查
-  - 最终验收与模拟打分
-  - 当前实现审计
-  - 测试自动化计划
-- 整改计划已明确分阶段顺序：
-  - `Phase 0` 保住当前已做对的数据库约束与强项
-  - `Phase 1` 优先补订单状态机、`PENDING_CONFIRMATION`、`PaymentRecord`、幽灵支付
-  - `Phase 2` 修补活动高并发库存一致性与 `totalQuota`
-  - `Phase 3` 将规则执行器提升为责任链并接入处罚闭环
-  - `Phase 4` 补前端响应式、`WCAG 2.2`、`Core Web Vitals` 证据
-  - `Phase 5` 补真实测试、CI、judge 与验证留证
-  - `Phase 6` 收口答辩与演示表达
+- 已把最近 4 次 `docs` 提交里的比赛整改方案正式收束为单一主 backlog：
+  - `docs/plans/competition-gap-closure-plan-2026-04-22.md`
+- 已新增 ADR，明确为什么后续只保留一份主执行计划，以及为什么新增单独的库存整改任务：
+  - `docs/adr/0019-unify-competition-remediation-backlog-into-six-work-packages.md`
+- 已在 `feature-list.json` 中补入遗漏的活动库存一致性任务：
+  - `COMP-006`
+- 已明确文档角色分工：
+  - `core-topic review` 与 `final acceptance` 负责问题输入
+  - `test automation plan` 负责验证矩阵输入
+  - `pdf requirement improvement plan` 负责 PDF 硬要求展开说明
+  - `competition gap closure plan` 作为唯一执行 backlog
+- 已明确最终 6 个不重叠工作包与执行顺序：
+  - `COMP-001`
+  - `COMP-002`
+  - `COMP-006`
+  - `COMP-003`
+  - `COMP-004`
+  - `COMP-005`
 
 ### 当前状态
 
-- `docs/review/` 目录现在已同时包含：
-  - 赛题核心偏题审查
-  - 最终验收与模拟打分
-  - 测试自动化计划
-  - 面向比赛 PDF 要求的整改计划
-- 当前这份整改计划仍是文档层交付，尚未开始业务代码整改
+- 仓库中的比赛整改文档不再存在“多份 plan 并行充当 backlog”的歧义。
+- 活动库存一致性、`totalQuota` 与 Redis 补偿自愈不再夹在支付或测试任务里，而是正式成为独立开发包。
+- 当前仍停留在文档收束阶段，尚未开始业务代码整改。
 
 ### 下一步建议
 
-1. 按整改计划先落 `Phase 1`，优先补订单真实 pending 主链路与幽灵支付
-2. 并行补 `Phase 2` 的活动库存一致性，避免继续在高并发项失分
-3. 代码开始落地后，同步把第一批验证结果写入 `docs/verification/`
+1. 先落 `COMP-001`，把付费活动票待支付主链路真正唤醒
+2. 再落 `COMP-002`，补齐幽灵支付对撞、幂等与补偿闭环
+3. 紧接着补 `COMP-006`，避免活动库存一致性继续以“附带问题”形式被拖延
 
 ### 注意事项
 
-- 本轮只新增整改计划文档并更新进度记录，没有修改业务代码、数据库 schema 或部署脚本
+- 本轮只修改计划文档、ADR、任务清单与进度记录，没有修改业务代码、数据库 schema 或部署脚本
+- 为避免重写历史记录，本轮保留了 `COMP-001` ~ `COMP-005` 既有语义，仅新增 `COMP-006`
 - 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
-
 
 ### 已完成
 
