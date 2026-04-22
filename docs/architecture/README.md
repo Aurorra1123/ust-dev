@@ -9,6 +9,7 @@
 - `pux-009-student-frontend-prototype.md`：学生端前端原型专项需求稿
 - `admin-frontend-restructure-plan-2026-04-21.md`：管理员前端一级模块重组与资源工作区拆分方案
 - `admin-overview-and-rule-center-simplification-plan-2026-04-22.md`：管理员运营总揽轻量化与规则中心恢复拆分方案
+- `admin-form-simplification-plan-2026-04-22.md`：管理员端资源、规则与活动表单的收口方案
 - `domain-model-baseline.md`：当前正式领域模型入口
 - `admin-resource-reservation-boundary-refactor.md`：后台、前端 API 与资源预约后端边界拆分蓝图
 - `technical-solution-v1.md`：归档版首版技术方案
@@ -26,12 +27,13 @@
 3. `pux-009-student-frontend-prototype.md`
 4. `admin-frontend-restructure-plan-2026-04-21.md`
 5. `admin-overview-and-rule-center-simplification-plan-2026-04-22.md`
-6. `domain-model-baseline.md`
-7. `technical-solution-v2.md`
-8. `architecture-diagrams.md`
-9. `current-implementation-audit-2026-04-21.md`
-10. `code-quality-review-and-refactor-baseline-2026-04-21.md`
-11. `architecture-and-product-report-2026-04-21.md`
-12. `admin-resource-reservation-boundary-refactor.md`
-13. `development-environment-audit-2026-04-16.md`
-14. `technical-solution-v1.md`
+6. `admin-form-simplification-plan-2026-04-22.md`
+7. `domain-model-baseline.md`
+8. `technical-solution-v2.md`
+9. `architecture-diagrams.md`
+10. `current-implementation-audit-2026-04-21.md`
+11. `code-quality-review-and-refactor-baseline-2026-04-21.md`
+12. `architecture-and-product-report-2026-04-21.md`
+13. `admin-resource-reservation-boundary-refactor.md`
+14. `development-environment-audit-2026-04-16.md`
+15. `technical-solution-v1.md`

@@ -654,5 +654,29 @@
       "规则页删除第三列概览和说明面板，页面结构收口为规则列表加规则编辑两栏"
     ],
     "passes": true
+  },
+  {
+    "id": "ADM-008",
+    "category": "frontend",
+    "priority": "P1",
+    "description": "为体育场馆与学术空间页补齐资源与资源单元的基础 CRUD 缺口，并把关键字段提示从 placeholder 升级为常驻说明",
+    "acceptance": [
+      "管理员可以编辑资源基础信息，而不只是创建、启停和删除资源",
+      "资源单元具备明确的编辑能力，不再长期停留在只能新增和删除的半完成状态",
+      "资源与资源单元表单中的 code、name、location、unitType、availabilityMode、capacity 等关键字段存在常驻说明，管理员无需清空输入框才能理解填写要求"
+    ],
+    "passes": false
+  },
+  {
+    "id": "ADM-009",
+    "category": "productization",
+    "priority": "P2",
+    "description": "继续轻量收口活动管理页的创建表单，在不改变核心票务链路的前提下强化首屏理解与字段说明",
+    "acceptance": [
+      "新增活动首屏只突出标题、地点、总额度等高频字段，低频配置继续保留在可选展开区",
+      "售卖时间、活动时间、总额度和票种价格等关键字段存在常驻说明，不再只依赖 placeholder",
+      "自定义首票和进阶设置继续采用折叠展开方式，不重新把活动创建页拉回重表单状态"
+    ],
+    "passes": false
   }
 ]
