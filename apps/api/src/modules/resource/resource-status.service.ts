@@ -18,6 +18,8 @@ import {
   getOverlappingClosures
 } from "./resource-channel";
 
+const ACADEMIC_BUFFER_MINUTES = 5;
+
 @Injectable()
 export class ResourceStatusService {
   constructor(private readonly prismaService: PrismaService) {}
@@ -147,10 +149,10 @@ export class ResourceStatusService {
       where: {
         resourceId,
         endTime: {
-          gt: from
+          gt: addMinutes(from, -ACADEMIC_BUFFER_MINUTES)
         },
         startTime: {
-          lt: to
+          lt: addMinutes(to, ACADEMIC_BUFFER_MINUTES)
         },
         status: {
           in: [OrderStatus.PENDING_CONFIRMATION, OrderStatus.CONFIRMED, OrderStatus.NO_SHOW]
@@ -231,4 +233,8 @@ function addDays(value: Date, days: number) {
     value.getSeconds(),
     value.getMilliseconds()
   );
+}
+
+function addMinutes(value: Date, minutes: number) {
+  return new Date(value.getTime() + minutes * 60 * 1000);
 }

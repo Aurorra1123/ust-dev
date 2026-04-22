@@ -41,8 +41,8 @@ function PublicHome() {
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate">
           {localeText(
             locale,
-            "从主页面直接选择学生或教师入口，系统会自动带入对应 demo 账号，便于课堂演示与联调。",
-            "Choose the student or teacher entry from the landing page to fill the matching demo credentials for class demos and integration."
+            "从主页面直接选择学生或教师入口，系统会自动带入对应演示邮箱，便于课堂演示与联调。",
+            "Choose the student or teacher entry from the landing page to fill the matching demo email for class demos and integration."
           )}
         </p>
 

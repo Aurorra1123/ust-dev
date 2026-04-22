@@ -9,6 +9,7 @@ import type {
   INestApplicationContext,
   Type
 } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
 import { NestFactory } from "@nestjs/core";
 import {
   ActivityStatus,
@@ -41,6 +42,9 @@ const TEST_DEMO_USER_EMAIL =
   process.env.GUARDRAIL_DEMO_USER_EMAIL ?? "demo@campusbook.top";
 const TEST_DEMO_USER_PASSWORD =
   process.env.GUARDRAIL_DEMO_USER_PASSWORD ?? "demo123456";
+const TEST_DEMO_STUDENT_EMAIL_WHITELIST =
+  process.env.GUARDRAIL_DEMO_STUDENT_EMAIL_WHITELIST ??
+  "demo@campusbook.top,partner1@campusbook.top,partner2@campusbook.top";
 const TEST_DEMO_ADMIN_EMAIL =
   process.env.GUARDRAIL_DEMO_ADMIN_EMAIL ?? "admin@campusbook.top";
 const TEST_DEMO_ADMIN_PASSWORD =
@@ -61,6 +65,7 @@ export interface IntegrationHarness {
   login(email: string, password?: string): Promise<string>;
   loginDemoStudent(): Promise<string>;
   loginDemoAdmin(): Promise<string>;
+  issueAccessTokenForUser(email: string): Promise<string>;
   createStudentUsers(prefix: string, count: number): Promise<string[]>;
   createPublishedActivityWithTicket(params: {
     title: string;
@@ -107,6 +112,7 @@ export async function createIntegrationHarness(
   ]);
 
   const prisma = new PrismaClient();
+  const jwtService = new JwtService();
   const activityQueue = new Queue(ACTIVITY_REGISTRATION_QUEUE_NAME, {
     connection: createBullmqConnection(TEST_REDIS_URL)
   });
@@ -262,6 +268,35 @@ export async function createIntegrationHarness(
     return emails;
   }
 
+  async function issueAccessTokenForUser(email: string) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true
+      }
+    });
+
+    if (!user || user.status !== UserStatus.ACTIVE) {
+      throw new Error(`issue-access-token-user-not-active:${email}`);
+    }
+
+    return jwtService.signAsync(
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role === UserRole.ADMIN ? "admin" : "student",
+        tokenType: "access"
+      },
+      {
+        secret: TEST_ACCESS_SECRET,
+        expiresIn: 15 * 60
+      }
+    );
+  }
+
   async function createPublishedActivityWithTicket(params: {
     title: string;
     stock: number;
@@ -311,6 +346,7 @@ export async function createIntegrationHarness(
     login,
     loginDemoStudent: () => login(TEST_DEMO_USER_EMAIL, TEST_DEMO_USER_PASSWORD),
     loginDemoAdmin: () => login(TEST_DEMO_ADMIN_EMAIL, TEST_DEMO_ADMIN_PASSWORD),
+    issueAccessTokenForUser,
     createStudentUsers,
     createPublishedActivityWithTicket,
     getApiService: (token) => apiApp.get(token as never),
@@ -359,6 +395,7 @@ function applyTestEnvironment() {
   process.env.ORDER_PENDING_EXPIRE_SECONDS = "120";
   process.env.DEMO_USER_EMAIL = TEST_DEMO_USER_EMAIL;
   process.env.DEMO_USER_PASSWORD = TEST_DEMO_USER_PASSWORD;
+  process.env.DEMO_STUDENT_EMAIL_WHITELIST = TEST_DEMO_STUDENT_EMAIL_WHITELIST;
   process.env.DEMO_USER_ROLE = "student";
   process.env.DEMO_ADMIN_EMAIL = TEST_DEMO_ADMIN_EMAIL;
   process.env.DEMO_ADMIN_PASSWORD = TEST_DEMO_ADMIN_PASSWORD;
@@ -395,6 +432,7 @@ function runApiCommand(args: string[]) {
       ORDER_PENDING_EXPIRE_SECONDS: "120",
       DEMO_USER_EMAIL: TEST_DEMO_USER_EMAIL,
       DEMO_USER_PASSWORD: TEST_DEMO_USER_PASSWORD,
+      DEMO_STUDENT_EMAIL_WHITELIST: TEST_DEMO_STUDENT_EMAIL_WHITELIST,
       DEMO_USER_ROLE: "student",
       DEMO_ADMIN_EMAIL: TEST_DEMO_ADMIN_EMAIL,
       DEMO_ADMIN_PASSWORD: TEST_DEMO_ADMIN_PASSWORD,

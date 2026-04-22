@@ -635,6 +635,12 @@ function toOrderDetail(order: OrderWithRelations): OrderDetailResponse {
   const checkInWindow = reservationStartTime
     ? buildReservationCheckInWindow(reservationStartTime)
     : null;
+  const academicBufferBeforeMin = order.academicReservation
+    ? normalizeAcademicBufferMinutes(order.academicReservation.bufferBeforeMin)
+    : 0;
+  const academicBufferAfterMin = order.academicReservation
+    ? normalizeAcademicBufferMinutes(order.academicReservation.bufferAfterMin)
+    : 0;
 
   return {
     id: order.id,
@@ -661,8 +667,12 @@ function toOrderDetail(order: OrderWithRelations): OrderDetailResponse {
       slotCount: item.slotCount,
       startTime: item.startTime?.toISOString() ?? null,
       endTime: item.endTime?.toISOString() ?? null,
-      bufferBeforeMin: item.bufferBeforeMin,
-      bufferAfterMin: item.bufferAfterMin,
+      bufferBeforeMin: order.academicReservation
+        ? academicBufferBeforeMin
+        : item.bufferBeforeMin,
+      bufferAfterMin: order.academicReservation
+        ? academicBufferAfterMin
+        : item.bufferAfterMin,
       unitPriceCents: item.unitPriceCents,
       resourceName: item.resource?.name ?? null,
       resourceUnitName: item.resourceUnit?.name ?? null,
@@ -700,8 +710,8 @@ function toOrderDetail(order: OrderWithRelations): OrderDetailResponse {
           resourceUnitName: order.academicReservation.resourceUnit.name,
           startTime: order.academicReservation.startTime.toISOString(),
           endTime: order.academicReservation.endTime.toISOString(),
-          bufferBeforeMin: order.academicReservation.bufferBeforeMin,
-          bufferAfterMin: order.academicReservation.bufferAfterMin,
+          bufferBeforeMin: academicBufferBeforeMin,
+          bufferAfterMin: academicBufferAfterMin,
           status: mapPrismaOrderStatus(order.academicReservation.status)
         }
       : null,
@@ -726,6 +736,10 @@ function toOrderDetail(order: OrderWithRelations): OrderDetailResponse {
         }
       : null
   };
+}
+
+function normalizeAcademicBufferMinutes(value: number) {
+  return Math.max(value, 5);
 }
 
 function mapPrismaOrderStatus(

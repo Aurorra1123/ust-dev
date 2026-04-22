@@ -44,6 +44,10 @@ class EnvironmentVariables {
   @IsNotEmpty()
   DEMO_USER_PASSWORD!: string;
 
+  @IsOptional()
+  @IsString()
+  DEMO_STUDENT_EMAIL_WHITELIST?: string;
+
   @IsIn(["student", "admin"])
   DEMO_USER_ROLE!: "student" | "admin";
 

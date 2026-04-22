@@ -65,10 +65,18 @@ bash scripts/judge-up.sh
 http://服务器IP:8080
 ```
 
-默认演示账号：
+默认 judge 演示账号：
 
 - 学生：`demo@campusbook.top / demo123456`
 - 管理员：`admin@campusbook.top / admin123456`
+- 辅助学生：`partner1@campusbook.top / demo123456`
+- 辅助学生：`partner2@campusbook.top / demo123456`
+
+说明：
+
+- 以上是 judge 默认值，便于现场演示和测试
+- 前端快捷入口只会带入演示邮箱，不会在浏览器侧公开默认密码
+- 如部署到公网环境，必须覆盖这些默认密码
 
 ## 停止与清理
 

@@ -27,6 +27,20 @@ describe("Guardrail-0 API regressions", { concurrency: 1 }, () => {
     await harness.close();
   });
 
+  test("API-000 非白名单学生不能复用 demo 学生密码", async () => {
+    const [email] = await harness.createStudentUsers("guardrail-auth", 1);
+
+    const response = await harness.request("/auth/login", {
+      method: "POST",
+      body: {
+        email,
+        password: "demo123456"
+      }
+    });
+
+    assert.equal(response.status, 401);
+  });
+
   test("API-001 学术预约缓冲贴脸冲突应被拒绝", async () => {
     const demoToken = await harness.loginDemoStudent();
     const partnerToken = await harness.login("partner1@campusbook.top");
@@ -42,6 +56,24 @@ describe("Guardrail-0 API regressions", { concurrency: 1 }, () => {
     });
 
     assert.equal(initial.status, 201);
+    assert.equal((initial.payload as { bufferBeforeMin?: number })?.bufferBeforeMin, 5);
+    assert.equal((initial.payload as { bufferAfterMin?: number })?.bufferAfterMin, 5);
+
+    const orderDetail = await harness.request(`/orders/${(initial.payload as { orderId: string }).orderId}`, {
+      accessToken: demoToken
+    });
+
+    assert.equal(orderDetail.status, 200);
+    assert.equal(
+      (orderDetail.payload as { academicReservation?: { bufferBeforeMin?: number } })?.academicReservation
+        ?.bufferBeforeMin,
+      5
+    );
+    assert.equal(
+      (orderDetail.payload as { items?: Array<{ bufferBeforeMin?: number }> })?.items?.[0]
+        ?.bufferBeforeMin,
+      5
+    );
 
     const conflict = await harness.request("/reservations/academic", {
       method: "POST",
@@ -56,7 +88,7 @@ describe("Guardrail-0 API regressions", { concurrency: 1 }, () => {
     assert.equal(conflict.status, 409);
   });
 
-  test("API-002 学术预约缓冲精确边界应放行", async () => {
+  test("API-002 学术预约双向缓冲精确边界应放行", async () => {
     const demoToken = await harness.loginDemoStudent();
     const partnerToken = await harness.login("partner1@campusbook.top");
 
@@ -75,8 +107,8 @@ describe("Guardrail-0 API regressions", { concurrency: 1 }, () => {
       accessToken: partnerToken,
       body: {
         resourceUnitId: "unit_academic_demo",
-        startTime: "2030-05-11T11:05:00.000Z",
-        endTime: "2030-05-11T12:05:00.000Z"
+        startTime: "2030-05-11T11:10:00.000Z",
+        endTime: "2030-05-11T12:10:00.000Z"
       }
     });
 
@@ -307,7 +339,7 @@ describe("Guardrail-0 API regressions", { concurrency: 1 }, () => {
     });
     const emails = await harness.createStudentUsers("guardrail-oversell", 6);
     const accessTokens = await Promise.all(
-      emails.map((email) => harness.login(email))
+      emails.map((email) => harness.issueAccessTokenForUser(email))
     );
 
     const responses = await Promise.all(

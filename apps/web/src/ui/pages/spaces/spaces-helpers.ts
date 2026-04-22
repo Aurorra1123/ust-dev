@@ -83,8 +83,8 @@ export function getSelectionConflict(params: {
     rangesOverlap(
       selectedRange.start,
       selectedRange.end,
-      reservation.startTime,
-      reservation.endTime
+      toBufferedReservationStart(reservation).toISOString(),
+      toBufferedReservationEnd(reservation).toISOString()
     )
   );
 
@@ -94,8 +94,8 @@ export function getSelectionConflict(params: {
       title: localeText(locale, "所选时间与现有预约冲突", "Selected range conflicts"),
       description: localeText(
         locale,
-        `${selectedUnit.name} 在 ${formatDateTime(overlappingReservation.startTime)} 至 ${formatDateTime(overlappingReservation.endTime)} 已被占用。`,
-        `${selectedUnit.name} is already occupied from ${formatDateTime(overlappingReservation.startTime)} to ${formatDateTime(overlappingReservation.endTime)}.`
+        `${selectedUnit.name} 在 ${formatDateTime(overlappingReservation.startTime)} 至 ${formatDateTime(overlappingReservation.endTime)} 已被占用，系统还会额外计算前后缓冲时间。`,
+        `${selectedUnit.name} is already occupied from ${formatDateTime(overlappingReservation.startTime)} to ${formatDateTime(overlappingReservation.endTime)}, and the hidden buffer is also enforced.`
       )
     };
   }
@@ -119,6 +119,8 @@ export function buildTimelineSegments(params: {
     orderId: string;
     startTime: string;
     endTime: string;
+    bufferBeforeMin?: number;
+    bufferAfterMin?: number;
   }>;
   closures: Array<{
     startsAt: string;
@@ -151,8 +153,8 @@ export function buildTimelineSegments(params: {
   }
 
   for (const reservation of params.reservations) {
-    const reservationStart = new Date(reservation.startTime).getTime();
-    const reservationEnd = new Date(reservation.endTime).getTime();
+    const reservationStart = toBufferedReservationStart(reservation).getTime();
+    const reservationEnd = toBufferedReservationEnd(reservation).getTime();
     const segment = createTimelineSegment({
       start: reservationStart,
       end: reservationEnd,
@@ -298,4 +300,22 @@ function createTimelineSegment(params: {
     tone: params.tone,
     label: params.label
   };
+}
+
+function toBufferedReservationStart(reservation: {
+  startTime: string;
+  bufferBeforeMin?: number;
+}) {
+  return addMinutes(new Date(reservation.startTime), -(reservation.bufferBeforeMin ?? 0));
+}
+
+function toBufferedReservationEnd(reservation: {
+  endTime: string;
+  bufferAfterMin?: number;
+}) {
+  return addMinutes(new Date(reservation.endTime), reservation.bufferAfterMin ?? 0);
+}
+
+function addMinutes(value: Date, minutes: number) {
+  return new Date(value.getTime() + minutes * 60 * 1000);
 }

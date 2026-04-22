@@ -404,6 +404,8 @@ export interface AdminResourceReservationRecord {
   resourceUnitName: string;
   startTime: string;
   endTime: string;
+  bufferBeforeMin?: number;
+  bufferAfterMin?: number;
   participantCount: number;
   checkedInCount: number;
 }
@@ -415,6 +417,8 @@ export interface PublicResourceReservationRecord {
   resourceUnitName: string;
   startTime: string;
   endTime: string;
+  bufferBeforeMin?: number;
+  bufferAfterMin?: number;
   participantCount: number;
   checkedInCount: number;
 }

@@ -104,21 +104,27 @@ export class AuthService {
   }
 
   private async authenticateDemoUser(email: string, password: string) {
+    const demoStudentEmail = this.configService
+      .getOrThrow<string>("DEMO_USER_EMAIL")
+      .trim()
+      .toLowerCase();
+    const demoStudentPassword =
+      this.configService.getOrThrow<string>("DEMO_USER_PASSWORD");
+    const demoAdminEmail = this.configService
+      .getOrThrow<string>("DEMO_ADMIN_EMAIL")
+      .trim()
+      .toLowerCase();
+    const demoAdminPassword =
+      this.configService.getOrThrow<string>("DEMO_ADMIN_PASSWORD");
     const demoCredentials = [
       {
-        email: this.configService
-          .getOrThrow<string>("DEMO_USER_EMAIL")
-          .trim()
-          .toLowerCase(),
-        password: this.configService.getOrThrow<string>("DEMO_USER_PASSWORD"),
+        email: demoStudentEmail,
+        password: demoStudentPassword,
         role: this.configService.getOrThrow<SharedUserRole>("DEMO_USER_ROLE")
       },
       {
-        email: this.configService
-          .getOrThrow<string>("DEMO_ADMIN_EMAIL")
-          .trim()
-          .toLowerCase(),
-        password: this.configService.getOrThrow<string>("DEMO_ADMIN_PASSWORD"),
+        email: demoAdminEmail,
+        password: demoAdminPassword,
         role: "admin" as const
       }
     ];
@@ -129,11 +135,10 @@ export class AuthService {
     );
 
     if (!matchedCredential) {
-      const demoStudentPassword = this.configService.getOrThrow<string>(
-        "DEMO_USER_PASSWORD"
-      );
-
-      if (password === demoStudentPassword) {
+      if (
+        password === demoStudentPassword &&
+        this.getAllowedDemoStudentEmails().has(email)
+      ) {
         const existingStudent = await this.prismaService.user.findUnique({
           where: { email },
           select: {
@@ -160,6 +165,22 @@ export class AuthService {
       matchedCredential.email,
       matchedCredential.role
     );
+  }
+
+  private getAllowedDemoStudentEmails() {
+    const configuredEmails = this.configService
+      .get<string>("DEMO_STUDENT_EMAIL_WHITELIST")
+      ?.split(",")
+      .map((value) => value.trim().toLowerCase())
+      .filter((value) => value.length > 0);
+
+    return new Set([
+      this.configService
+        .getOrThrow<string>("DEMO_USER_EMAIL")
+        .trim()
+        .toLowerCase(),
+      ...(configuredEmails ?? [])
+    ]);
   }
 
   private async ensureDemoUser(email: string, role: SharedUserRole) {

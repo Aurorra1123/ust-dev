@@ -1,13 +1,12 @@
 export type RuntimeDemoAccount = {
   email?: string;
-  password?: string;
 };
 
 declare global {
   interface Window {
     __CAMPUSBOOK_CONFIG__?: {
       apiBaseUrl?: string;
-      demoCredentials?: {
+      demoAccounts?: {
         student?: RuntimeDemoAccount;
         admin?: RuntimeDemoAccount;
       };
@@ -33,17 +32,12 @@ export function getRuntimeApiBaseUrl() {
   return apiBaseUrl;
 }
 
-export function getRuntimeDemoAccount(role: "student" | "admin") {
-  const account = getRuntimeConfig()?.demoCredentials?.[role];
-  const email = account?.email?.trim();
-  const password = account?.password?.trim();
+export function getRuntimeDemoEmail(role: "student" | "admin") {
+  const email = getRuntimeConfig()?.demoAccounts?.[role]?.email?.trim();
 
-  if (!email || !password) {
+  if (!email) {
     return undefined;
   }
 
-  return {
-    email,
-    password
-  };
+  return email;
 }

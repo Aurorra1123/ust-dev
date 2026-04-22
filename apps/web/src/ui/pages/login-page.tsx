@@ -17,6 +17,13 @@ type LoginFormState = {
   password: string;
 };
 
+function toLoginFormState(email: string): LoginFormState {
+  return {
+    email,
+    password: ""
+  };
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -25,14 +32,14 @@ export function LoginPage() {
   const quickRole = useMemo(() => searchParams.get("role"), [searchParams]);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [form, setForm] = useState<LoginFormState>(
-    () => resolveDemoAccount(quickRole) ?? studentDemoAccount
+    () => toLoginFormState((resolveDemoAccount(quickRole) ?? studentDemoAccount).email)
   );
 
   useEffect(() => {
     const quickAccount = resolveDemoAccount(quickRole);
 
     if (quickAccount) {
-      setForm(quickAccount);
+      setForm(toLoginFormState(quickAccount.email));
     }
   }, [quickRole]);
 
@@ -72,12 +79,11 @@ export function LoginPage() {
 
           <div className="mt-6 grid gap-3">
             <p className="text-sm font-medium text-ink">
-              {localeText(locale, "快捷身份带入", "Quick Role Access")}
+              {localeText(locale, "快捷邮箱带入", "Quick Email Access")}
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {quickRoleEntries.map((entry) => {
-                const isActive =
-                  form.email === entry.account.email && form.password === entry.account.password;
+                const isActive = form.email === entry.account.email && form.password.length === 0;
 
                 return (
                   <button
@@ -88,7 +94,7 @@ export function LoginPage() {
                         ? "border-ember bg-ember/10"
                         : "border-navy/10 bg-white hover:border-moss"
                     }`}
-                    onClick={() => setForm(entry.account)}
+                    onClick={() => setForm(toLoginFormState(entry.account.email))}
                   >
                     <p className="text-sm font-semibold text-ink">
                       {localeText(locale, entry.labelZh, entry.labelEn)}
@@ -182,8 +188,8 @@ export function LoginPage() {
             <p className="mt-2 text-sm text-slate">
               {localeText(
                 locale,
-                "上方可直接点击学生入口或教师入口完成账号带入。当前演示环境未开放注册。",
-                "Use the student or teacher entry above to fill the demo credentials. Registration is not open in the demo environment."
+                "上方可直接点击学生入口或教师入口带入演示邮箱。judge / test 默认密码见 README，当前演示环境未开放注册。",
+                "Use the student or teacher entry above to fill the demo email. The default judge/test passwords are documented in the README. Registration is not open in the demo environment."
               )}
             </p>
           </div>

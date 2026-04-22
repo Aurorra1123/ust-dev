@@ -1,42 +1,40 @@
-import { getRuntimeDemoAccount } from "../lib/runtime-config";
+import { getRuntimeDemoEmail } from "../lib/runtime-config";
 
 export type DemoAccount = {
   email: string;
-  password: string;
 };
 
 const defaultStudentDemoAccount: DemoAccount = {
-  email: "demo@campusbook.top",
-  password: "demo123456"
+  email: "demo@campusbook.top"
 };
 
 const defaultTeacherDemoAccount: DemoAccount = {
-  email: "admin@campusbook.top",
-  password: "admin123456"
+  email: "admin@campusbook.top"
 };
 
 export const studentDemoAccount: DemoAccount = {
-  ...(getRuntimeDemoAccount("student") ?? defaultStudentDemoAccount)
+  email: getRuntimeDemoEmail("student") ?? defaultStudentDemoAccount.email
 };
 
-export const teacherDemoAccount: DemoAccount =
-  getRuntimeDemoAccount("admin") ?? defaultTeacherDemoAccount;
+export const teacherDemoAccount: DemoAccount = {
+  email: getRuntimeDemoEmail("admin") ?? defaultTeacherDemoAccount.email
+};
 
 export const quickRoleEntries = [
   {
     role: "student",
     labelZh: "学生入口",
     labelEn: "Student Access",
-    hintZh: "点击后带入学生 demo 账号",
-    hintEn: "Fill the student demo account",
+    hintZh: "点击后带入学生演示邮箱",
+    hintEn: "Fill the student demo email",
     account: studentDemoAccount
   },
   {
     role: "teacher",
     labelZh: "教师入口",
     labelEn: "Teacher Access",
-    hintZh: "点击后带入管理员 demo 账号",
-    hintEn: "Fill the admin demo account",
+    hintZh: "点击后带入管理员演示邮箱",
+    hintEn: "Fill the admin demo email",
     account: teacherDemoAccount
   }
 ] as const;

@@ -37,7 +37,7 @@ import {
 } from "./shared/reservation-policy";
 
 const ACADEMIC_BUFFER_MINUTES = 5;
-const ACADEMIC_BUFFER_BEFORE_MINUTES = 0;
+const ACADEMIC_BUFFER_BEFORE_MINUTES = 5;
 const SPORTS_SLOT_MINUTES = 60;
 
 @Injectable()

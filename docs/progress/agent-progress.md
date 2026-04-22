@@ -6,6 +6,48 @@
 
 ### 已完成
 
+- 已完成 demo 认证暴露面收口与学术缓冲统一，并记录 ADR：
+  - `docs/adr/0028-lock-demo-auth-surface-and-unify-academic-buffer.md`
+  - 前端运行时 `config.js` 不再下发学生/管理员密码，只保留演示邮箱
+  - 登录页快捷入口改为“带入演示邮箱”，测试密码改为只在 README / judge 文档中保留
+  - API 登录不再允许“任意活跃学生 + demo 学生密码”，改为显式白名单学生邮箱
+  - judge / 本地 / 测试环境新增 `DEMO_STUDENT_EMAIL_WHITELIST`
+- 已完成学术空间前后各 `5` 分钟缓冲的代码与读侧口径统一：
+  - `apps/api/src/modules/reservation/reservation.service.ts`
+  - 学术预约新写入的 `bufferBeforeMin / bufferAfterMin` 均为 `5`
+  - `apps/api/src/modules/orders/orders.service.ts`
+  - `apps/api/src/modules/resource/resource.mapper.ts`
+  - `apps/api/src/modules/resource/resource-status.service.ts`
+  - 订单详情、公开预约状态和学术时间轴均已统一按 `5/5` 口径返回或展示
+- 已修复测试夹具与 guardrail 回归，使安全修复不再依赖旧漏洞：
+  - `apps/api/test/integration-harness.ts`
+  - 新增 `issueAccessTokenForUser()`，超库存并发测试不再通过 demo 密码伪造任意学生登录
+  - `apps/api/test/guardrail-0.test.ts`
+  - 新增“非白名单学生不能复用 demo 学生密码”回归
+  - 学术缓冲边界回归已从旧口径的 `11:05` 放行收口为双向缓冲下的 `11:10` 放行
+- 已同步更新当前有效文档口径：
+  - `README.md`
+  - `docs/standards/judge-quick-start.md`
+  - `docs/verification/2026-04-22/qa-001-guardrail-0-api-regressions.md`
+  - `docs/verification/2026-04-22/qa-009-non-payment-boundary-demo-checklist.md`
+  - `docs/plans/final-score-boost-plan-2026-04-22.md`
+  - `docs/review/2026-04-22-test-automation-plan.md`
+- 已处理一轮迁移失败排查：
+  - 曾尝试通过新增迁移回填历史学术预约 `bufferBeforeMin=0` 数据
+  - 该方案会让旧的贴边预约在升级为 `5/5` 时直接触发数据库排斥约束，因此已撤回自动 backfill 迁移
+  - 现策略改为“新写入统一 `5/5`、旧数据读侧按 `5/5` 口径返回、保留环境如需彻底回填必须先清理贴边历史单”
+- 已完成本轮串行验证：
+  - `pnpm --filter api lint`
+  - `pnpm --filter web lint`
+  - `pnpm --filter @campusbook/shared-types lint`
+  - `pnpm --filter api typecheck`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter @campusbook/shared-types typecheck`
+  - `pnpm --filter api test`
+  - `pnpm --filter @campusbook/shared-types build`
+  - `pnpm --filter api build`
+  - `pnpm --filter web build`
+  - 结果：`api test` 为 `26 tests / 7 suites / 26 pass / 0 fail`
 - 已根据当前仓库真实状态重写根目录 `README.md`：
   - 项目定位改为面向评委、同学和普通开发者的快速说明
   - README 现已收口为：项目简介、核心功能、技术栈、快速开始、测试账号、仓库结构、相关文档、项目亮点

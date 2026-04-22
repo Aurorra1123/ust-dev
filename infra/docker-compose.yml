@@ -49,6 +49,7 @@ services:
       ACTIVITY_REGISTRATION_PENDING_TTL_MS: ${ACTIVITY_REGISTRATION_PENDING_TTL_MS:-300000}
       DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-demo@campusbook.top}
       DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-demo123456}
+      DEMO_STUDENT_EMAIL_WHITELIST: ${DEMO_STUDENT_EMAIL_WHITELIST:-demo@campusbook.top,partner1@campusbook.top,partner2@campusbook.top}
       DEMO_USER_ROLE: ${DEMO_USER_ROLE:-student}
       DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-admin@campusbook.top}
       DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin123456}
@@ -78,6 +79,7 @@ services:
       ACTIVITY_REGISTRATION_PENDING_TTL_MS: ${ACTIVITY_REGISTRATION_PENDING_TTL_MS:-300000}
       DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-demo@campusbook.top}
       DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-demo123456}
+      DEMO_STUDENT_EMAIL_WHITELIST: ${DEMO_STUDENT_EMAIL_WHITELIST:-demo@campusbook.top,partner1@campusbook.top,partner2@campusbook.top}
       DEMO_USER_ROLE: ${DEMO_USER_ROLE:-student}
       DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-admin@campusbook.top}
       DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin123456}
@@ -97,9 +99,7 @@ services:
     environment:
       CAMPUSBOOK_API_BASE_URL: ${CAMPUSBOOK_API_BASE_URL:-}
       DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-demo@campusbook.top}
-      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-demo123456}
       DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:-admin@campusbook.top}
-      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-admin123456}
     expose:
       - "80"
 

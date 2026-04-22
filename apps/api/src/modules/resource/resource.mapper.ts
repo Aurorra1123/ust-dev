@@ -257,6 +257,12 @@ export function toAdminReservationRecord(
     resourceUnitName: reservation.resourceUnit.name,
     startTime: startTime.toISOString(),
     endTime: endTime.toISOString(),
+    bufferBeforeMin: isAcademic
+      ? normalizeAcademicBufferMinutes(reservation.bufferBeforeMin)
+      : 0,
+    bufferAfterMin: isAcademic
+      ? normalizeAcademicBufferMinutes(reservation.bufferAfterMin)
+      : 0,
     participantCount: reservation.order.reservationParticipants.length,
     checkedInCount: reservation.order.reservationParticipants.filter(
       (participant) => participant.checkedInAt !== null
@@ -278,6 +284,12 @@ export function toPublicReservationRecord(
     resourceUnitName: reservation.resourceUnit.name,
     startTime: startTime.toISOString(),
     endTime: endTime.toISOString(),
+    bufferBeforeMin: isAcademic
+      ? normalizeAcademicBufferMinutes(reservation.bufferBeforeMin)
+      : 0,
+    bufferAfterMin: isAcademic
+      ? normalizeAcademicBufferMinutes(reservation.bufferAfterMin)
+      : 0,
     participantCount: reservation.order.reservationParticipants.length,
     checkedInCount: reservation.order.reservationParticipants.filter(
       (participant) => participant.checkedInAt !== null
@@ -345,6 +357,10 @@ export function mapPrismaReleaseFrequency(
     case PrismaResourceReleaseFrequency.MONTHLY:
       return "monthly";
   }
+}
+
+function normalizeAcademicBufferMinutes(value: number) {
+  return Math.max(value, 5);
 }
 
 export function mapPrismaOrderStatus(
