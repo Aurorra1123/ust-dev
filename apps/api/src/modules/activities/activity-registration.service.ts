@@ -57,6 +57,7 @@ export class ActivityRegistrationService {
     await this.assertNotRegistered(activityId, user.id);
 
     await this.activityInventoryCacheService.ensureTicketRemaining(
+      activityId,
       ticket.id,
       Math.max(ticket.stock - ticket.reserved, 0)
     );
@@ -77,6 +78,7 @@ export class ActivityRegistrationService {
 
     if (reserveResult === "missing_stock") {
       await this.activityInventoryCacheService.ensureTicketRemaining(
+        activityId,
         ticket.id,
         Math.max(ticket.stock - ticket.reserved, 0)
       );
@@ -107,6 +109,7 @@ export class ActivityRegistrationService {
         activityId,
         ticket.id,
         user.id,
+        jobId,
         "queue-enqueue-failed"
       );
       throw new ServiceUnavailableException("activity-grab-queue-unavailable");
@@ -187,6 +190,7 @@ export class ActivityRegistrationService {
   }
 
   async processQueuedRegistration(payload: ActivityRegistrationJobPayload) {
+    const jobId = buildActivityRegistrationJobId(payload);
     const existing = await this.prismaService.activityRegistration.findFirst({
       where: {
         activityId: payload.activityId,
@@ -210,7 +214,9 @@ export class ActivityRegistrationService {
     if (existing) {
       await this.activityInventoryCacheService.markRequestCompleted(
         payload.activityId,
-        payload.userId
+        payload.userId,
+        payload.ticketId,
+        jobId
       );
 
       return {
@@ -337,7 +343,9 @@ export class ActivityRegistrationService {
 
       await this.activityInventoryCacheService.markRequestCompleted(
         payload.activityId,
-        payload.userId
+        payload.userId,
+        payload.ticketId,
+        jobId
       );
 
       return {
@@ -374,7 +382,9 @@ export class ActivityRegistrationService {
 
         await this.activityInventoryCacheService.markRequestCompleted(
           payload.activityId,
-          payload.userId
+          payload.userId,
+          payload.ticketId,
+          jobId
         );
 
         if (duplicated) {
@@ -400,6 +410,7 @@ export class ActivityRegistrationService {
         payload.activityId,
         payload.ticketId,
         payload.userId,
+        jobId,
         failureReason
       );
 

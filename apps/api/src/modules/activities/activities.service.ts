@@ -89,6 +89,7 @@ export class ActivitiesService {
 
   async createActivity(payload: CreateActivityDto): Promise<ActivityDetailResponse> {
     const timeline = normalizeActivityTimeline(payload);
+    assertTotalQuotaMatchesTickets(payload.totalQuota, payload.tickets ?? []);
 
     try {
       const activity = await this.prismaService.activity.create({
@@ -129,7 +130,25 @@ export class ActivitiesService {
     id: string,
     payload: UpdateActivityDto
   ): Promise<ActivityDetailResponse> {
-    await this.ensureActivityExists(id);
+    const existingActivity = await this.prismaService.activity.findUnique({
+      where: { id },
+      include: {
+        tickets: {
+          select: {
+            stock: true
+          }
+        }
+      }
+    });
+
+    if (!existingActivity) {
+      throw new NotFoundException("activity-not-found");
+    }
+
+    if (payload.totalQuota !== undefined) {
+      assertTotalQuotaMatchesTickets(payload.totalQuota, existingActivity.tickets);
+    }
+
     const timeline = normalizeActivityTimeline(payload, true);
 
     try {
@@ -141,7 +160,9 @@ export class ActivitiesService {
             ? { description: payload.description }
             : {}),
           ...(payload.location !== undefined ? { location: payload.location } : {}),
-          ...(payload.totalQuota ? { totalQuota: payload.totalQuota } : {}),
+          ...(payload.totalQuota !== undefined
+            ? { totalQuota: payload.totalQuota }
+            : {}),
           ...(timeline.saleStartTime
             ? { saleStartTime: timeline.saleStartTime }
             : {}),
@@ -179,14 +200,34 @@ export class ActivitiesService {
     await this.ensureActivityExists(activityId);
 
     try {
-      await this.prismaService.activityTicket.create({
-        data: {
-          activityId,
-          name: payload.name,
-          stock: payload.stock,
-          priceCents: payload.priceCents ?? 0,
-          status: mapSharedTicketStatus(payload.status ?? "active")
-        }
+      await this.prismaService.$transaction(async (tx) => {
+        await tx.activityTicket.create({
+          data: {
+            activityId,
+            name: payload.name,
+            stock: payload.stock,
+            priceCents: payload.priceCents ?? 0,
+            status: mapSharedTicketStatus(payload.status ?? "active")
+          }
+        });
+
+        const ticketStockSum = await tx.activityTicket.aggregate({
+          where: {
+            activityId
+          },
+          _sum: {
+            stock: true
+          }
+        });
+
+        await tx.activity.update({
+          where: {
+            id: activityId
+          },
+          data: {
+            totalQuota: ticketStockSum._sum.stock ?? 0
+          }
+        });
       });
     } catch (error) {
       handlePrismaConflict(error, "activity-ticket-conflict");
@@ -387,5 +428,20 @@ function handlePrismaConflict(error: unknown, message: string) {
     error.code === "P2002"
   ) {
     throw new ConflictException(message);
+  }
+}
+
+function assertTotalQuotaMatchesTickets(
+  totalQuota: number,
+  tickets: Array<{
+    stock: number;
+  }>
+) {
+  const totalTicketStock = tickets.reduce((sum, ticket) => sum + ticket.stock, 0);
+
+  if (totalQuota !== totalTicketStock) {
+    throw new BadRequestException(
+      "activity-total-quota-must-equal-ticket-stock-sum"
+    );
   }
 }

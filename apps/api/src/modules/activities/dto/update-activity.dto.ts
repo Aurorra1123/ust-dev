@@ -23,7 +23,7 @@ export class UpdateActivityDto {
 
   @IsOptional()
   @IsInt()
-  @Min(1)
+  @Min(0)
   totalQuota?: number;
 
   @IsOptional()

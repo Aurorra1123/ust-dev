@@ -27,7 +27,7 @@ export class CreateActivityDto {
   location?: string;
 
   @IsInt()
-  @Min(1)
+  @Min(0)
   totalQuota!: number;
 
   @IsDateString()

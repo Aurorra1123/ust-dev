@@ -4,6 +4,7 @@ import { ConfigModule } from "@nestjs/config";
 import { validateEnvironment } from "./config/env.validation";
 import { InfrastructureModule } from "./infrastructure/infrastructure.module";
 import { ActivitiesModule } from "./modules/activities/activities.module";
+import { ActivityInventoryRecoveryWorkerService } from "./modules/activities/activity-inventory-recovery-worker.service";
 import { ActivityRegistrationWorkerService } from "./modules/activities/activity-registration-worker.service";
 import { AuthModule } from "./modules/auth/auth.module";
 import { OrdersModule } from "./modules/orders/orders.module";
@@ -24,6 +25,7 @@ import { ReservationAttendanceWorkerService } from "./modules/orders/reservation
   providers: [
     OrderExpirationWorkerService,
     ReservationAttendanceWorkerService,
+    ActivityInventoryRecoveryWorkerService,
     ActivityRegistrationWorkerService
   ]
 })

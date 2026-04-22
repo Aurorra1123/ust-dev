@@ -6,6 +6,18 @@
 
 ### 已完成
 
+- 已完成 `COMP-006`，把活动库存一致性、`totalQuota` 与 Redis 自愈收口成可验证闭环：
+  - 创建或更新活动时强校验 `totalQuota == sum(ticket.stock)`
+  - 新增票种后会自动同步 `totalQuota`
+  - Redis pending 占位改为携带 `jobId + ticketId`，补偿与完成动作都有归属校验
+- 已新增库存恢复策略与 ADR：
+  - 缓存按“数据库剩余量 - 活跃 pending 数”重建
+  - worker 周期性执行库存重建，修复 key 丢失与 pending 过期后的漂移
+  - `docs/adr/0022-activity-stock-cache-is-rebuilt-from-db-and-live-pending.md`
+- 已补齐 `COMP-006` 自动化验证：
+  - `apps/api/test/comp-006-activity-inventory-recovery.test.ts`
+  - `docs/verification/2026-04-22/qa-004-comp-006-activity-inventory-recovery.md`
+
 - 已完成 `COMP-002`，把支付回调、超时取消、幂等和补偿闭环收口到同一条状态机：
   - 支付确认改为通过订单 `status + version` CAS 进入 `CONFIRMED`
   - 过期取消与支付确认发生竞争时，只会有一个最终状态迁移成功
@@ -61,6 +73,8 @@
 
 ### 当前状态
 
+- `COMP-006` 已完成，活动库存一致性与自愈已经有真实回归。
+- 当前下一阶段应进入 `COMP-003`，把规则引擎升级为 registry，并让资格、额度、处罚进入真实链路。
 - `COMP-002` 已完成，幽灵支付对撞已经有真实回归和补偿日志留痕。
 - 当前下一阶段应进入 `COMP-006`，收口活动库存一致性、Redis 自愈与 `totalQuota`。
 - `COMP-001` 已完成，付费活动票主链路已经可从待支付走到支付确认。
@@ -71,15 +85,15 @@
 
 ### 下一步建议
 
-1. 开始 `COMP-006`，在活动创建与更新时强校验 `totalQuota == sum(ticket.stock)`
-2. 收口 Redis pending 占位、归属校验、冷恢复与异常回查
-3. 为库存恢复、Redis key 丢失和 worker 中断场景补自动化验证证据
+1. 开始 `COMP-003`，把当前规则执行器从固定分支升级成可注册 handler registry
+2. 先接入活动资格、预约次数或总时长限制、爽约处罚三类高价值规则
+3. 让 `UserCreditLog` 与 `UserRuleProfile` 进入真实业务链路，并补自动化验证
 
 ### 注意事项
 
 - 本轮没有触碰 `docs/user_test/`
 - 为避免测试进程悬挂和多套应用并发拉起，本轮把 `apps/api` 的测试脚本收口为串行 `node:test` 并在结果产出后强制退出
-- 当前本地已完成 `COMP-002` 代码改动，但尚未开始 `COMP-006`
+- 当前本地已完成 `COMP-006` 代码改动，但尚未开始 `COMP-003`
 
 ### 已完成
 

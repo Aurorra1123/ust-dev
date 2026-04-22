@@ -7,6 +7,7 @@ import {
   AdminActivitiesController
 } from "./activities.controller";
 import { ActivityInventoryCacheService } from "./activity-inventory-cache.service";
+import { ActivityInventoryRecoveryService } from "./activity-inventory-recovery.service";
 import { ActivityRegistrationQueueService } from "./activity-registration-queue.service";
 import { ActivityRegistrationService } from "./activity-registration.service";
 import { ActivitiesService } from "./activities.service";
@@ -17,11 +18,13 @@ import { ActivitiesService } from "./activities.service";
   providers: [
     ActivitiesService,
     ActivityInventoryCacheService,
+    ActivityInventoryRecoveryService,
     ActivityRegistrationQueueService,
     ActivityRegistrationService
   ],
   exports: [
     ActivityInventoryCacheService,
+    ActivityInventoryRecoveryService,
     ActivityRegistrationQueueService,
     ActivityRegistrationService
   ]

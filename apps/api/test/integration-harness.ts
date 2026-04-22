@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
 import { ValidationPipe, type INestApplication } from "@nestjs/common";
+import type { INestApplicationContext } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import {
   ActivityStatus,
@@ -66,6 +67,8 @@ export interface IntegrationHarness {
     activityId: string;
     ticketId: string;
   }>;
+  getApiService<T>(token: string | symbol | Function): T;
+  getWorkerService<T>(token: string | symbol | Function): T;
   runExpirePendingOrders(): Promise<TestResponse>;
   waitForActivityQueueIdle(timeoutMs?: number): Promise<void>;
 }
@@ -90,7 +93,8 @@ export async function createIntegrationHarness(): Promise<IntegrationHarness> {
     connection: createBullmqConnection(TEST_REDIS_URL)
   });
 
-  const workerApp = await NestFactory.createApplicationContext(WorkerModule, {
+  const workerApp: INestApplicationContext =
+    await NestFactory.createApplicationContext(WorkerModule, {
     logger: false
   });
   const apiApp = await createApiApplication(AppModule);
@@ -267,6 +271,8 @@ export async function createIntegrationHarness(): Promise<IntegrationHarness> {
     loginDemoAdmin: () => login(TEST_DEMO_ADMIN_EMAIL, TEST_DEMO_ADMIN_PASSWORD),
     createStudentUsers,
     createPublishedActivityWithTicket,
+    getApiService: (token) => apiApp.get(token as never),
+    getWorkerService: (token) => workerApp.get(token as never),
     runExpirePendingOrders: () =>
       request("/orders/jobs/expire-pending", {
         method: "POST",

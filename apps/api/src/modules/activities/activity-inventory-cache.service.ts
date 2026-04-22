@@ -3,12 +3,15 @@ import { Injectable } from "@nestjs/common";
 import { RedisService } from "../../infrastructure/redis/redis.service";
 import {
   ACTIVITY_REGISTRATION_FAILURE_TTL_MS,
+  buildActivityRegistrationPendingValue,
   getActivityRegistrationFailureKey,
   getActivityRegistrationPendingKey,
-  getActivityTicketRemainingKey
+  getActivityTicketRemainingKey,
+  parseActivityRegistrationPendingValue
 } from "./activity-registration.constants";
 
 type ReserveResult = "reserved" | "sold_out" | "duplicate_pending" | "missing_stock";
+type PendingMutationResult = "compensated" | "completed" | "skipped";
 
 const RESERVE_STOCK_LUA = `
 local stockKey = KEYS[1]
@@ -40,24 +43,34 @@ const COMPENSATE_PENDING_LUA = `
 local stockKey = KEYS[1]
 local pendingKey = KEYS[2]
 local failureKey = KEYS[3]
-local failureReason = ARGV[1]
-local failureTtl = tonumber(ARGV[2])
+local expectedPendingValue = ARGV[1]
+local failureReason = ARGV[2]
+local failureTtl = tonumber(ARGV[3])
 
-if redis.call("EXISTS", pendingKey) == 1 then
+if redis.call("GET", pendingKey) == expectedPendingValue then
   if redis.call("EXISTS", stockKey) == 1 then
     redis.call("INCR", stockKey)
   end
   redis.call("DEL", pendingKey)
+  redis.call("SET", failureKey, failureReason, "PX", failureTtl)
+  return "compensated"
 end
 
-redis.call("SET", failureKey, failureReason, "PX", failureTtl)
-return "ok"
+return "skipped"
 `;
 
 const COMPLETE_PENDING_LUA = `
-redis.call("DEL", KEYS[1])
-redis.call("DEL", KEYS[2])
-return "ok"
+local pendingKey = KEYS[1]
+local failureKey = KEYS[2]
+local expectedPendingValue = ARGV[1]
+
+if redis.call("GET", pendingKey) == expectedPendingValue then
+  redis.call("DEL", pendingKey)
+  redis.call("DEL", failureKey)
+  return "completed"
+end
+
+return "skipped"
 `;
 
 const RELEASE_CONFIRMED_LUA = `
@@ -67,7 +80,6 @@ if redis.call("EXISTS", stockKey) == 1 then
 end
 
 redis.call("DEL", KEYS[2])
-redis.call("DEL", KEYS[3])
 return "ok"
 `;
 
@@ -75,12 +87,43 @@ return "ok"
 export class ActivityInventoryCacheService {
   constructor(private readonly redisService: RedisService) {}
 
-  async ensureTicketRemaining(ticketId: string, remaining: number) {
-    await (await this.redisService.connect()).set(
+  async ensureTicketRemaining(
+    activityId: string,
+    ticketId: string,
+    remaining: number
+  ) {
+    const client = await this.redisService.connect();
+    const created = await client.set(
       getActivityTicketRemainingKey(ticketId),
       String(Math.max(remaining, 0)),
       "NX"
     );
+
+    if (created === "OK") {
+      await this.reconcileTicketRemaining(activityId, ticketId, remaining);
+    }
+  }
+
+  async reconcileTicketRemaining(
+    activityId: string,
+    ticketId: string,
+    remaining: number
+  ) {
+    const pendingClaims = await this.countPendingClaimsForTicket(
+      activityId,
+      ticketId
+    );
+    const nextRemaining = Math.max(remaining - pendingClaims, 0);
+
+    await (await this.redisService.connect()).set(
+      getActivityTicketRemainingKey(ticketId),
+      String(nextRemaining)
+    );
+
+    return {
+      remaining: nextRemaining,
+      pendingClaims
+    };
   }
 
   async reserveTicketForRequest(params: {
@@ -96,7 +139,7 @@ export class ActivityInventoryCacheService {
       getActivityTicketRemainingKey(params.ticketId),
       getActivityRegistrationPendingKey(params.activityId, params.userId),
       getActivityRegistrationFailureKey(params.activityId, params.userId),
-      params.jobId,
+      buildActivityRegistrationPendingValue(params.jobId, params.ticketId),
       String(params.ttlMs)
     );
 
@@ -107,26 +150,38 @@ export class ActivityInventoryCacheService {
     activityId: string,
     ticketId: string,
     userId: string,
+    jobId: string,
     reason: string
-  ) {
-    await (await this.redisService.connect()).eval(
+  ): Promise<PendingMutationResult> {
+    const result = await (await this.redisService.connect()).eval(
       COMPENSATE_PENDING_LUA,
       3,
       getActivityTicketRemainingKey(ticketId),
       getActivityRegistrationPendingKey(activityId, userId),
       getActivityRegistrationFailureKey(activityId, userId),
+      buildActivityRegistrationPendingValue(jobId, ticketId),
       reason,
       String(ACTIVITY_REGISTRATION_FAILURE_TTL_MS)
     );
+
+    return toPendingMutationResult(result);
   }
 
-  async markRequestCompleted(activityId: string, userId: string) {
-    await (await this.redisService.connect()).eval(
+  async markRequestCompleted(
+    activityId: string,
+    userId: string,
+    ticketId: string,
+    jobId: string
+  ): Promise<PendingMutationResult> {
+    const result = await (await this.redisService.connect()).eval(
       COMPLETE_PENDING_LUA,
       2,
       getActivityRegistrationPendingKey(activityId, userId),
-      getActivityRegistrationFailureKey(activityId, userId)
+      getActivityRegistrationFailureKey(activityId, userId),
+      buildActivityRegistrationPendingValue(jobId, ticketId)
     );
+
+    return toPendingMutationResult(result);
   }
 
   async releaseConfirmedReservation(
@@ -136,9 +191,8 @@ export class ActivityInventoryCacheService {
   ) {
     await (await this.redisService.connect()).eval(
       RELEASE_CONFIRMED_LUA,
-      3,
+      2,
       getActivityTicketRemainingKey(ticketId),
-      getActivityRegistrationPendingKey(activityId, userId),
       getActivityRegistrationFailureKey(activityId, userId)
     );
   }
@@ -148,7 +202,11 @@ export class ActivityInventoryCacheService {
       getActivityRegistrationPendingKey(activityId, userId)
     );
 
-    return value ?? null;
+    if (!value) {
+      return null;
+    }
+
+    return parseActivityRegistrationPendingValue(value).jobId;
   }
 
   async getFailureReason(activityId: string, userId: string) {
@@ -157,6 +215,30 @@ export class ActivityInventoryCacheService {
     );
 
     return value ?? null;
+  }
+
+  private async countPendingClaimsForTicket(activityId: string, ticketId: string) {
+    const client = await this.redisService.connect();
+    const keys = await scanKeys(
+      client,
+      `campusbook:activity:${activityId}:user:*:pending`
+    );
+
+    if (keys.length === 0) {
+      return 0;
+    }
+
+    const values = await client.mget(keys);
+
+    return values.reduce((count, value) => {
+      if (!value) {
+        return count;
+      }
+
+      return parseActivityRegistrationPendingValue(value).ticketId === ticketId
+        ? count + 1
+        : count;
+    }, 0);
   }
 }
 
@@ -171,4 +253,25 @@ function toReserveResult(value: unknown): ReserveResult {
   }
 
   throw new Error(`unexpected-activity-stock-result:${String(value)}`);
+}
+
+function toPendingMutationResult(value: unknown): PendingMutationResult {
+  if (value === "compensated" || value === "completed" || value === "skipped") {
+    return value;
+  }
+
+  throw new Error(`unexpected-activity-pending-result:${String(value)}`);
+}
+
+async function scanKeys(client: Awaited<ReturnType<RedisService["connect"]>>, match: string) {
+  const keys: string[] = [];
+  let cursor = "0";
+
+  do {
+    const [nextCursor, batch] = await client.scan(cursor, "MATCH", match, "COUNT", 100);
+    cursor = nextCursor;
+    keys.push(...batch);
+  } while (cursor !== "0");
+
+  return keys;
 }
