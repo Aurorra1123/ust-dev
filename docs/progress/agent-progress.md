@@ -6,6 +6,49 @@
 
 ### 已完成
 
+- 已新增最终验收与模拟打分审查文档：
+  - `docs/review/2026-04-22-final-acceptance-and-scoring.md`
+- 本轮严格审查覆盖：
+  - 领域建模与数据库约束
+  - 学术空间 / 体育设施预约链路
+  - 活动抢票高并发链路
+  - 订单状态机、延迟任务与签到爽约逻辑
+  - 规则引擎
+  - 用户端前端主路径、响应式与可访问性风险
+  - CI、judge 启动脚本与 smoke
+- 已完成本地只读校验：
+  - `pnpm test`
+  - `pnpm lint`
+  - `pnpm typecheck`
+  - `pnpm build`
+- 本轮已确认：
+  - `pnpm test` 当前为空跑
+  - 仓库没有真实业务测试文件
+
+### 当前状态
+
+- `docs/review/` 目录现在已同时包含：
+  - 赛题核心偏题审查
+  - 最终验收与模拟打分
+- 当前项目结论不是“不能演示”，而是“仍有明显缺口，尤其是支付一致性、自动化测试、WCAG 与 CWV 证据”
+
+### 下一步建议
+
+1. 优先补订单待确认与支付闭环，让 `PENDING_CONFIRMATION / expireAt / PaymentRecord / 幽灵支付` 进入正式主链路
+2. 为预约冲突、活动抢票、取消、签到和规则生效补真实自动化测试
+3. 补做 Docker Compose judge 模式现场拉起验证，并把结果写入 `docs/verification/`
+4. 补前端 a11y 与性能验收证据，至少形成 WCAG / Lighthouse / CWV 的可追溯记录
+
+### 注意事项
+
+- 本轮只新增 review 文档与进度记录，没有修改业务代码
+- Docker Compose judge 模式现场拉起验证本轮按用户要求暂缓，尚未补证
+- 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
+
+## 2026-04-22
+
+### 已完成
+
 - 已新增赛题核心偏题审查文档：
   - `docs/review/2026-04-22-core-topic-review.md`
 - 文档中已落地两部分内容：
