@@ -131,6 +131,11 @@ export function ActivitiesPage() {
                   {selectedActivity.description ||
                     localeText(locale, "当前活动暂无补充描述。", "No description yet.")}
                 </p>
+                <p className="mt-3 text-sm font-medium text-ink">
+                  {soldOut
+                    ? localeText(locale, "当前活动名额已满，需等待释放或改选其他场次。", "This activity is sold out. Wait for quota to be released or choose another event.")
+                    : localeText(locale, `当前剩余 ${selectedActivity.remainingQuota} 个名额。`, `${selectedActivity.remainingQuota} seats are currently available.`)}
+                </p>
                 <p className="mt-3 text-sm text-slate">
                   {localeText(
                     locale,
@@ -163,19 +168,36 @@ export function ActivitiesPage() {
                 ) : (
                   <div className="mt-4 grid gap-3">
                     {detailQuery.data?.tickets.map((ticket) => (
-                      <div
-                        key={ticket.id}
-                        className="rounded-2xl border border-ink/10 bg-sand px-4 py-4"
-                      >
+                      <div key={ticket.id} className="rounded-2xl border border-ink/10 bg-sand px-4 py-4">
+                        {(() => {
+                          const remaining = Math.max(ticket.stock - ticket.reserved, 0);
+                          const ticketSoldOut = remaining <= 0;
+
+                          return (
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <p className="text-base font-semibold text-ink">{ticket.name}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-base font-semibold text-ink">{ticket.name}</p>
+                              <StatusPill tone={ticketSoldOut ? "danger" : "success"}>
+                                {ticketSoldOut
+                                  ? localeText(locale, "该票种已满", "Sold Out")
+                                  : localeText(locale, "该票种可报名", "Open")}
+                              </StatusPill>
+                            </div>
                             <p className="mt-2 text-sm text-slate">
                               {localeText(
                                 locale,
                                 `库存 ${ticket.stock} / 已保留 ${ticket.reserved}`,
                                 `Stock ${ticket.stock} / Reserved ${ticket.reserved}`
                               )}
+                            </p>
+                            <p
+                              id={`ticket-availability-${ticket.id}`}
+                              className="mt-2 text-sm font-medium text-ink"
+                            >
+                              {ticketSoldOut
+                                ? localeText(locale, "当前剩余 0 张，提交按钮会保持禁用。", "No seats remain. The action button stays disabled.")
+                                : localeText(locale, `当前剩余 ${remaining} 张。`, `${remaining} tickets remain.`)}
                             </p>
                           </div>
                           <button
@@ -184,7 +206,8 @@ export function ActivitiesPage() {
                             disabled={
                               sessionStatus !== "authenticated" ||
                               grabMutation.isPending ||
-                              soldOut
+                              soldOut ||
+                              ticketSoldOut
                             }
                             onClick={() =>
                               grabMutation.mutate({
@@ -192,6 +215,7 @@ export function ActivitiesPage() {
                                 ticketId: ticket.id
                               })
                             }
+                            aria-describedby={`ticket-availability-${ticket.id}`}
                           >
                             {sessionStatus === "authenticated"
                               ? grabMutation.isPending
@@ -200,6 +224,8 @@ export function ActivitiesPage() {
                               : localeText(locale, "请先登录", "Sign In")}
                           </button>
                         </div>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>
@@ -294,10 +320,23 @@ function ActivityCard({
         active ? "border-ember bg-ember/10" : "border-ink/10 bg-white hover:border-moss"
       }`}
       onClick={onSelect}
+      aria-pressed={active}
+      aria-label={localeText(
+        locale,
+        `${activity.title}，${statusLabel(activity.status, locale)}${active ? "，当前查看中" : ""}`,
+        `${activity.title}, ${statusLabel(activity.status, locale)}${active ? ", currently selected" : ""}`
+      )}
     >
-      <p className="text-xs uppercase tracking-[0.2em] text-moss">
-        {statusLabel(activity.status, locale)}
-      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-xs uppercase tracking-[0.2em] text-moss">
+          {statusLabel(activity.status, locale)}
+        </p>
+        {active ? (
+          <span className="rounded-full bg-ember px-2 py-1 text-[11px] font-medium text-white">
+            {localeText(locale, "当前查看", "Selected")}
+          </span>
+        ) : null}
+      </div>
       <h3 className="mt-2 text-lg font-semibold text-ink">{activity.title}</h3>
       <p className="mt-2 text-sm text-ink/70">
         {activity.location || localeText(locale, "线上/待定", "Online / TBD")}

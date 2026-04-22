@@ -73,6 +73,9 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-sand text-ink">
+      <a href="#main-content" className="skip-link">
+        {localeText(locale, "跳到主要内容", "Skip to main content")}
+      </a>
       <header className="border-b border-navy/10 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <Link to="/" className="text-lg font-semibold text-ink">
@@ -92,6 +95,7 @@ export function AppShell() {
                   "切换到中文界面",
                   "Switch to Chinese interface"
                 )}
+                aria-pressed={locale === "zh-CN"}
               >
                 {localeText(locale, "中文", "Chinese")}
               </button>
@@ -106,6 +110,7 @@ export function AppShell() {
                   "切换到英文界面",
                   "Switch to English interface"
                 )}
+                aria-pressed={locale === "en"}
               >
                 {localeText(locale, "英文", "English")}
               </button>
@@ -134,7 +139,10 @@ export function AppShell() {
         </div>
 
         <div className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">
-          <nav className="flex gap-2 overflow-x-auto">
+          <nav
+            className="flex gap-2 overflow-x-auto"
+            aria-label={localeText(locale, "主导航", "Primary navigation")}
+          >
             {navigationItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -158,7 +166,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         {sessionStatus === "unknown" ? (
           <div className="rounded-2xl border border-navy/10 bg-white px-4 py-3 text-sm text-slate">
             {localeText(locale, "正在恢复登录状态。", "Restoring your session.")}

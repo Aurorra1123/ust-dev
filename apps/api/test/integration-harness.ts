@@ -3,8 +3,7 @@ import type { AddressInfo } from "node:net";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import { ValidationPipe, type INestApplication } from "@nestjs/common";
-import type { INestApplicationContext } from "@nestjs/common";
+import type { INestApplication, INestApplicationContext } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import {
   ActivityStatus,
@@ -15,9 +14,9 @@ import {
   UserStatus
 } from "@prisma/client";
 import { Queue } from "bullmq";
-import cookieParser from "cookie-parser";
 import Redis from "ioredis";
 
+import { configureApiApplication } from "../src/bootstrap-api";
 import { createBullmqConnection } from "../src/infrastructure/redis/bullmq";
 import { ACTIVITY_REGISTRATION_QUEUE_NAME } from "../src/modules/activities/activity-registration.constants";
 
@@ -296,18 +295,7 @@ async function createApiApplication(module: object) {
     logger: false
   });
 
-  app.enableCors({
-    origin: true,
-    credentials: true
-  });
-  app.use(cookieParser());
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true
-    })
-  );
+  configureApiApplication(app);
 
   return app;
 }

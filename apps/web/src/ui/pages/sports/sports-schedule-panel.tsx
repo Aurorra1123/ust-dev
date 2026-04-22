@@ -135,6 +135,12 @@ export function SportsSchedulePanel({
                       )}`}
                       disabled={groupState !== "available" && groupState !== "selected"}
                       onClick={() => onToggleSlot(slotIso)}
+                      aria-pressed={slotStarts.includes(slotIso)}
+                      aria-label={localeText(
+                        locale,
+                        `${formatTime(slotIso)} 组合时段，状态 ${headerStateLabel(groupState, locale)}`,
+                        `${formatTime(slotIso)} group slot, status ${headerStateLabel(groupState, locale)}`
+                      )}
                     >
                       {headerStateLabel(groupState, locale)}
                     </button>
@@ -158,7 +164,18 @@ export function SportsSchedulePanel({
                         : "border-ink/10 bg-white"
                   }`}
                 >
-                  <p className="text-sm font-semibold text-ink">{unit.name}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-ink">{unit.name}</p>
+                    {mode === "group" && selectedGroupUnitIds.has(unit.id) ? (
+                      <span className="rounded-full bg-ember px-2 py-1 text-[11px] font-medium text-white">
+                        {localeText(locale, "组合成员", "Grouped")}
+                      </span>
+                    ) : targetId === unit.id ? (
+                      <span className="rounded-full bg-moss px-2 py-1 text-[11px] font-medium text-white">
+                        {localeText(locale, "当前目标", "Selected")}
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink/45">
                     {unit.code}
                   </p>
@@ -185,6 +202,12 @@ export function SportsSchedulePanel({
                       )}`}
                       disabled={mode !== "unit" || (state !== "available" && state !== "selected")}
                       onClick={() => onSelectUnit(unit.id, slotIso)}
+                      aria-pressed={targetId === unit.id && slotStarts.includes(slotIso)}
+                      aria-label={localeText(
+                        locale,
+                        `${unit.name}，${formatTime(slotIso)}，状态 ${cellStateLabel(state, locale)}`,
+                        `${unit.name}, ${formatTime(slotIso)}, status ${cellStateLabel(state, locale)}`
+                      )}
                     >
                       <p className="text-xs uppercase tracking-[0.16em] text-ink/45">
                         {formatTime(slotIso)}

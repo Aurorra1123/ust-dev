@@ -6,6 +6,27 @@
 
 ### 已完成
 
+- 已完成 `COMP-004`，补齐前端关键主路径的 a11y、安全头与轻量留证：
+  - 全局新增 `skip link`、`focus-visible`、`sr-only`
+  - `StatePanel` 现在具备 `role` 与 `aria-live`
+  - 学术、体育、活动主路径补入 `aria-pressed`、`aria-describedby`、显式状态文案与键盘帮助
+- 已把 API 安全基线收口到共享 bootstrap：
+  - 新增 `apps/api/src/bootstrap-api.ts`
+  - `main.ts` 与测试 harness 共用同一套 CORS / 安全头 / pipe 初始化
+- 已补 Nginx / Web 容器的最小 CSP 与基础安全头：
+  - `Content-Security-Policy`
+  - `X-Content-Type-Options`
+  - `Referrer-Policy`
+  - `Permissions-Policy`
+  - `Cross-Origin-Opener-Policy`
+  - `Cross-Origin-Resource-Policy`
+- 已新增 ADR 与验证记录：
+  - `docs/adr/0024-share-api-bootstrap-and-minimal-web-csp-baseline.md`
+  - `docs/verification/2026-04-22/qa-006-comp-004-frontend-a11y-security.md`
+- 已新增 `COMP-004` 轻量审计与安全头回归：
+  - `scripts/comp-004-audit.mjs`
+  - `apps/api/test/comp-004-security-headers.test.ts`
+
 - 已完成 `COMP-003`，把规则系统升级为强类型 handler registry：
   - 已接入 `max_active_reservations_per_category`
   - 已接入 `no_show_credit_penalty`
@@ -93,8 +114,8 @@
 
 ### 当前状态
 
-- `COMP-003` 已完成，规则引擎和处罚闭环已经有真实回归。
-- 当前下一阶段应进入 `COMP-004`，收口前端 a11y、性能、安全实现与留证。
+- `COMP-004` 已完成，前端关键主路径的可达性、安全头与轻量留证已经有真实回归。
+- 当前下一阶段应进入 `COMP-005`，把 judge-up、smoke 与最终验收样例补成统一门槛。
 - `COMP-006` 已完成，活动库存一致性与自愈已经有真实回归。
 - 当前下一阶段应进入 `COMP-003`，把规则引擎升级为 registry，并让资格、额度、处罚进入真实链路。
 - `COMP-002` 已完成，幽灵支付对撞已经有真实回归和补偿日志留痕。
@@ -107,15 +128,15 @@
 
 ### 下一步建议
 
-1. 开始 `COMP-004`，补学术、体育、活动与订单关键页的键盘可达和错误提示
-2. 补基础安全头、a11y 留证与性能留证
-3. 在 `COMP-004` 完成后进入 `COMP-005`，把已有业务链路转成更完整的验收门槛
+1. 开始 `COMP-005`，扩 judge-up、smoke 与业务级验收脚本
+2. 把学术、体育、活动、订单和规则命中都纳入统一回归门槛
+3. 按 `docs/verification/` 输出最终评委复现实例
 
 ### 注意事项
 
 - 本轮没有触碰 `docs/user_test/`
 - 为避免测试进程悬挂和多套应用并发拉起，本轮把 `apps/api` 的测试脚本收口为串行 `node:test` 并在结果产出后强制退出
-- 当前本地已完成 `COMP-003` 代码改动，但尚未开始 `COMP-004`
+- 当前本地已完成 `COMP-004` 代码改动，并已通过类型检查、前端构建、轻量审计和完整 API 回归
 
 ### 已完成
 

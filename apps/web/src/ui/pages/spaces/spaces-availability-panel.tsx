@@ -189,9 +189,22 @@ export function SpacesAvailabilityPanel({
                             : "border-ink/10 bg-sand hover:border-moss"
                         }`}
                         onClick={() => onSelectUnit(unit.id)}
+                        aria-pressed={unit.id === selectedUnitId}
+                        aria-label={localeText(
+                          locale,
+                          `${unit.name}，${rowSummary}${unit.id === selectedUnitId ? "，当前已选中" : ""}`,
+                          `${unit.name}, ${rowSummary}${unit.id === selectedUnitId ? ", currently selected" : ""}`
+                        )}
                       >
                         <div className="w-40 shrink-0">
-                          <p className="text-sm font-semibold text-ink">{unit.name}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-ink">{unit.name}</p>
+                            {unit.id === selectedUnitId ? (
+                              <span className="rounded-full bg-ember px-2 py-1 text-[11px] font-medium text-white">
+                                {localeText(locale, "当前选择", "Selected")}
+                              </span>
+                            ) : null}
+                          </div>
                           <p className="mt-1 text-xs uppercase tracking-[0.18em] text-ink/45">
                             {unit.code}
                           </p>

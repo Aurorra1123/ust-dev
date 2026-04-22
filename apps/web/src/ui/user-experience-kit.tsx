@@ -74,9 +74,15 @@ export function StatePanel({
         : tone === "loading"
           ? "border-moss/15 bg-mist"
           : "border-navy/10 bg-sand";
+  const role = tone === "danger" ? "alert" : "status";
+  const ariaLive = tone === "danger" ? "assertive" : "polite";
 
   return (
-    <div className={`rounded-[24px] border px-5 py-5 ${toneClass}`}>
+    <div
+      className={`rounded-[24px] border px-5 py-5 ${toneClass}`}
+      role={role}
+      aria-live={ariaLive}
+    >
       <p className="text-sm font-semibold text-ink">{title}</p>
       <p className="mt-2 text-sm leading-7 text-slate">{description}</p>
     </div>
