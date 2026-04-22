@@ -6,6 +6,12 @@
 
 ### 已完成
 
+- 已完成一轮外部写作规则工具调研与实测，并据此收口比赛说明文档：
+  - 已在仓库内临时拉取 `yzhao062/agent-style` 仓库做只读调研
+  - 已实际验证 `agent-style` 的 `list-tools`、`enable agents-md` 与 `review` 流程
+  - 已确认该工具更适合英文技术写作，不直接适用于中文说明文档
+  - 已将其可迁移规则收口到当前提交文档中，重点压缩口语化表达、抽象词、机械连接句与过度宣传式表述
+  - 已更新 `docs/demo/competition-architecture-and-product-report-2026-04-22.md`
 - 已新增面向评委提交口径的正式说明文档目录与文档：
   - `docs/demo/README.md`
   - `docs/demo/competition-architecture-and-product-report-2026-04-22.md`
