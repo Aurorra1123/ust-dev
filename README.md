@@ -120,17 +120,16 @@ pnpm dev:web
 - `apps/api`：后端 API、Prisma、seed 脚本和 Worker 入口
 - `packages/shared-types`：前后端共享类型
 - `infra`：Docker Compose、Dockerfile 和 Nginx 配置
-- `docs`：架构、部署、进度、验证和计划文档
+- `docs`：评审版产品说明、架构图、流程图和 ER 图
 - `scripts`：初始化、judge 启动和 smoke 脚本
 
 ## 相关文档
 
-- [docs/architecture/product-baseline.md](docs/architecture/product-baseline.md)：产品范围和主要用户路径
-- [docs/architecture/technical-solution-v2.md](docs/architecture/technical-solution-v2.md)：当前推荐技术方案
-- [docs/architecture/current-implementation-audit-2026-04-21.md](docs/architecture/current-implementation-audit-2026-04-21.md)：当前代码真实实现到哪里
-- [docs/standards/judge-quick-start.md](docs/standards/judge-quick-start.md)：评委验收 / 演示的一键启动说明
-- [docs/progress/agent-progress.md](docs/progress/agent-progress.md)：最近阶段进度
-- [docs/plans/feature-list.json](docs/plans/feature-list.json)：功能清单与完成状态
+- [docs/README.md](docs/README.md)：文档总入口
+- [docs/product-architecture.md](docs/product-architecture.md)：产品架构说明
+- [docs/core-architecture-diagram.md](docs/core-architecture-diagram.md)：核心架构图
+- [docs/business-flow-diagram.md](docs/business-flow-diagram.md)：业务流程图
+- [docs/database-er-diagram.md](docs/database-er-diagram.md)：数据库 ER 图
 
 ## 项目亮点
 
@@ -139,41 +138,3 @@ pnpm dev:web
 - 活动报名链路不是直接同步写库，而是用 `Redis + BullMQ + Worker` 处理高峰请求，避免把压力全压到数据库。
 - 三类业务共用统一订单中心、规则拦截和后台工作台，体验和管理路径更清楚。
 - 提供 judge 模式一键启动，适合答辩、演示和快速验收。
-
-## AST 圈复杂度记录
-
-截至 `2026-04-22`，仓库已完成一轮基于 AST 的圈复杂度治理，覆盖前端热点页面、预约面板和后端核心服务函数。
-
-本轮计划内已完成收口的热点包括：
-
-- `ResourcesWorkspace`
-- `OrderDetailPage`
-- `ActivitiesWorkspace`
-- `ActivitiesPage`
-- `RulesEditorPanel`
-- `SpacesBookingPanel`
-- `SportsBookingPanel`
-- `ReservationService.createSportsReservation`
-- `OrdersService.transitionOrder`
-- `normalizeActivityTimeline`
-
-最终 AST 汇总结果：
-
-- `analyzedFiles = 162`
-- `analyzedFunctions = 1278`
-- `over10 = 36`
-- `over15 = 15`
-- `over20 = 5`
-- `over30 = 1`
-
-当前剩余 `>20` 热点：
-
-1. `RulesWorkspace` `38`
-2. `SpacesPage` `28`
-3. `SportsPage` `27`
-4. `NotificationsWorkspace` `24`
-5. `toOrderDetail` `21`
-
-完整留证见：
-
-- [docs/verification/2026-04-22/qa-017-cyclomatic-final-ast-report.md](docs/verification/2026-04-22/qa-017-cyclomatic-final-ast-report.md)
