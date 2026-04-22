@@ -6,6 +6,20 @@
 
 ### 已完成
 
+- 已补齐评审版结构化文档到 `docs/demo/`：
+  - `core-architecture-diagram.md`
+  - `business-flow-diagram.md`
+  - `database-er-diagram.md`
+  - `product-architecture.md`
+- 本轮文档全部按当前代码真实状态收口：
+  - 运行时架构以 `apps/api/src/app.module.ts`、`apps/api/src/worker.module.ts`、`apps/web/src/routes.tsx`、`infra/docker-compose.yml` 为准
+  - 业务流程以当前 `reservation / activities / orders / payment / rules` 模块代码为准
+  - ER 图以 `apps/api/prisma/schema.prisma` 为准
+- 已在评审文档中显式对齐当前有效业务分支：
+  - 学术空间与体育设施预约创建后直接 `CONFIRMED`
+  - 活动报名按票价分为“免费直确认”和“付费待支付后确认”
+  - 支付链路明确标注为 Mock 支付，不表述为真实第三方支付
+- 本轮只新增评审材料与进度记录，未修改业务代码、数据库 schema 或部署脚本
 - 已完成一轮外部写作规则工具调研与实测，并据此收口比赛说明文档：
   - 已在仓库内临时拉取 `yzhao062/agent-style` 仓库做只读调研
   - 已实际验证 `agent-style` 的 `list-tools`、`enable agents-md` 与 `review` 流程
