@@ -6,6 +6,18 @@
 
 ### 已完成
 
+- 已把两项新的展示与交互任务正式同步进文档系统：
+  - `docs/architecture/demo-data-curation-plan-2026-04-22.md`
+  - `docs/adr/0026-admin-resource-pages-use-inline-editing-instead-of-right-rail-forms.md`
+- 已更新 `docs/architecture/admin-form-simplification-plan-2026-04-22.md`，明确资源页后续采用：
+  - 资源卡片就地编辑
+  - 资源单元行内编辑
+  - 虚线框新增入口
+- 已在 `docs/plans/feature-list.json` 中新增：
+  - `DEMO-001`：正式演示数据整备
+  - `ADM-010`：资源页就地编辑与虚线新增入口重构
+- 已更新架构文档索引：
+  - `docs/architecture/README.md`
 - 已完成 `COMP-005`，把业务测试、judge smoke 与 judge-up 基线继续收口：
   - 新增 `apps/api/test/comp-005-business-regressions.test.ts`
   - 覆盖 delayed expiration worker、同活动跨票种唯一性、规则启停即时生效
