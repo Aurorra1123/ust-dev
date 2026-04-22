@@ -6,6 +6,17 @@
 
 ### 已完成
 
+- 已完成一轮线上应用层同步部署并修复 API 镜像运行时缺陷：
+  - `docker compose -f infra/docker-compose.yml build api web`
+  - `docker compose -f infra/docker-compose.yml up -d --no-deps api worker web`
+  - 首次切换后，线上 `web` 已切到新 bundle，`config.js` 也已切到不含密码的 `demoAccounts`
+  - 首次切换时 `api` 出现短暂 `502`
+  - 定位原因为 `infra/docker/api.Dockerfile` runner 仍从 `deps` 复制 `node_modules`，导致运行镜像缺少 `prisma generate` 后的产物
+  - 已把 runner 拷贝源统一改为 `builder`，随后重新构建 `api` 并重启 `api / worker`
+  - 线上 `https://api.campusbook.top/health` 已恢复 `200`
+  - 非白名单学生复用 demo 学生密码的线上抽检现已返回 `401`
+  - 已新增部署留证：
+    - `docs/verification/2026-04-22/ops-live-app-sync-deploy.md`
 - 已为评审版产品说明文档补充英文界面截图：
   - 新增目录 `docs/demo/screenshots/`
   - 已生成并插入：

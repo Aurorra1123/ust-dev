@@ -24,10 +24,10 @@ RUN pnpm --filter api build
 
 FROM base AS runner
 
-COPY --from=deps /workspace/package.json /workspace/pnpm-lock.yaml /workspace/pnpm-workspace.yaml /workspace/
-COPY --from=deps /workspace/apps /workspace/apps
-COPY --from=deps /workspace/packages /workspace/packages
-COPY --from=deps /workspace/node_modules /workspace/node_modules
+COPY --from=builder /workspace/package.json /workspace/pnpm-lock.yaml /workspace/pnpm-workspace.yaml /workspace/
+COPY --from=builder /workspace/apps /workspace/apps
+COPY --from=builder /workspace/packages /workspace/packages
+COPY --from=builder /workspace/node_modules /workspace/node_modules
 COPY --from=builder /workspace/apps/api/dist /workspace/apps/api/dist
 
 EXPOSE 3000
