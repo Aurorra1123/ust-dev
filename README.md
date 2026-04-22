@@ -2,6 +2,14 @@
 
 一个面向校园场景的统一预约与活动平台，覆盖学术空间、体育设施、校园活动和后台管理。
 
+## 在线体验
+
+- 学生端：[https://campusbook.top/](https://campusbook.top/)
+- 管理端：[https://campusbook.top/admin](https://campusbook.top/admin)
+- API 健康检查：[https://api.campusbook.top/health](https://api.campusbook.top/health)
+
+建议先用学生账号体验预约、活动和订单流程，再用管理员账号查看后台工作台。
+
 ## 项目简介
 
 校园里的预约入口通常比较分散：学术空间、体育场地、校园活动往往不在同一套系统里，规则也不统一，热门活动还容易在高峰期出现排队混乱或超卖问题。`CampusBook` 想解决的，就是把这些常见场景放进同一个入口，让学生和管理员都能更清楚地完成预约、报名和管理。
@@ -130,11 +138,3 @@ pnpm dev:web
 - [docs/core-architecture-diagram.md](docs/core-architecture-diagram.md)：核心架构图
 - [docs/business-flow-diagram.md](docs/business-flow-diagram.md)：业务流程图
 - [docs/database-er-diagram.md](docs/database-er-diagram.md)：数据库 ER 图
-
-## 项目亮点
-
-- 一套系统同时覆盖学术空间、体育设施、校园活动三个校园高频场景，不是单一预约页。
-- 学术空间和体育设施使用不同的预约模型：前者是连续时间段加缓冲，后者是离散槽位和组合预约。
-- 活动报名链路不是直接同步写库，而是用 `Redis + BullMQ + Worker` 处理高峰请求，避免把压力全压到数据库。
-- 三类业务共用统一订单中心、规则拦截和后台工作台，体验和管理路径更清楚。
-- 提供 judge 模式一键启动，适合答辩、演示和快速验收。
