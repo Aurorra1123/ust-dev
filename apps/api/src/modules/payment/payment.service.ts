@@ -6,8 +6,7 @@ import {
 } from "@nestjs/common";
 import {
   PaymentCompensationType,
-  PaymentStatus,
-  Prisma
+  PaymentStatus
 } from "@prisma/client";
 import type {
   MockPaymentStartResponse,

@@ -3,7 +3,12 @@ import type { AddressInfo } from "node:net";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { INestApplication, INestApplicationContext } from "@nestjs/common";
+import type {
+  Abstract,
+  INestApplication,
+  INestApplicationContext,
+  Type
+} from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import {
   ActivityStatus,
@@ -66,8 +71,8 @@ export interface IntegrationHarness {
     activityId: string;
     ticketId: string;
   }>;
-  getApiService<T>(token: string | symbol | Function): T;
-  getWorkerService<T>(token: string | symbol | Function): T;
+  getApiService<T>(token: string | symbol | Type<T> | Abstract<T>): T;
+  getWorkerService<T>(token: string | symbol | Type<T> | Abstract<T>): T;
   runExpirePendingOrders(): Promise<TestResponse>;
   waitForActivityQueueIdle(timeoutMs?: number): Promise<void>;
 }
