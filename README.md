@@ -1,5 +1,7 @@
 # CampusBook（智约校园）
 
+[![CampusBook 登录页预览](docs/screenshots/main.png)](https://campusbook.top/)
+
 一个面向校园场景的统一预约与活动平台，覆盖学术空间、体育设施、校园活动和后台管理。
 
 ## 在线体验
