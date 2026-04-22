@@ -30,6 +30,9 @@ export function RulesEditorPanel({
   editor,
   setEditor,
   isEditorValid,
+  bindingScopeLabel,
+  visibleBindingCount,
+  hiddenBindingCount,
   saveRuleMutation,
   updateRuleStatusMutation,
   deleteRuleMutation,
@@ -45,6 +48,9 @@ export function RulesEditorPanel({
   editor: RuleEditorState;
   setEditor: Dispatch<SetStateAction<RuleEditorState>>;
   isEditorValid: boolean;
+  bindingScopeLabel: string;
+  visibleBindingCount: number;
+  hiddenBindingCount: number;
   saveRuleMutation: MutationStateLike;
   updateRuleStatusMutation: MutationStateLike;
   deleteRuleMutation: MutationStateLike;
@@ -246,8 +252,8 @@ export function RulesEditorPanel({
               {selectedRule
                 ? localeText(
                     locale,
-                    "勾选后规则会立即作用到对应资源；取消勾选将解绑该资源。",
-                    "Checked resources are affected immediately by the selected rule. Unchecking removes the binding."
+                    `当前只展示 ${bindingScopeLabel} 的资源；勾选后规则会立即作用到对应资源，取消勾选会解除绑定。`,
+                    `Only ${bindingScopeLabel} resources are listed here. Checking applies the rule immediately, and unchecking removes the binding.`
                   )
                 : localeText(
                     locale,
@@ -255,45 +261,64 @@ export function RulesEditorPanel({
                     "Save the rule first before binding it to resources."
                   )}
             </p>
+            {hiddenBindingCount > 0 ? (
+              <p className="mt-2 text-sm text-danger">
+                {localeText(
+                  locale,
+                  `该规则还有 ${hiddenBindingCount} 个其他业务域绑定，请切换到对应子页继续整理。`,
+                  `This rule still has ${hiddenBindingCount} bindings in the other domain. Switch tabs to manage them.`
+                )}
+              </p>
+            ) : null}
           </div>
           {selectedRule ? (
             <StatusPill tone="brand">
               {localeText(
                 locale,
-                `${selectedRule.resourceIds.length} 个资源`,
-                `${selectedRule.resourceIds.length} resources`
+                `当前域已绑定 ${visibleBindingCount} 个资源`,
+                `${visibleBindingCount} bindings in this domain`
               )}
             </StatusPill>
           ) : null}
         </div>
 
         <div className="mt-4 grid gap-2">
-          {resources.map((resource) => {
-            const checked = selectedRule?.resourceIds.includes(resource.id) ?? false;
+          {resources.length ? (
+            resources.map((resource) => {
+              const checked = selectedRule?.resourceIds.includes(resource.id) ?? false;
 
-            return (
-              <label
-                key={resource.id}
-                className="flex items-center gap-3 rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm text-ink"
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  disabled={!selectedRule || bindingMutation.isPending}
-                  onChange={(event) => onToggleBinding(resource.id, event.target.checked)}
-                />
-                <div className="min-w-0">
-                  <p className="font-medium text-ink">{resource.name}</p>
-                  <p className="mt-1 text-xs text-ink/55">
-                    {resourceTypeLabel(resource.type, locale)} ·{" "}
-                    {resource.status === "active"
-                      ? localeText(locale, "启用中", "Active")
-                      : localeText(locale, "已停用", "Inactive")}
-                  </p>
-                </div>
-              </label>
-            );
-          })}
+              return (
+                <label
+                  key={resource.id}
+                  className="flex items-center gap-3 rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm text-ink"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={!selectedRule || bindingMutation.isPending}
+                    onChange={(event) => onToggleBinding(resource.id, event.target.checked)}
+                  />
+                  <div className="min-w-0">
+                    <p className="font-medium text-ink">{resource.name}</p>
+                    <p className="mt-1 text-xs text-ink/55">
+                      {resourceTypeLabel(resource.type, locale)} ·{" "}
+                      {resource.status === "active"
+                        ? localeText(locale, "启用中", "Active")
+                        : localeText(locale, "已停用", "Inactive")}
+                    </p>
+                  </div>
+                </label>
+              );
+            })
+          ) : (
+            <div className="rounded-2xl border border-dashed border-ink/12 px-4 py-4 text-sm text-slate">
+              {localeText(
+                locale,
+                "当前业务域还没有可绑定资源。请先回到资源页创建资源，再回来配置规则。",
+                "There are no bindable resources in this domain yet. Create resources first, then return to configure rules."
+              )}
+            </div>
+          )}
         </div>
 
         <MutationState

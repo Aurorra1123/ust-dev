@@ -2,16 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { ResourceType } from "@campusbook/shared-types";
 
-import { cancelOrder } from "../../../../lib/api/order-api";
 import {
   createResource,
-  createResourceBookingClosures,
-  createResourceReleaseRules,
   createResourceUnit,
   deleteResource,
-  deleteResourceBookingClosure,
   deleteResourceUnit,
-  fetchAdminResourceReservationStatus,
   fetchAdminResources,
   updateResource
 } from "../../../../lib/api/resource-api";
@@ -27,13 +22,9 @@ import { ResourcesDetailPanel } from "./resources/resources-detail-panel";
 import {
   alignResourceUnitFormToResource,
   buildAcademicAreaGroups,
-  createDefaultBookingClosureFormState,
-  createDefaultReleaseRuleFormState,
   createDefaultResourceFormState,
   createDefaultResourceUnitFormState,
-  createDefaultStatusWindow,
-  extractAcademicAreaKey,
-  type StatusWindowState
+  extractAcademicAreaKey
 } from "./resources/resources-workspace-helpers";
 
 type ResourceWorkspaceDomain = "all" | "sports" | "academic";
@@ -63,15 +54,6 @@ export function ResourcesWorkspace({
   const [resourceUnitForm, setResourceUnitForm] = useState(
     createDefaultResourceUnitFormState
   );
-  const [resourceOperationTargets, setResourceOperationTargets] = useState<string[]>([]);
-  const [showAdvancedScheduling, setShowAdvancedScheduling] = useState(false);
-  const [releaseRuleForm, setReleaseRuleForm] = useState(
-    createDefaultReleaseRuleFormState
-  );
-  const [bookingClosureForm, setBookingClosureForm] = useState(
-    createDefaultBookingClosureFormState
-  );
-  const [statusWindow, setStatusWindow] = useState(createDefaultStatusWindow);
 
   const domainResources = useMemo(() => {
     const resources = resourcesQuery.data ?? [];
@@ -141,8 +123,6 @@ export function ResourcesWorkspace({
     visibleResources.find((resource) => resource.id === resourceId) ??
     visibleResources[0] ??
     null;
-  const hasReleaseStrategy = (selectedResource?.releaseRules.length ?? 0) > 0;
-  const showSchedulingSettings = hasReleaseStrategy || showAdvancedScheduling;
   const isCreateResourceValid =
     resourceForm.code.trim().length > 0 && resourceForm.name.trim().length > 0;
   const isCreateResourceUnitValid =
@@ -160,21 +140,6 @@ export function ResourcesWorkspace({
       alignResourceUnitFormToResource(current, selectedResource)
     );
   }, [selectedResource]);
-
-  useEffect(() => {
-    if (!selectedResource) {
-      setResourceOperationTargets([]);
-      return;
-    }
-
-    setResourceOperationTargets((current) =>
-      current.length > 0 ? current : [selectedResource.id]
-    );
-  }, [selectedResource]);
-
-  useEffect(() => {
-    setShowAdvancedScheduling(false);
-  }, [selectedResource?.id]);
 
   const createResourceMutation = useMutation({
     mutationFn: createResource,
@@ -219,8 +184,7 @@ export function ResourcesWorkspace({
       setResourceId(resource.id);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
+        queryClient.invalidateQueries({ queryKey: ["resources"] })
       ]);
     }
   });
@@ -231,8 +195,7 @@ export function ResourcesWorkspace({
       setResourceId("");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
+        queryClient.invalidateQueries({ queryKey: ["resources"] })
       ]);
     }
   });
@@ -244,83 +207,10 @@ export function ResourcesWorkspace({
       setResourceId(resource.id);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
+        queryClient.invalidateQueries({ queryKey: ["resources"] })
       ]);
     }
   });
-
-  const createReleaseRuleMutation = useMutation({
-    mutationFn: createResourceReleaseRules,
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
-      ]);
-    }
-  });
-
-  const createBookingClosureMutation = useMutation({
-    mutationFn: createResourceBookingClosures,
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
-      ]);
-    }
-  });
-
-  const deleteBookingClosureMutation = useMutation({
-    mutationFn: (closureId: string) => deleteResourceBookingClosure(closureId),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] })
-      ]);
-    }
-  });
-
-  const cancelReservationMutation = useMutation({
-    mutationFn: (payload: { orderId: string; reason: string }) =>
-      cancelOrder(payload.orderId, payload.reason),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["admin", "resource-status"] }),
-        queryClient.invalidateQueries({ queryKey: ["orders"] })
-      ]);
-    }
-  });
-
-  const resourceStatusQuery = useQuery({
-    queryKey: [
-      "admin",
-      "resource-status",
-      selectedResource?.id ?? "none",
-      statusWindow.from,
-      statusWindow.to
-    ],
-    queryFn: () =>
-      fetchAdminResourceReservationStatus(selectedResource!.id, {
-        from: new Date(statusWindow.from).toISOString(),
-        to: new Date(statusWindow.to).toISOString()
-      }),
-    enabled: Boolean(selectedResource)
-  });
-
-  function handleToggleResourceOperationTarget(resourceId: string, nextChecked: boolean) {
-    setResourceOperationTargets((current) =>
-      nextChecked
-        ? Array.from(new Set([...current, resourceId]))
-        : current.filter((id) => id !== resourceId)
-    );
-  }
-
-  function handleStatusWindowChange(field: keyof StatusWindowState, value: string) {
-    setStatusWindow((current) => ({
-      ...current,
-      [field]: value
-    }));
-  }
 
   function handleToggleResourceStatus() {
     if (!selectedResource) {
@@ -357,8 +247,8 @@ export function ResourcesWorkspace({
       !window.confirm(
         localeText(
           locale,
-          "仅当该资源没有资源单元、规则绑定、关闭规则、开放策略和历史预约记录时，才允许彻底删除。确认继续吗？",
-          "The resource can only be deleted when it has no units, bindings, closure rules, opening strategies, or reservation history. Continue?"
+          "仅当该资源没有资源单元、规则绑定和历史预约记录时，才允许彻底删除。确认继续吗？",
+          "The resource can only be deleted when it has no units, rule bindings, or reservation history. Continue?"
         )
       )
     ) {
@@ -409,65 +299,6 @@ export function ResourcesWorkspace({
     });
   }
 
-  function handleCreateBookingClosure() {
-    if (!resourceOperationTargets.length) {
-      return;
-    }
-
-    createBookingClosureMutation.mutate({
-      resourceIds: resourceOperationTargets,
-      startsAt: new Date(bookingClosureForm.startsAt).toISOString(),
-      endsAt: bookingClosureForm.indefinite
-        ? null
-        : new Date(bookingClosureForm.endsAt).toISOString(),
-      reason: bookingClosureForm.reason
-    });
-  }
-
-  function handleCreateReleaseRule() {
-    if (!resourceOperationTargets.length) {
-      return;
-    }
-
-    createReleaseRuleMutation.mutate({
-      resourceIds: resourceOperationTargets,
-      frequency: releaseRuleForm.frequency,
-      dayOfWeek:
-        releaseRuleForm.frequency === "weekly" ? releaseRuleForm.dayOfWeek : undefined,
-      dayOfMonth:
-        releaseRuleForm.frequency === "monthly" ? releaseRuleForm.dayOfMonth : undefined,
-      hour: releaseRuleForm.hour,
-      minute: releaseRuleForm.minute
-    });
-  }
-
-  function handleDeleteBookingClosure(closureId: string) {
-    if (
-      !window.confirm(
-        localeText(
-          locale,
-          "删除后该预约关闭规则将立即失效。确认继续吗？",
-          "Deleting this booking closure will remove it immediately. Continue?"
-        )
-      )
-    ) {
-      return;
-    }
-
-    deleteBookingClosureMutation.mutate(closureId);
-  }
-
-  function handleCancelReservation(orderId: string) {
-    cancelReservationMutation.mutate({
-      orderId,
-      reason: localeText(
-        locale,
-        "管理员从资源工作台取消预约",
-        "Cancelled by admin from resource workspace"
-      )
-    });
-  }
-
   const workspaceTitle =
     domain === "sports"
       ? localeText(locale, "体育场馆", "Sports Venues")
@@ -478,19 +309,19 @@ export function ResourcesWorkspace({
     domain === "sports"
       ? localeText(
           locale,
-          "这里集中维护体育场馆、场地单元、关闭规则、开放策略和预约状态。进入模块后默认就是体育设施上下文，不再混入学术空间。",
-          "Manage sports venues, court units, closures, opening strategies, and reservation status here. This module stays in the sports-facility context and no longer mixes in academic spaces."
+          "这里专门维护体育场馆与场地单元，不再混入规则、调度和预约状态控制。",
+          "Maintain sports venues and court units here without mixing in rule, scheduling, or reservation controls."
         )
       : domain === "academic"
         ? localeText(
             locale,
-            "这里集中维护学术空间、房间单元、关闭规则、开放策略和预约状态。你可以先按 E1/E2/E3/E4 等区域查看，再管理对应空间。",
-            "Manage academic spaces, room units, closures, opening strategies, and reservation status here. Review spaces by E1/E2/E3/E4-style areas first, then work on the matching rooms."
+            "这里专门维护学术空间与房间单元。你可以先按 E1/E2/E3/E4 等区域查看，再管理对应空间。",
+            "Maintain academic spaces and room units here. Review spaces by E1/E2/E3/E4-style areas first, then manage the matching rooms."
           )
         : localeText(
             locale,
-            "这里集中处理资源列表、预约开放策略、预约通道关闭和预约状态查看。左侧先选资源，中间看当前状态，右侧执行新增和配置操作。",
-            "This workspace manages the resource list, booking opening strategy, booking closures, and reservation status. Select a resource on the left, review its current status in the center, and configure updates on the right."
+            "这里专门处理资源和资源单元的基础维护，不再承担规则、调度和预约状态控制。",
+            "This workspace now focuses only on resource and unit maintenance instead of rule, scheduling, and reservation controls."
           );
   const loadingTitle =
     domain === "sports"
@@ -502,19 +333,19 @@ export function ResourcesWorkspace({
     domain === "sports"
       ? localeText(
           locale,
-          "页面正在整理当前可维护的体育场馆、开放策略和预约状态。",
-          "The page is loading sports venues, opening strategies, and reservation status."
+          "页面正在整理当前可维护的体育场馆与场地单元。",
+          "The page is loading sports venues and court units."
         )
       : domain === "academic"
         ? localeText(
             locale,
-            "页面正在整理当前可维护的学术空间、区域分组和预约状态。",
-            "The page is loading academic spaces, area groups, and reservation status."
+            "页面正在整理当前可维护的学术空间、区域分组和房间单元。",
+            "The page is loading academic spaces, area groups, and room units."
           )
         : localeText(
             locale,
-            "页面正在整理当前可维护的资源、开放策略和预约状态。",
-            "The page is loading current resources, opening strategies, and reservation status."
+            "页面正在整理当前可维护的资源与资源单元。",
+            "The page is loading resources and resource units."
           );
   const errorTitle =
     domain === "sports"
@@ -532,8 +363,8 @@ export function ResourcesWorkspace({
     domain === "sports"
       ? localeText(
           locale,
-          "可以先在右侧创建体育场馆，再补具体场地单元和开放策略。",
-          "Create a sports venue on the right first, then add specific courts and opening strategies."
+          "可以先在右侧创建体育场馆，再补具体场地单元。",
+          "Create a sports venue on the right first, then add specific court units."
         )
       : domain === "academic"
         ? localeText(
@@ -544,10 +375,7 @@ export function ResourcesWorkspace({
         : localeText(locale, "可以先在右侧创建资源。", "Create a resource on the right first.");
 
   return (
-    <PageSection
-      title={workspaceTitle}
-      description={workspaceDescription}
-    >
+    <PageSection title={workspaceTitle} description={workspaceDescription}>
       {resourcesQuery.isLoading ? (
         <StatePanel
           tone="loading"
@@ -600,28 +428,13 @@ export function ResourcesWorkspace({
                 />
                 <ResourcesDetailPanel
                   locale={locale}
-                  resources={visibleResources}
                   selectedResource={selectedResource}
-                  resourceOperationTargets={resourceOperationTargets}
-                  onToggleResourceOperationTarget={handleToggleResourceOperationTarget}
                   onToggleResourceStatus={handleToggleResourceStatus}
                   onDeleteResource={handleDeleteResource}
                   onDeleteResourceUnit={handleDeleteResourceUnit}
-                  onDeleteBookingClosure={handleDeleteBookingClosure}
                   updateResourceStatusMutation={updateResourceStatusMutation}
                   deleteResourceMutation={deleteResourceMutation}
                   deleteResourceUnitMutation={deleteResourceUnitMutation}
-                  deleteBookingClosureMutation={deleteBookingClosureMutation}
-                  statusWindow={statusWindow}
-                  onStatusWindowChange={handleStatusWindowChange}
-                  resourceStatusQuery={{
-                    data: resourceStatusQuery.data,
-                    isLoading: resourceStatusQuery.isLoading,
-                    isError: resourceStatusQuery.isError,
-                    error: (resourceStatusQuery.error as Error | null) ?? null
-                  }}
-                  onCancelReservation={handleCancelReservation}
-                  cancelReservationMutation={cancelReservationMutation}
                 />
               </>
             ) : (
@@ -636,25 +449,13 @@ export function ResourcesWorkspace({
             setResourceForm={setResourceForm}
             resourceUnitForm={resourceUnitForm}
             setResourceUnitForm={setResourceUnitForm}
-            bookingClosureForm={bookingClosureForm}
-            setBookingClosureForm={setBookingClosureForm}
-            releaseRuleForm={releaseRuleForm}
-            setReleaseRuleForm={setReleaseRuleForm}
             lockedResourceType={lockedResourceType}
-            resourceOperationTargetsCount={resourceOperationTargets.length}
-            hasReleaseStrategy={hasReleaseStrategy}
-            showSchedulingSettings={showSchedulingSettings}
-            setShowAdvancedScheduling={setShowAdvancedScheduling}
             createResourceMutation={createResourceMutation}
             createResourceUnitMutation={createResourceUnitMutation}
-            createBookingClosureMutation={createBookingClosureMutation}
-            createReleaseRuleMutation={createReleaseRuleMutation}
             isCreateResourceValid={isCreateResourceValid}
             isCreateResourceUnitValid={isCreateResourceUnitValid}
             onCreateResource={handleCreateResource}
             onCreateResourceUnit={handleCreateResourceUnit}
-            onCreateBookingClosure={handleCreateBookingClosure}
-            onCreateReleaseRule={handleCreateReleaseRule}
           />
         </div>
       )}

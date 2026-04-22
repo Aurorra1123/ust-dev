@@ -1,14 +1,9 @@
 import type { AdminResourceDetailResponse } from "@campusbook/shared-types";
 
-import { formatDateTime } from "../../../../../lib/date";
 import { localeText } from "../../../../../lib/locale";
 import type { Locale } from "../../../../../store/locale-store";
 import { StatusPill } from "../../../../user-experience-kit";
-import {
-  channelStatusLabel,
-  channelStatusTone,
-  resourceTypeLabel
-} from "../../admin-helpers";
+import { resourceTypeLabel } from "../../admin-helpers";
 
 export function ResourcesCatalogPanel({
   locale,
@@ -50,34 +45,13 @@ export function ResourcesCatalogPanel({
               {localeText(locale, "未配置单元", "No Units")}
             </StatusPill>
           ) : null}
-          <StatusPill tone={channelStatusTone(resource.channelStatus.status)}>
-            {channelStatusLabel(resource.channelStatus.status, locale)}
-          </StatusPill>
         </div>
       </div>
       <p className="mt-3 text-sm text-ink/70">
-        {(resource.location || localeText(locale, "未填写位置", "No location"))} ·{" "}
-        {localeText(locale, `${resource.units.length} 个单元`, `${resource.units.length} units`)}
+        {resource.code} · {resource.location || localeText(locale, "未填写位置", "No location")}
       </p>
       <p className="mt-2 text-xs text-ink/55">
-        {resource.channelStatus.status === "scheduled" &&
-        resource.channelStatus.nextReleaseAt
-          ? localeText(
-              locale,
-              `下次开放 ${formatDateTime(resource.channelStatus.nextReleaseAt)}`,
-              `Next open ${formatDateTime(resource.channelStatus.nextReleaseAt)}`
-            )
-          : resource.channelStatus.status === "closed"
-            ? localeText(
-                locale,
-                resource.channelStatus.activeClosureReason
-                  ? `关闭原因：${resource.channelStatus.activeClosureReason}`
-                  : "当前存在预约关闭规则",
-                resource.channelStatus.activeClosureReason
-                  ? `Closed: ${resource.channelStatus.activeClosureReason}`
-                  : "Booking channel is currently closed"
-              )
-            : localeText(locale, "当前可接受预约", "Booking channel is open")}
+        {localeText(locale, `${resource.units.length} 个资源单元`, `${resource.units.length} units`)}
       </p>
     </button>
   ));

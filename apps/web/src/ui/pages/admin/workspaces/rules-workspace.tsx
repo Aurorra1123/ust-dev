@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { AppRule } from "@campusbook/shared-types";
 
 import {
   bindRuleToResource,
@@ -18,13 +19,14 @@ import { PageSection } from "../../../page-section";
 import { StatePanel } from "../../../user-experience-kit";
 import { RulesEditorPanel } from "./rules/rules-editor-panel";
 import { RulesSelectorPanel } from "./rules/rules-selector-panel";
-import { RulesSummaryPanel } from "./rules/rules-summary-panel";
 import {
   buildRuleExpression,
   createDefaultRuleEditorState,
   NEW_RULE_ID,
   toRuleEditorState
 } from "./rules/rules-workspace-helpers";
+
+type RuleDomain = "academic" | "sports";
 
 export function RulesWorkspace({ locale }: { locale: Locale }) {
   const rulesQuery = useQuery({
@@ -35,20 +37,51 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
     queryKey: ["admin", "resources"],
     queryFn: fetchAdminResources
   });
+  const [ruleDomain, setRuleDomain] = useState<RuleDomain>("academic");
   const [selectedRuleId, setSelectedRuleId] = useState(NEW_RULE_ID);
   const [editor, setEditor] = useState(createDefaultRuleEditorState);
+
+  const academicResources = useMemo(
+    () =>
+      (resourcesQuery.data ?? []).filter((resource) => resource.type === "academic_space"),
+    [resourcesQuery.data]
+  );
+  const sportsResources = useMemo(
+    () =>
+      (resourcesQuery.data ?? []).filter((resource) => resource.type === "sports_facility"),
+    [resourcesQuery.data]
+  );
+  const academicResourceIds = useMemo(
+    () => new Set(academicResources.map((resource) => resource.id)),
+    [academicResources]
+  );
+  const sportsResourceIds = useMemo(
+    () => new Set(sportsResources.map((resource) => resource.id)),
+    [sportsResources]
+  );
+  const visibleRules = useMemo(
+    () =>
+      (rulesQuery.data ?? []).filter((rule) =>
+        ruleBelongsToDomain(rule, ruleDomain, academicResourceIds, sportsResourceIds)
+      ),
+    [academicResourceIds, ruleDomain, rulesQuery.data, sportsResourceIds]
+  );
+  const currentDomainResources =
+    ruleDomain === "academic" ? academicResources : sportsResources;
+  const currentDomainResourceIds =
+    ruleDomain === "academic" ? academicResourceIds : sportsResourceIds;
 
   useEffect(() => {
     if (selectedRuleId === NEW_RULE_ID) {
       return;
     }
 
-    if (!rulesQuery.data?.some((rule) => rule.id === selectedRuleId)) {
-      setSelectedRuleId(rulesQuery.data?.[0]?.id ?? NEW_RULE_ID);
+    if (!visibleRules.some((rule) => rule.id === selectedRuleId)) {
+      setSelectedRuleId(visibleRules[0]?.id ?? NEW_RULE_ID);
     }
-  }, [selectedRuleId, rulesQuery.data]);
+  }, [selectedRuleId, visibleRules]);
 
-  const selectedRule = rulesQuery.data?.find((rule) => rule.id === selectedRuleId) ?? null;
+  const selectedRule = visibleRules.find((rule) => rule.id === selectedRuleId) ?? null;
 
   useEffect(() => {
     if (!selectedRule) {
@@ -105,15 +138,12 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
     }
   });
 
-  const ruleStats = useMemo(
-    () => ({
-      total: rulesQuery.data?.length ?? 0,
-      active: rulesQuery.data?.filter((rule) => rule.status === "active").length ?? 0,
-      bindings:
-        rulesQuery.data?.reduce((total, rule) => total + rule.resourceIds.length, 0) ?? 0
-    }),
-    [rulesQuery.data]
-  );
+  const visibleBindingCount =
+    selectedRule?.resourceIds.filter((resourceId) => currentDomainResourceIds.has(resourceId))
+      .length ?? 0;
+  const hiddenBindingCount =
+    selectedRule?.resourceIds.filter((resourceId) => !currentDomainResourceIds.has(resourceId))
+      .length ?? 0;
   const isEditorValid =
     editor.name.trim().length > 0 &&
     (editor.ruleType !== "allowed_user_roles" || editor.allowedRoles.length > 0);
@@ -205,44 +235,64 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
 
   return (
     <PageSection
-      title={localeText(locale, "规则工作区", "Rule Workspace")}
+      title={localeText(locale, "规则配置", "Rule Config")}
       description={localeText(
         locale,
-        "在这里创建、编辑、启停和绑定预约规则。规则会直接影响学生的预约可行性，因此所有写操作都带状态反馈。",
-        "Create, edit, activate, deactivate, and bind booking rules here. Rules directly affect booking eligibility, so every write action includes visible feedback."
+        "规则相关控制集中收口到这里处理；资源页只做资源维护，这里只做规则创建、编辑、启停和绑定。",
+        "All rule-related controls are centralized here. Resource pages now focus on maintenance, while this page handles rule creation, editing, activation, and bindings."
       )}
     >
+      <div className="mb-4 flex flex-wrap gap-2">
+        {(["academic", "sports"] as const).map((value) => (
+          <button
+            key={value}
+            type="button"
+            className={`rounded-full border px-4 py-2 text-sm transition ${
+              ruleDomain === value
+                ? "border-ember bg-ember text-white"
+                : "border-navy/10 bg-white text-ink hover:border-moss"
+            }`}
+            onClick={() => setRuleDomain(value)}
+          >
+            {ruleDomainLabel(value, locale)}
+          </button>
+        ))}
+      </div>
+
       {rulesQuery.isLoading || resourcesQuery.isLoading ? (
         <StatePanel
           tone="loading"
-          title={localeText(locale, "正在载入规则工作区", "Loading rule workspace")}
+          title={localeText(locale, "正在载入规则配置", "Loading rule configuration")}
           description={localeText(
             locale,
-            "页面正在整理规则定义和资源绑定关系。",
-            "Collecting rule definitions and resource bindings."
+            "页面正在整理规则定义和当前业务域资源。",
+            "Collecting rule definitions and resources for the current domain."
           )}
         />
       ) : rulesQuery.isError || resourcesQuery.isError ? (
         <StatePanel
           tone="danger"
-          title={localeText(locale, "规则工作区暂时无法加载", "Rule workspace is unavailable")}
+          title={localeText(locale, "规则配置暂时无法加载", "Rule configuration is unavailable")}
           description={getErrorMessage(rulesQuery.error ?? resourcesQuery.error)}
         />
       ) : (
-        <div className="grid gap-4 xl:grid-cols-[280px,minmax(0,1fr),320px]">
+        <div className="grid gap-4 xl:grid-cols-[280px,minmax(0,1fr)]">
           <RulesSelectorPanel
             locale={locale}
-            rules={rulesQuery.data ?? []}
+            rules={visibleRules}
             selectedRuleId={selectedRuleId}
             onSelectRule={setSelectedRuleId}
           />
           <RulesEditorPanel
             locale={locale}
-            resources={resourcesQuery.data ?? []}
+            resources={currentDomainResources}
             selectedRule={selectedRule}
             editor={editor}
             setEditor={setEditor}
             isEditorValid={isEditorValid}
+            bindingScopeLabel={ruleDomainLabel(ruleDomain, locale)}
+            visibleBindingCount={visibleBindingCount}
+            hiddenBindingCount={hiddenBindingCount}
             saveRuleMutation={saveRuleMutation}
             updateRuleStatusMutation={updateRuleStatusMutation}
             deleteRuleMutation={deleteRuleMutation}
@@ -252,9 +302,34 @@ export function RulesWorkspace({ locale }: { locale: Locale }) {
             onDeleteRule={handleDeleteRule}
             onToggleBinding={handleToggleBinding}
           />
-          <RulesSummaryPanel locale={locale} ruleStats={ruleStats} />
         </div>
       )}
     </PageSection>
   );
+}
+
+function ruleDomainLabel(domain: RuleDomain, locale: Locale) {
+  return domain === "academic"
+    ? localeText(locale, "学术空间规则", "Academic Space Rules")
+    : localeText(locale, "体育场馆规则", "Sports Venue Rules");
+}
+
+function ruleBelongsToDomain(
+  rule: AppRule,
+  domain: RuleDomain,
+  academicResourceIds: Set<string>,
+  sportsResourceIds: Set<string>
+) {
+  const hasAcademicBinding = rule.resourceIds.some((resourceId) =>
+    academicResourceIds.has(resourceId)
+  );
+  const hasSportsBinding = rule.resourceIds.some((resourceId) =>
+    sportsResourceIds.has(resourceId)
+  );
+
+  if (!hasAcademicBinding && !hasSportsBinding) {
+    return true;
+  }
+
+  return domain === "academic" ? hasAcademicBinding : hasSportsBinding;
 }

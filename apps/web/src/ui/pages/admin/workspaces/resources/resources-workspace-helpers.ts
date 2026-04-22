@@ -168,8 +168,8 @@ export function formatResourceMutationError(error: unknown, locale: Locale) {
     case "resource-delete-blocked-existing-records":
       return localeText(
         locale,
-        "该资源仍有关联的资源单元、规则、通道配置或历史预约记录，不能直接删除。请先停用资源，或先清理未被引用的配置。",
-        "This resource still has linked units, channel rules, or reservation history. Deactivate it first, or remove unused configuration before deleting."
+        "该资源仍有关联的资源单元、规则绑定或历史预约记录，不能直接删除。请先停用资源，或先清理未被引用的配置。",
+        "This resource still has linked units, rule bindings, or reservation history. Deactivate it first, or remove unused configuration before deleting."
       );
     case "resource-unit-delete-blocked-existing-records":
       return localeText(

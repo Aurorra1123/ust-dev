@@ -13,6 +13,7 @@ export type WorkspaceTab =
   | "overview"
   | "sportsVenues"
   | "academicSpaces"
+  | "rulesConfig"
   | "activities"
   | "notifications"
   | "serviceRequests";
@@ -25,6 +26,8 @@ export function workspaceTabLabel(tab: WorkspaceTab, locale: Locale) {
       return localeText(locale, "体育场馆", "Sports Venues");
     case "academicSpaces":
       return localeText(locale, "学术空间", "Academic Spaces");
+    case "rulesConfig":
+      return localeText(locale, "规则配置", "Rule Config");
     case "activities":
       return localeText(locale, "活动管理", "Activity Management");
     case "notifications":
