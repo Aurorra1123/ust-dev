@@ -1,6 +1,6 @@
 # Architecture Diagrams
 
-本文件不再描述“推荐方案”，而是以当前仓库代码为准，汇总 2026-04-21 核对后的真实架构图与业务流程图。
+本文件不再描述“推荐方案”，而是以当前仓库代码为准，汇总截至 2026-04-22 核对后的真实架构图、ER 图与业务流程图。
 
 核对范围主要来自：
 
@@ -323,7 +323,429 @@ flowchart LR
   - `max_duration_minutes`
   - `allowed_user_roles`
 
-## 9. 当前代码状态摘要
+## 9. 当前数据库完整 ER 图
+
+说明：
+
+- 本图以 `apps/api/prisma/schema.prisma` 为准。
+- 为了可读性，图中省略大多数 `createdAt / updatedAt` 与索引定义，只保留主键、核心业务字段和主要外键关系。
+- 虽然管理员前端最近做了“资源页与规则页职责收口”，但数据库当前并没有删除 `Rule`、`ResourceReleaseRule`、`ResourceBookingClosure` 等表。
+
+```mermaid
+erDiagram
+    User {
+        string id PK
+        string name
+        string email UK
+        string passwordHash
+        enum role
+        enum status
+        int creditScore
+    }
+
+    Resource {
+        string id PK
+        enum type
+        string code UK
+        string name
+        string description
+        string location
+        enum status
+    }
+
+    ResourceUnit {
+        string id PK
+        string resourceId FK
+        string code UK
+        string name
+        string unitType
+        enum availabilityMode
+        int capacity
+        int sortOrder
+    }
+
+    ResourceGroup {
+        string id PK
+        string resourceId FK
+        string name
+        string description
+    }
+
+    ResourceGroupItem {
+        string id PK
+        string groupId FK
+        string resourceUnitId FK
+        int sortOrder
+    }
+
+    ResourceReleaseRule {
+        string id PK
+        string resourceId FK
+        enum frequency
+        int dayOfWeek
+        int dayOfMonth
+        int hour
+        int minute
+        boolean isActive
+    }
+
+    ResourceBookingClosure {
+        string id PK
+        string resourceId FK
+        datetime startsAt
+        datetime endsAt
+        string reason
+        boolean isActive
+    }
+
+    Rule {
+        string id PK
+        string ruleType
+        string name
+        json expression
+        enum status
+    }
+
+    ResourceRuleBinding {
+        string id PK
+        string resourceId FK
+        string ruleId FK
+    }
+
+    UserRuleProfile {
+        string id PK
+        string userId FK
+        string ruleId FK
+        json profileValue
+    }
+
+    UserCreditLog {
+        string id PK
+        string userId FK
+        int scoreDelta
+        string reason
+    }
+
+    UserReservationRestriction {
+        string id PK
+        string userId FK
+        enum category
+        int violationCount
+        datetime bannedUntil
+        datetime lastViolatedAt
+    }
+
+    Activity {
+        string id PK
+        string title
+        string description
+        string location
+        int totalQuota
+        datetime saleStartTime
+        datetime saleEndTime
+        datetime eventStartTime
+        datetime eventEndTime
+        enum status
+    }
+
+    ActivityTicket {
+        string id PK
+        string activityId FK
+        string name
+        int stock
+        int reserved
+        int priceCents
+        enum status
+    }
+
+    Order {
+        string id PK
+        string orderNo UK
+        string userId FK
+        string activityId FK
+        enum bizType
+        enum status
+        int version
+        datetime expireAt
+        int totalAmountCents
+    }
+
+    OrderItem {
+        string id PK
+        string orderId FK
+        string resourceId FK
+        string resourceUnitId FK
+        string activityTicketId FK
+        int quantity
+        int slotCount
+        datetime startTime
+        datetime endTime
+        int unitPriceCents
+    }
+
+    PaymentRecord {
+        string id PK
+        string orderId FK
+        enum payStatus
+        string transactionNo UK
+        int amountCents
+        datetime paidAt
+    }
+
+    OrderStatusLog {
+        string id PK
+        string orderId FK
+        enum fromStatus
+        enum toStatus
+        string reason
+    }
+
+    AcademicReservation {
+        string id PK
+        string orderId FK
+        string userId FK
+        string resourceId FK
+        string resourceUnitId FK
+        datetime startTime
+        datetime endTime
+        int bufferBeforeMin
+        int bufferAfterMin
+        enum status
+    }
+
+    SportsReservationSlot {
+        string id PK
+        string orderId FK
+        string userId FK
+        string resourceId FK
+        string resourceUnitId FK
+        datetime slotStart
+        datetime slotEnd
+        enum status
+    }
+
+    ActivityRegistration {
+        string id PK
+        string orderId FK
+        string activityId FK
+        string activityTicketId FK
+        string userId FK
+        enum status
+    }
+
+    ReservationParticipant {
+        string id PK
+        string orderId FK
+        string userId FK
+        boolean isHost
+        datetime checkedInAt
+    }
+
+    Notification {
+        string id PK
+        string title
+        string summary
+        string content
+        enum status
+        datetime publishedAt
+        string createdByUserId FK
+    }
+
+    ServiceRequest {
+        string id PK
+        string userId FK
+        string title
+        string description
+        string location
+        enum status
+        string adminNote
+        datetime receivedAt
+        datetime resolvedAt
+    }
+
+    User ||--o{ Order : places
+    User ||--o{ ServiceRequest : submits
+    User o|--o{ Notification : creates
+    User ||--o{ AcademicReservation : books
+    User ||--o{ SportsReservationSlot : books
+    User ||--o{ ActivityRegistration : registers
+    User ||--o{ ReservationParticipant : joins
+    User ||--o{ UserCreditLog : has
+    User ||--o{ UserRuleProfile : profiles
+    User ||--o{ UserReservationRestriction : restricted_by
+
+    Resource ||--o{ ResourceUnit : contains
+    Resource ||--o{ ResourceGroup : owns
+    ResourceGroup ||--o{ ResourceGroupItem : contains
+    ResourceUnit ||--o{ ResourceGroupItem : member_of
+    Resource ||--o{ ResourceReleaseRule : opens_by
+    Resource ||--o{ ResourceBookingClosure : closes_by
+    Resource ||--o{ ResourceRuleBinding : bound_by
+    Rule ||--o{ ResourceRuleBinding : binds
+    Rule ||--o{ UserRuleProfile : profiles
+
+    Resource ||--o{ AcademicReservation : reserved_by
+    ResourceUnit ||--o{ AcademicReservation : reserved_unit
+    Resource ||--o{ SportsReservationSlot : occupies
+    ResourceUnit ||--o{ SportsReservationSlot : occupies_unit
+    Resource ||--o{ OrderItem : appears_in
+    ResourceUnit ||--o{ OrderItem : appears_in
+
+    Activity ||--o{ ActivityTicket : has
+    Activity ||--o{ ActivityRegistration : has
+    Activity ||--o{ Order : linked_orders
+    ActivityTicket ||--o{ ActivityRegistration : used_by
+    ActivityTicket ||--o{ OrderItem : sold_as
+
+    Order ||--o{ OrderItem : contains
+    Order ||--o{ PaymentRecord : pays
+    Order ||--o{ OrderStatusLog : logs
+    Order ||--o{ ReservationParticipant : has
+    Order ||--o| AcademicReservation : academic_flow
+    Order ||--o{ SportsReservationSlot : sports_flow
+    Order ||--o| ActivityRegistration : activity_flow
+```
+
+## 10. 当前数据库简化版 ER 图
+
+说明：
+
+- 这张图面向汇报、方案说明和答辩陈述，只保留最关键的主业务链路。
+- 重点表达 4 条主线：
+  - 用户与资源
+  - 用户与规则
+  - 资源预约订单
+  - 活动票务订单
+
+```mermaid
+erDiagram
+    User {
+        string id PK
+        string email UK
+        enum role
+        int creditScore
+    }
+
+    Resource {
+        string id PK
+        enum type
+        string code UK
+        string name
+        enum status
+    }
+
+    ResourceUnit {
+        string id PK
+        string resourceId FK
+        string code UK
+        string name
+        string unitType
+        enum availabilityMode
+    }
+
+    Rule {
+        string id PK
+        string ruleType
+        string name
+        json expression
+        enum status
+    }
+
+    ResourceRuleBinding {
+        string id PK
+        string resourceId FK
+        string ruleId FK
+    }
+
+    Order {
+        string id PK
+        string orderNo UK
+        string userId FK
+        enum bizType
+        enum status
+        int totalAmountCents
+    }
+
+    AcademicReservation {
+        string id PK
+        string orderId FK
+        string userId FK
+        string resourceId FK
+        string resourceUnitId FK
+        datetime startTime
+        datetime endTime
+    }
+
+    SportsReservationSlot {
+        string id PK
+        string orderId FK
+        string userId FK
+        string resourceId FK
+        string resourceUnitId FK
+        datetime slotStart
+        datetime slotEnd
+    }
+
+    Activity {
+        string id PK
+        string title
+        int totalQuota
+        enum status
+    }
+
+    ActivityTicket {
+        string id PK
+        string activityId FK
+        string name
+        int stock
+        int reserved
+        int priceCents
+    }
+
+    ActivityRegistration {
+        string id PK
+        string orderId FK
+        string activityId FK
+        string activityTicketId FK
+        string userId FK
+        enum status
+    }
+
+    User ||--o{ Order : places
+    User ||--o{ AcademicReservation : books
+    User ||--o{ SportsReservationSlot : books
+    User ||--o{ ActivityRegistration : joins
+
+    Resource ||--o{ ResourceUnit : contains
+    Resource ||--o{ ResourceRuleBinding : bound_by
+    Rule ||--o{ ResourceRuleBinding : binds
+
+    Resource ||--o{ AcademicReservation : reserved_by
+    ResourceUnit ||--o{ AcademicReservation : reserved_unit
+    Resource ||--o{ SportsReservationSlot : occupies
+    ResourceUnit ||--o{ SportsReservationSlot : occupies_unit
+
+    Activity ||--o{ ActivityTicket : has
+    Activity ||--o{ ActivityRegistration : has
+    ActivityTicket ||--o{ ActivityRegistration : used_by
+
+    Order ||--o| AcademicReservation : academic_flow
+    Order ||--o{ SportsReservationSlot : sports_flow
+    Order ||--o| ActivityRegistration : activity_flow
+```
+
+简化版解读：
+
+- `Resource` 是统一资源根，体育场馆与学术空间都从这里分流。
+- `ResourceUnit` 是真正被占用的最小预约单元。
+- `Rule + ResourceRuleBinding` 说明规则能力仍然保留在数据库中，没有因为前端收口而删除。
+- `Order` 是统一订单根，再分别分流到：
+  - `AcademicReservation`
+  - `SportsReservationSlot`
+  - `ActivityRegistration`
+- 这也是当前系统“统一订单、分业务子表”的核心设计。
+
+## 11. 当前代码状态摘要
 
 - 已真实落地：学术空间预约、体育设施单场地与组合预约、活动抢票并发处理、订单查询/取消、预约签到、缺席自动判定、资源发布规则与闭馆控制、管理员资源/活动/规则维护。
 - 已有基础设施但当前未跑通主路径：`PENDING_CONFIRMATION` 订单创建、订单超时取消、支付回调、`PaymentRecord` 驱动的“幽灵支付”闭环。

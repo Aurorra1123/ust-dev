@@ -6,6 +6,9 @@
 
 ### 已完成
 
+- 已在 `docs/architecture/architecture-diagrams.md` 中补充两张基于当前 Prisma schema 的 ER 图：
+  - 完整业务 ER 图
+  - 面向汇报的简化版核心 ER 图
 - 已将“管理员表单收口”正式落文档：
   - `docs/architecture/admin-form-simplification-plan-2026-04-22.md`
 - 已新增 ADR：
