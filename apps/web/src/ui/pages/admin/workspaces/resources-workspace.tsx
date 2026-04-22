@@ -16,10 +16,8 @@ import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
 import { PageSection } from "../../../page-section";
-import { EmptyPanel, StatePanel } from "../../../user-experience-kit";
-import { ResourcesActionsPanel } from "./resources/resources-actions-panel";
+import { StatePanel } from "../../../user-experience-kit";
 import { ResourcesCatalogPanel } from "./resources/resources-catalog-panel";
-import { ResourcesDetailPanel } from "./resources/resources-detail-panel";
 import {
   alignResourceUnitFormToResource,
   buildAcademicAreaGroups,
@@ -31,6 +29,19 @@ import {
 } from "./resources/resources-workspace-helpers";
 
 type ResourceWorkspaceDomain = "all" | "sports" | "academic";
+type ActiveInlinePanel =
+  | { kind: "createResource" }
+  | { kind: "editResource"; resourceId: string }
+  | { kind: "createUnit"; resourceId: string }
+  | { kind: "editUnit"; resourceId: string; unitId: string };
+
+function getPanelResourceId(panel: ActiveInlinePanel | null) {
+  if (!panel || panel.kind === "createResource") {
+    return null;
+  }
+
+  return panel.resourceId;
+}
 
 export function ResourcesWorkspace({
   locale,
@@ -49,9 +60,10 @@ export function ResourcesWorkspace({
       : domain === "academic"
         ? "academic_space"
         : null;
-  const [resourceId, setResourceId] = useState("");
-  const [selectedUnitId, setSelectedUnitId] = useState("");
   const [academicAreaKey, setAcademicAreaKey] = useState("");
+  const [activeInlinePanel, setActiveInlinePanel] = useState<ActiveInlinePanel | null>(
+    null
+  );
   const [resourceCreateForm, setResourceCreateForm] = useState(() =>
     createDefaultResourceFormState(lockedResourceType ?? "academic_space")
   );
@@ -64,6 +76,9 @@ export function ResourcesWorkspace({
   const [resourceUnitEditForm, setResourceUnitEditForm] = useState(
     createDefaultResourceUnitFormState
   );
+  const [statusFeedbackResourceId, setStatusFeedbackResourceId] = useState("");
+  const [deleteFeedbackResourceId, setDeleteFeedbackResourceId] = useState("");
+  const [deleteUnitFeedbackResourceId, setDeleteUnitFeedbackResourceId] = useState("");
 
   const domainResources = useMemo(() => {
     const resources = resourcesQuery.data ?? [];
@@ -90,6 +105,25 @@ export function ResourcesWorkspace({
       academicAreaGroups.find((group) => group.key === academicAreaKey)?.resources ?? []
     );
   }, [academicAreaGroups, academicAreaKey, domain, domainResources]);
+  const activeResourceId = getPanelResourceId(activeInlinePanel);
+  const activeResource =
+    visibleResources.find((resource) => resource.id === activeResourceId) ?? null;
+  const activeUnit =
+    activeInlinePanel?.kind === "editUnit"
+      ? activeResource?.units.find((unit) => unit.id === activeInlinePanel.unitId) ?? null
+      : null;
+  const isCreatingResource = activeInlinePanel?.kind === "createResource";
+  const editingResourceId =
+    activeInlinePanel?.kind === "editResource" ? activeInlinePanel.resourceId : "";
+  const creatingUnitResourceId =
+    activeInlinePanel?.kind === "createUnit" ? activeInlinePanel.resourceId : "";
+  const editingUnitTarget =
+    activeInlinePanel?.kind === "editUnit"
+      ? {
+          resourceId: activeInlinePanel.resourceId,
+          unitId: activeInlinePanel.unitId
+        }
+      : null;
 
   useEffect(() => {
     if (domain !== "academic") {
@@ -107,14 +141,6 @@ export function ResourcesWorkspace({
   }, [academicAreaGroups, academicAreaKey, domain]);
 
   useEffect(() => {
-    const firstResource = visibleResources[0];
-
-    if (!visibleResources.some((resource) => resource.id === resourceId)) {
-      setResourceId(firstResource?.id ?? "");
-    }
-  }, [resourceId, visibleResources]);
-
-  useEffect(() => {
     if (!lockedResourceType) {
       return;
     }
@@ -129,63 +155,50 @@ export function ResourcesWorkspace({
     );
   }, [lockedResourceType]);
 
-  const selectedResource =
-    visibleResources.find((resource) => resource.id === resourceId) ??
-    visibleResources[0] ??
-    null;
-  const selectedUnit =
-    selectedResource?.units.find((unit) => unit.id === selectedUnitId) ??
-    selectedResource?.units[0] ??
-    null;
+  useEffect(() => {
+    const panelResourceId = getPanelResourceId(activeInlinePanel);
+
+    if (!panelResourceId) {
+      return;
+    }
+
+    const resource = visibleResources.find((item) => item.id === panelResourceId);
+
+    if (!resource) {
+      setActiveInlinePanel(null);
+      return;
+    }
+
+    if (
+      activeInlinePanel?.kind === "editUnit" &&
+      !resource.units.some((unit) => unit.id === activeInlinePanel.unitId)
+    ) {
+      setActiveInlinePanel(null);
+    }
+  }, [activeInlinePanel, visibleResources]);
+
   const isCreateResourceValid =
     resourceCreateForm.code.trim().length > 0 &&
     resourceCreateForm.name.trim().length > 0;
   const isEditResourceValid =
-    Boolean(selectedResource) &&
+    activeInlinePanel?.kind === "editResource" &&
+    Boolean(activeResource) &&
     resourceEditForm.code.trim().length > 0 &&
     resourceEditForm.name.trim().length > 0;
   const isCreateResourceUnitValid =
-    Boolean(selectedResource) &&
+    activeInlinePanel?.kind === "createUnit" &&
+    Boolean(activeResource) &&
     resourceUnitCreateForm.code.trim().length > 0 &&
     resourceUnitCreateForm.name.trim().length > 0 &&
     resourceUnitCreateForm.unitType.trim().length > 0 &&
     resourceUnitCreateForm.capacity > 0;
   const isEditResourceUnitValid =
-    Boolean(selectedResource && selectedUnit) &&
+    activeInlinePanel?.kind === "editUnit" &&
+    Boolean(activeResource && activeUnit) &&
     resourceUnitEditForm.code.trim().length > 0 &&
     resourceUnitEditForm.name.trim().length > 0 &&
     resourceUnitEditForm.unitType.trim().length > 0 &&
     resourceUnitEditForm.capacity > 0;
-
-  useEffect(() => {
-    if (!selectedResource) {
-      setSelectedUnitId("");
-      return;
-    }
-
-    if (!selectedResource.units.some((unit) => unit.id === selectedUnitId)) {
-      setSelectedUnitId(selectedResource.units[0]?.id ?? "");
-    }
-  }, [selectedResource, selectedUnitId]);
-
-  useEffect(() => {
-    if (!selectedResource) {
-      return;
-    }
-
-    setResourceUnitCreateForm((current) =>
-      alignResourceUnitFormToResource(current, selectedResource)
-    );
-    setResourceEditForm(toResourceFormState(selectedResource));
-  }, [selectedResource]);
-
-  useEffect(() => {
-    if (!selectedUnit) {
-      return;
-    }
-
-    setResourceUnitEditForm(toResourceUnitFormState(selectedUnit));
-  }, [selectedUnit]);
 
   const createResourceMutation = useMutation({
     mutationFn: createResource,
@@ -194,7 +207,6 @@ export function ResourcesWorkspace({
         setAcademicAreaKey(extractAcademicAreaKey(resource.code));
       }
 
-      setResourceId(resource.id);
       setResourceCreateForm(createDefaultResourceFormState(lockedResourceType ?? resource.type));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
@@ -219,7 +231,6 @@ export function ResourcesWorkspace({
         setAcademicAreaKey(extractAcademicAreaKey(resource.code));
       }
 
-      setResourceId(resource.id);
       setResourceEditForm(toResourceFormState(resource));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
@@ -241,11 +252,7 @@ export function ResourcesWorkspace({
 
       return createResourceUnit(targetResourceId, unitPayload);
     },
-    onSuccess: async (resource, variables) => {
-      setResourceId(resource.id);
-      setSelectedUnitId(
-        resource.units.find((unit) => unit.code === variables.code)?.id ?? ""
-      );
+    onSuccess: async (resource) => {
       setResourceUnitCreateForm(
         alignResourceUnitFormToResource(createDefaultResourceUnitFormState(), resource)
       );
@@ -269,8 +276,6 @@ export function ResourcesWorkspace({
       };
     }) => updateResourceUnit(payload.resourceId, payload.unitId, payload.body),
     onSuccess: async (resource, variables) => {
-      setResourceId(resource.id);
-      setSelectedUnitId(variables.unitId);
       const updatedUnit =
         resource.units.find((unit) => unit.id === variables.unitId) ?? null;
 
@@ -288,8 +293,7 @@ export function ResourcesWorkspace({
   const updateResourceStatusMutation = useMutation({
     mutationFn: (payload: { resourceId: string; status: "active" | "inactive" }) =>
       updateResource(payload.resourceId, { status: payload.status }),
-    onSuccess: async (resource) => {
-      setResourceId(resource.id);
+    onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
         queryClient.invalidateQueries({ queryKey: ["resources"] })
@@ -299,8 +303,10 @@ export function ResourcesWorkspace({
 
   const deleteResourceMutation = useMutation({
     mutationFn: (currentResourceId: string) => deleteResource(currentResourceId),
-    onSuccess: async () => {
-      setResourceId("");
+    onSuccess: async (_, deletedResourceId) => {
+      setActiveInlinePanel((current) =>
+        getPanelResourceId(current) === deletedResourceId ? null : current
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
         queryClient.invalidateQueries({ queryKey: ["resources"] })
@@ -311,8 +317,18 @@ export function ResourcesWorkspace({
   const deleteResourceUnitMutation = useMutation({
     mutationFn: (payload: { resourceId: string; unitId: string }) =>
       deleteResourceUnit(payload.resourceId, payload.unitId),
-    onSuccess: async (resource) => {
-      setResourceId(resource.id);
+    onSuccess: async (_, variables) => {
+      setActiveInlinePanel((current) => {
+        if (
+          current?.kind === "editUnit" &&
+          current.resourceId === variables.resourceId &&
+          current.unitId === variables.unitId
+        ) {
+          return null;
+        }
+
+        return current;
+      });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
         queryClient.invalidateQueries({ queryKey: ["resources"] })
@@ -320,12 +336,113 @@ export function ResourcesWorkspace({
     }
   });
 
-  function handleToggleResourceStatus() {
-    if (!selectedResource) {
+  function handleOpenCreateResource() {
+    createResourceMutation.reset();
+    setResourceCreateForm(createDefaultResourceFormState(lockedResourceType ?? "academic_space"));
+    setActiveInlinePanel({ kind: "createResource" });
+  }
+
+  function handleCancelCreateResource() {
+    createResourceMutation.reset();
+    setResourceCreateForm(createDefaultResourceFormState(lockedResourceType ?? "academic_space"));
+    setActiveInlinePanel((current) =>
+      current?.kind === "createResource" ? null : current
+    );
+  }
+
+  function handleOpenEditResource(resourceId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+
+    if (!resource) {
       return;
     }
 
-    const nextStatus = selectedResource.status === "active" ? "inactive" : "active";
+    updateResourceMutation.reset();
+    setResourceEditForm(toResourceFormState(resource));
+    setActiveInlinePanel({ kind: "editResource", resourceId });
+  }
+
+  function handleCancelEditResource(resourceId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+
+    if (resource) {
+      setResourceEditForm(toResourceFormState(resource));
+    }
+
+    updateResourceMutation.reset();
+    setActiveInlinePanel((current) =>
+      current?.kind === "editResource" && current.resourceId === resourceId ? null : current
+    );
+  }
+
+  function handleOpenCreateResourceUnit(resourceId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+
+    if (!resource) {
+      return;
+    }
+
+    createResourceUnitMutation.reset();
+    setResourceUnitCreateForm(
+      alignResourceUnitFormToResource(createDefaultResourceUnitFormState(), resource)
+    );
+    setActiveInlinePanel({ kind: "createUnit", resourceId });
+  }
+
+  function handleCancelCreateResourceUnit(resourceId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+
+    if (resource) {
+      setResourceUnitCreateForm(
+        alignResourceUnitFormToResource(createDefaultResourceUnitFormState(), resource)
+      );
+    }
+
+    createResourceUnitMutation.reset();
+    setActiveInlinePanel((current) =>
+      current?.kind === "createUnit" && current.resourceId === resourceId ? null : current
+    );
+  }
+
+  function handleOpenEditResourceUnit(resourceId: string, unitId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+    const unit = resource?.units.find((item) => item.id === unitId);
+
+    if (!resource || !unit) {
+      return;
+    }
+
+    updateResourceUnitMutation.reset();
+    setResourceUnitEditForm(toResourceUnitFormState(unit));
+    setActiveInlinePanel({ kind: "editUnit", resourceId, unitId });
+  }
+
+  function handleCancelEditResourceUnit(resourceId: string, unitId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+    const unit = resource?.units.find((item) => item.id === unitId);
+
+    if (unit) {
+      setResourceUnitEditForm(toResourceUnitFormState(unit));
+    }
+
+    updateResourceUnitMutation.reset();
+    setActiveInlinePanel((current) =>
+      current?.kind === "editUnit" &&
+      current.resourceId === resourceId &&
+      current.unitId === unitId
+        ? null
+        : current
+    );
+  }
+
+  function handleToggleResourceStatus(resourceId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+
+    if (!resource) {
+      return;
+    }
+
+    const nextStatus = resource.status === "active" ? "inactive" : "active";
 
     if (
       nextStatus === "inactive" &&
@@ -340,14 +457,18 @@ export function ResourcesWorkspace({
       return;
     }
 
+    updateResourceStatusMutation.reset();
+    setStatusFeedbackResourceId(resource.id);
     updateResourceStatusMutation.mutate({
-      resourceId: selectedResource.id,
+      resourceId: resource.id,
       status: nextStatus
     });
   }
 
-  function handleDeleteResource() {
-    if (!selectedResource) {
+  function handleDeleteResource(resourceId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+
+    if (!resource) {
       return;
     }
 
@@ -363,11 +484,15 @@ export function ResourcesWorkspace({
       return;
     }
 
-    deleteResourceMutation.mutate(selectedResource.id);
+    deleteResourceMutation.reset();
+    setDeleteFeedbackResourceId(resource.id);
+    deleteResourceMutation.mutate(resource.id);
   }
 
-  function handleDeleteResourceUnit(unitId: string) {
-    if (!selectedResource) {
+  function handleDeleteResourceUnit(resourceId: string, unitId: string) {
+    const resource = visibleResources.find((item) => item.id === resourceId);
+
+    if (!resource) {
       return;
     }
 
@@ -383,8 +508,10 @@ export function ResourcesWorkspace({
       return;
     }
 
+    deleteResourceUnitMutation.reset();
+    setDeleteUnitFeedbackResourceId(resource.id);
     deleteResourceUnitMutation.mutate({
-      resourceId: selectedResource.id,
+      resourceId: resource.id,
       unitId
     });
   }
@@ -397,12 +524,12 @@ export function ResourcesWorkspace({
   }
 
   function handleSaveResource() {
-    if (!selectedResource) {
+    if (activeInlinePanel?.kind !== "editResource") {
       return;
     }
 
     updateResourceMutation.mutate({
-      resourceId: selectedResource.id,
+      resourceId: activeInlinePanel.resourceId,
       body: {
         type: lockedResourceType ?? resourceEditForm.type,
         code: resourceEditForm.code.trim(),
@@ -414,12 +541,12 @@ export function ResourcesWorkspace({
   }
 
   function handleCreateResourceUnit() {
-    if (!selectedResource) {
+    if (activeInlinePanel?.kind !== "createUnit") {
       return;
     }
 
     createResourceUnitMutation.mutate({
-      resourceId: selectedResource.id,
+      resourceId: activeInlinePanel.resourceId,
       code: resourceUnitCreateForm.code.trim(),
       name: resourceUnitCreateForm.name.trim(),
       unitType: resourceUnitCreateForm.unitType.trim(),
@@ -429,13 +556,13 @@ export function ResourcesWorkspace({
   }
 
   function handleSaveResourceUnit() {
-    if (!selectedResource || !selectedUnit) {
+    if (activeInlinePanel?.kind !== "editUnit") {
       return;
     }
 
     updateResourceUnitMutation.mutate({
-      resourceId: selectedResource.id,
-      unitId: selectedUnit.id,
+      resourceId: activeInlinePanel.resourceId,
+      unitId: activeInlinePanel.unitId,
       body: {
         code: resourceUnitEditForm.code.trim(),
         name: resourceUnitEditForm.name.trim(),
@@ -456,19 +583,19 @@ export function ResourcesWorkspace({
     domain === "sports"
       ? localeText(
           locale,
-          "这里专门维护体育场馆与场地单元，不再混入规则、调度和预约状态控制。",
-          "Maintain sports venues and court units here without mixing in rule, scheduling, or reservation controls."
+          "这里专门维护体育场馆与场地单元。已创建对象直接在原卡片内编辑，新增入口收口为虚线框。",
+          "Maintain sports venues and court units here. Existing records are edited in place, while creation stays behind dashed entry cards."
         )
       : domain === "academic"
         ? localeText(
             locale,
-            "这里专门维护学术空间与房间单元。你可以先按 E1/E2/E3/E4 等区域查看，再管理对应空间。",
-            "Maintain academic spaces and room units here. Review spaces by E1/E2/E3/E4-style areas first, then manage the matching rooms."
+            "这里专门维护学术空间与房间单元。你可以先按 E1/E2/E3/E4 等区域查看，再在对应卡片内直接维护。",
+            "Maintain academic spaces and room units here. Review spaces by E1/E2/E3/E4-style areas first, then edit the matching cards in place."
           )
         : localeText(
             locale,
-            "这里专门处理资源和资源单元的基础维护，不再承担规则、调度和预约状态控制。",
-            "This workspace now focuses only on resource and unit maintenance instead of rule, scheduling, and reservation controls."
+            "这里专门处理资源和资源单元的基础维护，已创建对象直接就地编辑，新增操作收口为虚线入口。",
+            "This workspace now focuses only on resource and unit maintenance, with inline editing for existing records and dashed entry points for creation."
           );
   const loadingTitle =
     domain === "sports"
@@ -500,26 +627,6 @@ export function ResourcesWorkspace({
       : domain === "academic"
         ? localeText(locale, "学术空间暂时无法加载", "Academic spaces are unavailable")
         : localeText(locale, "资源工作区暂时无法加载", "Resource workspace is unavailable");
-  const emptyTitle =
-    domain === "sports"
-      ? localeText(locale, "当前还没有体育场馆", "No sports venues yet")
-      : domain === "academic"
-        ? localeText(locale, "当前还没有学术空间", "No academic spaces yet")
-        : localeText(locale, "当前还没有资源", "No resources yet");
-  const emptyDescription =
-    domain === "sports"
-      ? localeText(
-          locale,
-          "可以先在右侧创建体育场馆，再补具体场地单元。",
-          "Create a sports venue on the right first, then add specific court units."
-        )
-      : domain === "academic"
-        ? localeText(
-            locale,
-            "可以先在右侧创建学术空间。命名规范符合 E1/E2/E3/E4 等前缀时，会自动进入对应区域。",
-            "Create an academic space on the right first. Codes that start with E1/E2/E3/E4 and similar prefixes will be grouped into the matching area automatically."
-          )
-        : localeText(locale, "可以先在右侧创建资源。", "Create a resource on the right first.");
 
   return (
     <PageSection title={workspaceTitle} description={workspaceDescription}>
@@ -536,65 +643,42 @@ export function ResourcesWorkspace({
           description={getErrorMessage(resourcesQuery.error)}
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),380px]">
-          <div className="grid gap-4">
-            {domain === "academic" && academicAreaGroups.length ? (
-              <div className="rounded-[26px] border border-navy/10 bg-white px-5 py-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                  {localeText(locale, "区域索引", "Area Index")}
-                </p>
-                <h3 className="mt-2 text-lg font-semibold text-ink">
-                  {localeText(locale, "先按区域查看学术空间", "Review academic spaces by area first")}
-                </h3>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {academicAreaGroups.map((group) => (
-                    <button
-                      key={group.key}
-                      type="button"
-                      className={`rounded-full border px-4 py-2 text-sm transition ${
-                        academicAreaKey === group.key
-                          ? "border-ember bg-ember text-white"
-                          : "border-navy/10 bg-sand text-ink hover:border-moss"
-                      }`}
-                      onClick={() => setAcademicAreaKey(group.key)}
-                    >
-                      {group.label} · {group.resources.length}
-                    </button>
-                  ))}
-                </div>
+        <div className="grid gap-4">
+          {domain === "academic" && academicAreaGroups.length ? (
+            <div className="rounded-[26px] border border-navy/10 bg-white px-5 py-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-moss">
+                {localeText(locale, "区域索引", "Area Index")}
+              </p>
+              <h3 className="mt-2 text-lg font-semibold text-ink">
+                {localeText(locale, "先按区域查看学术空间", "Review academic spaces by area first")}
+              </h3>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {academicAreaGroups.map((group) => (
+                  <button
+                    key={group.key}
+                    type="button"
+                    className={`rounded-full border px-4 py-2 text-sm transition ${
+                      academicAreaKey === group.key
+                        ? "border-ember bg-ember text-white"
+                        : "border-navy/10 bg-sand text-ink hover:border-moss"
+                    }`}
+                    onClick={() => setAcademicAreaKey(group.key)}
+                  >
+                    {group.label} · {group.resources.length}
+                  </button>
+                ))}
               </div>
-            ) : null}
+            </div>
+          ) : null}
 
-            {visibleResources.length ? (
-              <>
-                <ResourcesCatalogPanel
-                  locale={locale}
-                  resources={visibleResources}
-                  selectedResourceId={selectedResource?.id ?? null}
-                  onSelectResource={setResourceId}
-                />
-                <ResourcesDetailPanel
-                  locale={locale}
-                  selectedResource={selectedResource}
-                  selectedUnitId={selectedUnitId}
-                  onSelectUnit={setSelectedUnitId}
-                  onToggleResourceStatus={handleToggleResourceStatus}
-                  onDeleteResource={handleDeleteResource}
-                  onDeleteResourceUnit={handleDeleteResourceUnit}
-                  updateResourceStatusMutation={updateResourceStatusMutation}
-                  deleteResourceMutation={deleteResourceMutation}
-                  deleteResourceUnitMutation={deleteResourceUnitMutation}
-                />
-              </>
-            ) : (
-              <EmptyPanel title={emptyTitle} description={emptyDescription} />
-            )}
-          </div>
-
-          <ResourcesActionsPanel
+          <ResourcesCatalogPanel
             locale={locale}
-            selectedResource={selectedResource}
-            selectedUnit={selectedUnit}
+            resources={visibleResources}
+            lockedResourceType={lockedResourceType}
+            isCreatingResource={Boolean(isCreatingResource)}
+            editingResourceId={editingResourceId}
+            creatingUnitResourceId={creatingUnitResourceId}
+            editingUnitTarget={editingUnitTarget}
             resourceCreateForm={resourceCreateForm}
             setResourceCreateForm={setResourceCreateForm}
             resourceEditForm={resourceEditForm}
@@ -603,19 +687,35 @@ export function ResourcesWorkspace({
             setResourceUnitCreateForm={setResourceUnitCreateForm}
             resourceUnitEditForm={resourceUnitEditForm}
             setResourceUnitEditForm={setResourceUnitEditForm}
-            lockedResourceType={lockedResourceType}
             createResourceMutation={createResourceMutation}
             updateResourceMutation={updateResourceMutation}
             createResourceUnitMutation={createResourceUnitMutation}
             updateResourceUnitMutation={updateResourceUnitMutation}
+            updateResourceStatusMutation={updateResourceStatusMutation}
+            deleteResourceMutation={deleteResourceMutation}
+            deleteResourceUnitMutation={deleteResourceUnitMutation}
+            statusFeedbackResourceId={statusFeedbackResourceId}
+            deleteFeedbackResourceId={deleteFeedbackResourceId}
+            deleteUnitFeedbackResourceId={deleteUnitFeedbackResourceId}
             isCreateResourceValid={isCreateResourceValid}
             isEditResourceValid={isEditResourceValid}
             isCreateResourceUnitValid={isCreateResourceUnitValid}
             isEditResourceUnitValid={isEditResourceUnitValid}
+            onStartCreateResource={handleOpenCreateResource}
+            onCancelCreateResource={handleCancelCreateResource}
             onCreateResource={handleCreateResource}
+            onStartEditResource={handleOpenEditResource}
+            onCancelEditResource={handleCancelEditResource}
             onSaveResource={handleSaveResource}
+            onStartCreateResourceUnit={handleOpenCreateResourceUnit}
+            onCancelCreateResourceUnit={handleCancelCreateResourceUnit}
             onCreateResourceUnit={handleCreateResourceUnit}
+            onStartEditResourceUnit={handleOpenEditResourceUnit}
+            onCancelEditResourceUnit={handleCancelEditResourceUnit}
             onSaveResourceUnit={handleSaveResourceUnit}
+            onToggleResourceStatus={handleToggleResourceStatus}
+            onDeleteResource={handleDeleteResource}
+            onDeleteResourceUnit={handleDeleteResourceUnit}
           />
         </div>
       )}

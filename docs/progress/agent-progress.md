@@ -6,6 +6,20 @@
 
 ### 已完成
 
+- 已完成 `ADM-010`，把体育场馆 / 学术空间页从右侧栏表单切到对象就地 CRUD：
+  - 删除右侧独立的“编辑当前资源 / 编辑当前资源单元 / 新增资源单元”操作区
+  - 资源卡片现已直接提供 `编辑 / 删除 / 启停`
+  - 资源单元现已支持行内编辑与删除
+  - 新增资源与新增资源单元都改为虚线框入口并在原位置展开
+- 已完成 `DEMO-001` 的代码落地，正式收口 demo seed 展示字段：
+  - 学术空间编码改为 `E1-*` 体系，继续兼容前端分区逻辑
+  - 体育场馆、活动、票种、通知、工单、规则和用户显示名已替换为正式演示命名
+  - 保留既有稳定 id 与主要业务关系，不触碰 schema
+- 已完成本轮静态校验：
+  - `pnpm --filter web build`
+  - `pnpm --filter web lint`
+  - `pnpm --filter api build`
+  - `pnpm --filter api lint`
 - 已把两项新的展示与交互任务正式同步进文档系统：
   - `docs/architecture/demo-data-curation-plan-2026-04-22.md`
   - `docs/adr/0026-admin-resource-pages-use-inline-editing-instead-of-right-rail-forms.md`

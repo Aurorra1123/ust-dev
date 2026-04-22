@@ -27,7 +27,7 @@ async function main() {
   const studentUser = await prisma.user.upsert({
     where: { email: "demo@campusbook.top" },
     update: {
-      name: "demo",
+      name: "陈思远",
       role: UserRole.STUDENT,
       status: UserStatus.ACTIVE,
       creditScore: 100
@@ -35,7 +35,7 @@ async function main() {
     create: {
       id: "user_demo_student",
       email: "demo@campusbook.top",
-      name: "demo",
+      name: "陈思远",
       role: UserRole.STUDENT,
       status: UserStatus.ACTIVE,
       creditScore: 100
@@ -45,7 +45,7 @@ async function main() {
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@campusbook.top" },
     update: {
-      name: "admin",
+      name: "梁老师",
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
       creditScore: 70
@@ -53,7 +53,7 @@ async function main() {
     create: {
       id: "user_demo_admin",
       email: "admin@campusbook.top",
-      name: "admin",
+      name: "梁老师",
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
       creditScore: 70
@@ -63,7 +63,7 @@ async function main() {
   const partnerOneUser = await prisma.user.upsert({
     where: { email: "partner1@campusbook.top" },
     update: {
-      name: "partner1",
+      name: "李可欣",
       role: UserRole.STUDENT,
       status: UserStatus.ACTIVE,
       creditScore: 100
@@ -71,7 +71,7 @@ async function main() {
     create: {
       id: "user_demo_partner_one",
       email: "partner1@campusbook.top",
-      name: "partner1",
+      name: "李可欣",
       role: UserRole.STUDENT,
       status: UserStatus.ACTIVE,
       creditScore: 100
@@ -81,7 +81,7 @@ async function main() {
   await prisma.user.upsert({
     where: { email: "partner2@campusbook.top" },
     update: {
-      name: "partner2",
+      name: "王子衡",
       role: UserRole.STUDENT,
       status: UserStatus.ACTIVE,
       creditScore: 100
@@ -89,7 +89,7 @@ async function main() {
     create: {
       id: "user_demo_partner_two",
       email: "partner2@campusbook.top",
-      name: "partner2",
+      name: "王子衡",
       role: UserRole.STUDENT,
       status: UserStatus.ACTIVE,
       creditScore: 100
@@ -100,19 +100,19 @@ async function main() {
     where: { id: "res_academic_demo" },
     update: {
       type: ResourceType.ACADEMIC_SPACE,
-      code: "ACAD-ROOM-101",
-      name: "Room 101",
-      description: "演示用学术空间，适合小组讨论与项目评审。",
-      location: "Learning Commons 1F",
+      code: "E1-INNOVATION-01",
+      name: "创新协作室",
+      description: "位于 E1 Learning Commons 的开放式学术协作空间，适合课程讨论、项目评审与小组研讨。",
+      location: "E1 Learning Commons 1F",
       status: ResourceStatus.ACTIVE
     },
     create: {
       id: "res_academic_demo",
       type: ResourceType.ACADEMIC_SPACE,
-      code: "ACAD-ROOM-101",
-      name: "Room 101",
-      description: "演示用学术空间，适合小组讨论与项目评审。",
-      location: "Learning Commons 1F",
+      code: "E1-INNOVATION-01",
+      name: "创新协作室",
+      description: "位于 E1 Learning Commons 的开放式学术协作空间，适合课程讨论、项目评审与小组研讨。",
+      location: "E1 Learning Commons 1F",
       status: ResourceStatus.ACTIVE
     }
   });
@@ -121,8 +121,8 @@ async function main() {
     where: { id: "unit_academic_demo" },
     update: {
       resourceId: "res_academic_demo",
-      code: "ACAD-ROOM-101-U1",
-      name: "Room 101",
+      code: "E1-INNOVATION-01-U1",
+      name: "创新协作室 A",
       unitType: "room",
       availabilityMode: ResourceAvailabilityMode.CONTINUOUS,
       capacity: 8,
@@ -131,8 +131,8 @@ async function main() {
     create: {
       id: "unit_academic_demo",
       resourceId: "res_academic_demo",
-      code: "ACAD-ROOM-101-U1",
-      name: "Room 101",
+      code: "E1-INNOVATION-01-U1",
+      name: "创新协作室 A",
       unitType: "room",
       availabilityMode: ResourceAvailabilityMode.CONTINUOUS,
       capacity: 8,
@@ -144,18 +144,18 @@ async function main() {
     where: { id: "res_sports_demo" },
     update: {
       type: ResourceType.SPORTS_FACILITY,
-      code: "SPORTS-DEMO",
-      name: "Badminton Demo Courts",
-      description: "演示用羽毛球双场地资源，支持单场与组合预约。",
+      code: "SPORT-BADMINTON-A",
+      name: "羽毛球馆 A 区",
+      description: "支持单场预约与双场联动预约的羽毛球场地区域，适合日常训练和小型团体活动。",
       location: "Sports Hall A",
       status: ResourceStatus.ACTIVE
     },
     create: {
       id: "res_sports_demo",
       type: ResourceType.SPORTS_FACILITY,
-      code: "SPORTS-DEMO",
-      name: "Badminton Demo Courts",
-      description: "演示用羽毛球双场地资源，支持单场与组合预约。",
+      code: "SPORT-BADMINTON-A",
+      name: "羽毛球馆 A 区",
+      description: "支持单场预约与双场联动预约的羽毛球场地区域，适合日常训练和小型团体活动。",
       location: "Sports Hall A",
       status: ResourceStatus.ACTIVE
     }
@@ -165,8 +165,8 @@ async function main() {
     where: { id: "unit_sports_demo_a" },
     update: {
       resourceId: "res_sports_demo",
-      code: "SPORTS-DEMO-A",
-      name: "Court A",
+      code: "SPORT-BADMINTON-A-A1",
+      name: "A1 号场",
       unitType: "court",
       availabilityMode: ResourceAvailabilityMode.DISCRETE_SLOT,
       capacity: 4,
@@ -175,8 +175,8 @@ async function main() {
     create: {
       id: "unit_sports_demo_a",
       resourceId: "res_sports_demo",
-      code: "SPORTS-DEMO-A",
-      name: "Court A",
+      code: "SPORT-BADMINTON-A-A1",
+      name: "A1 号场",
       unitType: "court",
       availabilityMode: ResourceAvailabilityMode.DISCRETE_SLOT,
       capacity: 4,
@@ -188,8 +188,8 @@ async function main() {
     where: { id: "unit_sports_demo_b" },
     update: {
       resourceId: "res_sports_demo",
-      code: "SPORTS-DEMO-B",
-      name: "Court B",
+      code: "SPORT-BADMINTON-A-A2",
+      name: "A2 号场",
       unitType: "court",
       availabilityMode: ResourceAvailabilityMode.DISCRETE_SLOT,
       capacity: 4,
@@ -198,8 +198,8 @@ async function main() {
     create: {
       id: "unit_sports_demo_b",
       resourceId: "res_sports_demo",
-      code: "SPORTS-DEMO-B",
-      name: "Court B",
+      code: "SPORT-BADMINTON-A-A2",
+      name: "A2 号场",
       unitType: "court",
       availabilityMode: ResourceAvailabilityMode.DISCRETE_SLOT,
       capacity: 4,
@@ -211,14 +211,14 @@ async function main() {
     where: { id: "group_sports_demo_pair" },
     update: {
       resourceId: "res_sports_demo",
-      name: "Badminton Pair",
-      description: "双场地联动预约演示组合。"
+      name: "双场联动场地",
+      description: "用于双场联动训练或团体活动的组合场地。"
     },
     create: {
       id: "group_sports_demo_pair",
       resourceId: "res_sports_demo",
-      name: "Badminton Pair",
-      description: "双场地联动预约演示组合。"
+      name: "双场联动场地",
+      description: "用于双场联动训练或团体活动的组合场地。"
     }
   });
 
@@ -255,9 +255,9 @@ async function main() {
   await prisma.activity.upsert({
     where: { id: "activity_demo_open_day" },
     update: {
-      title: "Campus Open Day 2026",
-      description: "面向新生与访客的校园开放日活动。",
-      location: "Main Auditorium",
+      title: "校园开放日 2026",
+      description: "面向新生、访客与合作伙伴的校园开放日活动，包含校园导览与学生项目展示。",
+      location: "学术会堂",
       totalQuota: 220,
       saleStartTime,
       saleEndTime,
@@ -267,9 +267,9 @@ async function main() {
     },
     create: {
       id: "activity_demo_open_day",
-      title: "Campus Open Day 2026",
-      description: "面向新生与访客的校园开放日活动。",
-      location: "Main Auditorium",
+      title: "校园开放日 2026",
+      description: "面向新生、访客与合作伙伴的校园开放日活动，包含校园导览与学生项目展示。",
+      location: "学术会堂",
       totalQuota: 220,
       saleStartTime,
       saleEndTime,
@@ -283,7 +283,7 @@ async function main() {
     where: { id: "ticket_demo_open_day_general" },
     update: {
       activityId: "activity_demo_open_day",
-      name: "General Admission",
+      name: "普通入场名额",
       stock: 180,
       priceCents: 0,
       status: ActivityTicketStatus.ACTIVE
@@ -291,7 +291,7 @@ async function main() {
     create: {
       id: "ticket_demo_open_day_general",
       activityId: "activity_demo_open_day",
-      name: "General Admission",
+      name: "普通入场名额",
       stock: 180,
       priceCents: 0,
       status: ActivityTicketStatus.ACTIVE
@@ -302,7 +302,7 @@ async function main() {
     where: { id: "ticket_demo_open_day_priority" },
     update: {
       activityId: "activity_demo_open_day",
-      name: "Priority Pass",
+      name: "优先通行名额",
       stock: 40,
       priceCents: 1500,
       status: ActivityTicketStatus.ACTIVE
@@ -310,7 +310,7 @@ async function main() {
     create: {
       id: "ticket_demo_open_day_priority",
       activityId: "activity_demo_open_day",
-      name: "Priority Pass",
+      name: "优先通行名额",
       stock: 40,
       priceCents: 1500,
       status: ActivityTicketStatus.ACTIVE
@@ -320,9 +320,9 @@ async function main() {
   await prisma.activity.upsert({
     where: { id: "activity_demo_workshop_draft" },
     update: {
-      title: "Design Sprint Workshop",
-      description: "演示用草稿活动，供管理员维护接口验证。",
-      location: "Innovation Lab",
+      title: "跨学科创新工作坊",
+      description: "供教师端继续补充议程、导师与报名提醒的草稿活动。",
+      location: "创新实验室",
       totalQuota: 30,
       saleStartTime,
       saleEndTime,
@@ -332,9 +332,9 @@ async function main() {
     },
     create: {
       id: "activity_demo_workshop_draft",
-      title: "Design Sprint Workshop",
-      description: "演示用草稿活动，供管理员维护接口验证。",
-      location: "Innovation Lab",
+      title: "跨学科创新工作坊",
+      description: "供教师端继续补充议程、导师与报名提醒的草稿活动。",
+      location: "创新实验室",
       totalQuota: 30,
       saleStartTime,
       saleEndTime,
@@ -348,7 +348,7 @@ async function main() {
     where: { id: "ticket_demo_workshop_standard" },
     update: {
       activityId: "activity_demo_workshop_draft",
-      name: "Workshop Seat",
+      name: "工作坊席位",
       stock: 30,
       priceCents: 0,
       status: ActivityTicketStatus.ACTIVE
@@ -356,7 +356,7 @@ async function main() {
     create: {
       id: "ticket_demo_workshop_standard",
       activityId: "activity_demo_workshop_draft",
-      name: "Workshop Seat",
+      name: "工作坊席位",
       stock: 30,
       priceCents: 0,
       status: ActivityTicketStatus.ACTIVE
@@ -367,11 +367,11 @@ async function main() {
     where: { id: "notification_demo_sports_maintenance" },
     update: {
       title: "体育馆周三晚间维护提醒",
-      summary: "Sports Hall A 本周三 20:00 后暂停开放预约。",
+      summary: "羽毛球馆 A 区本周三 20:00 后暂停开放预约。",
       imageUrl:
         "https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80",
       content:
-        "Sports Hall A 将于本周三 20:00 后进行地板维护，相关时段的预约会陆续调整，请同学优先选择周四后的场次。",
+        "羽毛球馆 A 区将于本周三 20:00 后进行地板维护，相关时段的预约会陆续调整，请同学优先选择周四后的场次。",
       status: NotificationStatus.PUBLISHED,
       publishedAt: addHours(now, -4),
       createdByUserId: adminUser.id
@@ -379,11 +379,11 @@ async function main() {
     create: {
       id: "notification_demo_sports_maintenance",
       title: "体育馆周三晚间维护提醒",
-      summary: "Sports Hall A 本周三 20:00 后暂停开放预约。",
+      summary: "羽毛球馆 A 区本周三 20:00 后暂停开放预约。",
       imageUrl:
         "https://images.unsplash.com/photo-1547347298-4074fc3086f0?auto=format&fit=crop&w=1200&q=80",
       content:
-        "Sports Hall A 将于本周三 20:00 后进行地板维护，相关时段的预约会陆续调整，请同学优先选择周四后的场次。",
+        "羽毛球馆 A 区将于本周三 20:00 后进行地板维护，相关时段的预约会陆续调整，请同学优先选择周四后的场次。",
       status: NotificationStatus.PUBLISHED,
       publishedAt: addHours(now, -4),
       createdByUserId: adminUser.id
@@ -394,11 +394,11 @@ async function main() {
     where: { id: "notification_demo_open_day" },
     update: {
       title: "开放日报名已开放",
-      summary: "Campus Open Day 2026 已开放普通票与优先票报名。",
+      summary: "校园开放日 2026 已开放普通入场名额与优先通行名额报名。",
       imageUrl:
         "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80",
       content:
-        "开放日活动已经开放报名，学生可在活动页查看票种与余量。若需要带同学入场，请优先选择同一时段完成报名。",
+        "开放日活动已经开放报名，学生可在活动页查看票种与余量。若需要与同行同学一同入场，请优先选择相同时段完成报名。",
       status: NotificationStatus.PUBLISHED,
       publishedAt: addHours(now, -1),
       createdByUserId: adminUser.id
@@ -406,11 +406,11 @@ async function main() {
     create: {
       id: "notification_demo_open_day",
       title: "开放日报名已开放",
-      summary: "Campus Open Day 2026 已开放普通票与优先票报名。",
+      summary: "校园开放日 2026 已开放普通入场名额与优先通行名额报名。",
       imageUrl:
         "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1200&q=80",
       content:
-        "开放日活动已经开放报名，学生可在活动页查看票种与余量。若需要带同学入场，请优先选择同一时段完成报名。",
+        "开放日活动已经开放报名，学生可在活动页查看票种与余量。若需要与同行同学一同入场，请优先选择相同时段完成报名。",
       status: NotificationStatus.PUBLISHED,
       publishedAt: addHours(now, -1),
       createdByUserId: adminUser.id
@@ -420,22 +420,22 @@ async function main() {
   await prisma.notification.upsert({
     where: { id: "notification_demo_draft_workshop" },
     update: {
-      title: "设计冲刺工作坊预热文案",
-      summary: "管理员可在后台继续补充后发布。",
+      title: "跨学科创新工作坊预热通知",
+      summary: "管理员可继续补充议程与报名提醒后发布。",
       imageUrl: null,
       content:
-        "这是一条草稿通知，用于验证管理员编辑、保存与发布流程。发布后应同步出现在学生首页通知区。",
+        "这是一条草稿通知，用于演示通知编辑、保存与发布流程。发布后应同步出现在学生首页通知区。",
       status: NotificationStatus.DRAFT,
       publishedAt: null,
       createdByUserId: adminUser.id
     },
     create: {
       id: "notification_demo_draft_workshop",
-      title: "设计冲刺工作坊预热文案",
-      summary: "管理员可在后台继续补充后发布。",
+      title: "跨学科创新工作坊预热通知",
+      summary: "管理员可继续补充议程与报名提醒后发布。",
       imageUrl: null,
       content:
-        "这是一条草稿通知，用于验证管理员编辑、保存与发布流程。发布后应同步出现在学生首页通知区。",
+        "这是一条草稿通知，用于演示通知编辑、保存与发布流程。发布后应同步出现在学生首页通知区。",
       status: NotificationStatus.DRAFT,
       publishedAt: null,
       createdByUserId: adminUser.id
@@ -446,22 +446,22 @@ async function main() {
     where: { id: "service_request_demo_screen" },
     update: {
       userId: studentUser.id,
-      title: "自习室投影无法连接",
-      description: "Room 101 投影设备显示无信号，已尝试更换线缆但未恢复。",
-      location: "Learning Commons 1F / Room 101",
+      title: "创新协作室投影异常",
+      description: "创新协作室 A 的投影设备显示无信号，已尝试更换线缆但未恢复。",
+      location: "E1 Learning Commons 1F / 创新协作室 A",
       status: ServiceRequestStatus.RECEIVED,
-      adminNote: "已登记给现场值班同事，今晚 19:00 前回看设备。",
+      adminNote: "已登记给现场值班同事，预计今晚 19:00 前完成初步排查。",
       receivedAt: addHours(now, -2),
       resolvedAt: null
     },
     create: {
       id: "service_request_demo_screen",
       userId: studentUser.id,
-      title: "自习室投影无法连接",
-      description: "Room 101 投影设备显示无信号，已尝试更换线缆但未恢复。",
-      location: "Learning Commons 1F / Room 101",
+      title: "创新协作室投影异常",
+      description: "创新协作室 A 的投影设备显示无信号，已尝试更换线缆但未恢复。",
+      location: "E1 Learning Commons 1F / 创新协作室 A",
       status: ServiceRequestStatus.RECEIVED,
-      adminNote: "已登记给现场值班同事，今晚 19:00 前回看设备。",
+      adminNote: "已登记给现场值班同事，预计今晚 19:00 前完成初步排查。",
       receivedAt: addHours(now, -2),
       resolvedAt: null
     }
@@ -472,8 +472,8 @@ async function main() {
     update: {
       userId: partnerOneUser.id,
       title: "羽毛球馆空调温度异常",
-      description: "Sports Hall A 东侧区域空调未出风，体感温度明显偏高。",
-      location: "Sports Hall A / East Courts",
+      description: "羽毛球馆 A 区东侧场地空调未出风，体感温度明显偏高。",
+      location: "Sports Hall A / 羽毛球馆 A 区东侧",
       status: ServiceRequestStatus.IN_PROGRESS,
       adminNote: "后勤已接单，等待设备检修人员到场。",
       receivedAt: addHours(now, -6),
@@ -483,8 +483,8 @@ async function main() {
       id: "service_request_demo_aircon",
       userId: partnerOneUser.id,
       title: "羽毛球馆空调温度异常",
-      description: "Sports Hall A 东侧区域空调未出风，体感温度明显偏高。",
-      location: "Sports Hall A / East Courts",
+      description: "羽毛球馆 A 区东侧场地空调未出风，体感温度明显偏高。",
+      location: "Sports Hall A / 羽毛球馆 A 区东侧",
       status: ServiceRequestStatus.IN_PROGRESS,
       adminNote: "后勤已接单，等待设备检修人员到场。",
       receivedAt: addHours(now, -6),
@@ -495,14 +495,14 @@ async function main() {
   await prisma.rule.upsert({
     where: { id: "rule_demo_academic_min_credit" },
     update: {
-      name: "Academic Reservation Minimum Credit",
+      name: "学术空间最低信用分",
       ruleType: "min_credit_score",
       expression: { min: 80 },
       status: RuleStatus.ACTIVE
     },
     create: {
       id: "rule_demo_academic_min_credit",
-      name: "Academic Reservation Minimum Credit",
+      name: "学术空间最低信用分",
       ruleType: "min_credit_score",
       expression: { min: 80 },
       status: RuleStatus.ACTIVE
@@ -512,14 +512,14 @@ async function main() {
   await prisma.rule.upsert({
     where: { id: "rule_demo_academic_max_duration" },
     update: {
-      name: "Academic Reservation Maximum Duration",
+      name: "学术空间最长预约时长",
       ruleType: "max_duration_minutes",
       expression: { max: 120 },
       status: RuleStatus.ACTIVE
     },
     create: {
       id: "rule_demo_academic_max_duration",
-      name: "Academic Reservation Maximum Duration",
+      name: "学术空间最长预约时长",
       ruleType: "max_duration_minutes",
       expression: { max: 120 },
       status: RuleStatus.ACTIVE
@@ -529,14 +529,14 @@ async function main() {
   await prisma.rule.upsert({
     where: { id: "rule_demo_sports_student_only" },
     update: {
-      name: "Sports Reservation Student Only",
+      name: "体育场馆预约角色限制",
       ruleType: "allowed_user_roles",
       expression: { roles: ["student"] },
       status: RuleStatus.ACTIVE
     },
     create: {
       id: "rule_demo_sports_student_only",
-      name: "Sports Reservation Student Only",
+      name: "体育场馆预约角色限制",
       ruleType: "allowed_user_roles",
       expression: { roles: ["student"] },
       status: RuleStatus.ACTIVE
