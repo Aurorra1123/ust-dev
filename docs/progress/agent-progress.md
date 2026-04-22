@@ -2,6 +2,53 @@
 
 本文件用于跨会话交接，任何一次较完整的工作结束前都应更新。
 
+## 2026-04-22
+
+### 已完成
+
+- 已完成管理员端业务域重组的四个正式任务 `ADM-001` ~ `ADM-004`：
+  - `ADM-001`
+    - 管理员一级导航已从旧的 `resources / rules / activities / notifications / serviceRequests` 收口为：
+      - `运营总揽`
+      - `体育场馆`
+      - `学术空间`
+      - `活动管理`
+      - `通知发布`
+      - `工单维修`
+    - 运营总揽中的快捷入口、模块文案与步骤说明已同步到新结构
+  - `ADM-002`
+    - 原 `ResourcesWorkspace` 已收口为共享资源域底座
+    - 前端已新增 `SportsVenuesWorkspace` 与 `AcademicSpacesWorkspace` 两个独立入口
+    - 体育场馆页只展示 `sports_facility`，学术空间页只展示 `academic_space`
+  - `ADM-003`
+    - 学术空间页已增加按资源 `code` 前缀进行 `E1 / E2 / E3 / E4 ...` 区域切换的前端分组能力
+    - 不符合命名规则的资源会进入 `未分区 / Ungrouped`
+  - `ADM-004`
+    - 规则工作区已从管理员一级导航下线
+    - 现有规则后端接口、模型与执行能力没有删除，仍由 ADR 保持边界
+- 已完成本地校验并留证：
+  - `pnpm --filter web lint`
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - 新增验证记录：`docs/verification/2026-04-22/adm-001-adm-004-admin-domain-workspace-split.md`
+
+### 当前状态
+
+- 管理员端前端已经切换到以业务域为中心的新信息架构
+- 资源管理主路径已经从“混合资源工作区”拆成“体育场馆 / 学术空间”两条独立路径
+- 规则系统当前仍保留在后端，但不再继续作为管理员一级主路径能力暴露
+
+### 下一步建议
+
+1. 若要继续做演示收尾，可补一组管理员端截图，覆盖“新导航 / 体育场馆页 / 学术空间分区页”三类场景
+2. 若后续要继续深化后台产品化，可再评估是否需要为组合场地和规则恢复设计次级入口，而不是重新回到一级主导航
+
+### 注意事项
+
+- 本轮只改前端信息架构与页面组织，没有修改 API、数据库或 Prisma schema
+- 本轮沿用既有 ADR `docs/adr/0015-admin-workspace-split-by-business-domain.md`，没有新增 ADR
+- 当前工作区仍保留未跟踪的 `docs/user_test/`，本轮未触碰
+
 ## 2026-04-21
 
 ### 已完成

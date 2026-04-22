@@ -46,9 +46,17 @@ export type StatusWindowState = {
   to: string;
 };
 
-export function createDefaultResourceFormState(): ResourceFormState {
+export type AcademicAreaGroup = {
+  key: string;
+  label: string;
+  resources: AdminResourceDetailResponse[];
+};
+
+export function createDefaultResourceFormState(
+  type: ResourceType = "academic_space"
+): ResourceFormState {
   return {
-    type: "academic_space",
+    type,
     code: "",
     name: "",
     description: "",
@@ -109,6 +117,48 @@ export function createDefaultStatusWindow(): StatusWindowState {
     from: toDateTimeLocalValue(from),
     to: toDateTimeLocalValue(to)
   };
+}
+
+export function extractAcademicAreaKey(resourceCode: string) {
+  const normalizedCode = resourceCode.trim().toUpperCase();
+  const matched = normalizedCode.match(/^(E\d+)/);
+
+  return matched?.[1] ?? "ungrouped";
+}
+
+export function buildAcademicAreaGroups(
+  resources: AdminResourceDetailResponse[],
+  locale: Locale
+): AcademicAreaGroup[] {
+  const groups = new Map<string, AdminResourceDetailResponse[]>();
+
+  for (const resource of resources) {
+    const key = extractAcademicAreaKey(resource.code);
+    const current = groups.get(key) ?? [];
+    current.push(resource);
+    groups.set(key, current);
+  }
+
+  return [...groups.entries()]
+    .sort(([leftKey], [rightKey]) => {
+      if (leftKey === "ungrouped") {
+        return 1;
+      }
+
+      if (rightKey === "ungrouped") {
+        return -1;
+      }
+
+      return leftKey.localeCompare(rightKey, undefined, { numeric: true });
+    })
+    .map(([key, groupedResources]) => ({
+      key,
+      label:
+        key === "ungrouped"
+          ? localeText(locale, "未分区", "Ungrouped")
+          : localeText(locale, `${key} 区`, `${key} Area`),
+      resources: groupedResources
+    }));
 }
 
 export function formatResourceMutationError(error: unknown, locale: Locale) {

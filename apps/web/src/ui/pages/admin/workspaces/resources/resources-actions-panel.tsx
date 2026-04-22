@@ -1,13 +1,18 @@
 import type {
   AdminResourceDetailResponse,
-  ResourceReleaseFrequency
+  ResourceReleaseFrequency,
+  ResourceType
 } from "@campusbook/shared-types";
 import type { Dispatch, SetStateAction } from "react";
 
 import { localeText } from "../../../../../lib/locale";
 import type { Locale } from "../../../../../store/locale-store";
 import { StatusPill } from "../../../../user-experience-kit";
-import { releaseFrequencyLabel, weekDayOptions } from "../../admin-helpers";
+import {
+  releaseFrequencyLabel,
+  resourceTypeLabel,
+  weekDayOptions
+} from "../../admin-helpers";
 import { MutationState } from "../../components/mutation-state";
 import type {
   BookingClosureFormState,
@@ -34,6 +39,7 @@ export function ResourcesActionsPanel({
   setBookingClosureForm,
   releaseRuleForm,
   setReleaseRuleForm,
+  lockedResourceType,
   resourceOperationTargetsCount,
   hasReleaseStrategy,
   showSchedulingSettings,
@@ -59,6 +65,7 @@ export function ResourcesActionsPanel({
   setBookingClosureForm: Dispatch<SetStateAction<BookingClosureFormState>>;
   releaseRuleForm: ReleaseRuleFormState;
   setReleaseRuleForm: Dispatch<SetStateAction<ReleaseRuleFormState>>;
+  lockedResourceType: ResourceType | null;
   resourceOperationTargetsCount: number;
   hasReleaseStrategy: boolean;
   showSchedulingSettings: boolean;
@@ -87,19 +94,32 @@ export function ResourcesActionsPanel({
           {localeText(locale, "新增资源", "Create Resource")}
         </h3>
         <div className="mt-4 grid gap-3">
-          <select
-            className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-            value={resourceForm.type}
-            onChange={(event) =>
-              setResourceForm((current) => ({
-                ...current,
-                type: event.target.value as AdminResourceDetailResponse["type"]
-              }))
-            }
-          >
-            <option value="academic_space">{localeText(locale, "学术空间", "Study Space")}</option>
-            <option value="sports_facility">{localeText(locale, "体育设施", "Sports Facility")}</option>
-          </select>
+          {lockedResourceType ? (
+            <div className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm text-ink">
+              <p className="text-xs uppercase tracking-[0.2em] text-ink/45">
+                {localeText(locale, "当前模块", "Current module")}
+              </p>
+              <div className="mt-2">
+                <StatusPill tone="brand">
+                  {resourceTypeLabel(lockedResourceType, locale)}
+                </StatusPill>
+              </div>
+            </div>
+          ) : (
+            <select
+              className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
+              value={resourceForm.type}
+              onChange={(event) =>
+                setResourceForm((current) => ({
+                  ...current,
+                  type: event.target.value as AdminResourceDetailResponse["type"]
+                }))
+              }
+            >
+              <option value="academic_space">{localeText(locale, "学术空间", "Study Space")}</option>
+              <option value="sports_facility">{localeText(locale, "体育设施", "Sports Facility")}</option>
+            </select>
+          )}
           <input
             className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
             value={resourceForm.code}

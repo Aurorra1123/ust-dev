@@ -11,26 +11,26 @@ import type { Locale } from "../../../store/locale-store";
 
 export type WorkspaceTab =
   | "overview"
-  | "resources"
+  | "sportsVenues"
+  | "academicSpaces"
   | "activities"
-  | "rules"
   | "notifications"
   | "serviceRequests";
 
 export function workspaceTabLabel(tab: WorkspaceTab, locale: Locale) {
   switch (tab) {
     case "overview":
-      return localeText(locale, "运营总览", "Operations Overview");
-    case "resources":
-      return localeText(locale, "资源工作区", "Resource Workspace");
+      return localeText(locale, "运营总揽", "Operations Hub");
+    case "sportsVenues":
+      return localeText(locale, "体育场馆", "Sports Venues");
+    case "academicSpaces":
+      return localeText(locale, "学术空间", "Academic Spaces");
     case "activities":
-      return localeText(locale, "活动工作区", "Activity Workspace");
-    case "rules":
-      return localeText(locale, "规则工作区", "Rule Workspace");
+      return localeText(locale, "活动管理", "Activity Management");
     case "notifications":
-      return localeText(locale, "通知工作区", "Notification Workspace");
+      return localeText(locale, "通知发布", "Notice Publishing");
     case "serviceRequests":
-      return localeText(locale, "工单工作区", "Service Request Workspace");
+      return localeText(locale, "工单维修", "Service Repairs");
   }
 }
 

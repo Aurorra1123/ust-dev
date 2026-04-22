@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { ResourceType } from "@campusbook/shared-types";
 
 import { cancelOrder } from "../../../../lib/api/order-api";
 import {
@@ -19,27 +20,46 @@ import { localeText } from "../../../../lib/locale";
 import { queryClient } from "../../../../lib/query-client";
 import type { Locale } from "../../../../store/locale-store";
 import { PageSection } from "../../../page-section";
-import { StatePanel } from "../../../user-experience-kit";
+import { EmptyPanel, StatePanel } from "../../../user-experience-kit";
 import { ResourcesActionsPanel } from "./resources/resources-actions-panel";
 import { ResourcesCatalogPanel } from "./resources/resources-catalog-panel";
 import { ResourcesDetailPanel } from "./resources/resources-detail-panel";
 import {
   alignResourceUnitFormToResource,
+  buildAcademicAreaGroups,
   createDefaultBookingClosureFormState,
   createDefaultReleaseRuleFormState,
   createDefaultResourceFormState,
   createDefaultResourceUnitFormState,
   createDefaultStatusWindow,
+  extractAcademicAreaKey,
   type StatusWindowState
 } from "./resources/resources-workspace-helpers";
 
-export function ResourcesWorkspace({ locale }: { locale: Locale }) {
+type ResourceWorkspaceDomain = "all" | "sports" | "academic";
+
+export function ResourcesWorkspace({
+  locale,
+  domain = "all"
+}: {
+  locale: Locale;
+  domain?: ResourceWorkspaceDomain;
+}) {
   const resourcesQuery = useQuery({
     queryKey: ["admin", "resources"],
     queryFn: fetchAdminResources
   });
+  const lockedResourceType: ResourceType | null =
+    domain === "sports"
+      ? "sports_facility"
+      : domain === "academic"
+        ? "academic_space"
+        : null;
   const [resourceId, setResourceId] = useState("");
-  const [resourceForm, setResourceForm] = useState(createDefaultResourceFormState);
+  const [academicAreaKey, setAcademicAreaKey] = useState("");
+  const [resourceForm, setResourceForm] = useState(() =>
+    createDefaultResourceFormState(lockedResourceType ?? "academic_space")
+  );
   const [resourceUnitForm, setResourceUnitForm] = useState(
     createDefaultResourceUnitFormState
   );
@@ -53,17 +73,73 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
   );
   const [statusWindow, setStatusWindow] = useState(createDefaultStatusWindow);
 
-  useEffect(() => {
-    const firstResource = resourcesQuery.data?.[0];
+  const domainResources = useMemo(() => {
+    const resources = resourcesQuery.data ?? [];
 
-    if (!resourceId && firstResource) {
-      setResourceId(firstResource.id);
+    if (!lockedResourceType) {
+      return resources;
     }
-  }, [resourceId, resourcesQuery.data]);
+
+    return resources.filter((resource) => resource.type === lockedResourceType);
+  }, [lockedResourceType, resourcesQuery.data]);
+  const academicAreaGroups = useMemo(
+    () =>
+      domain === "academic"
+        ? buildAcademicAreaGroups(domainResources, locale)
+        : [],
+    [domain, domainResources, locale]
+  );
+  const visibleResources = useMemo(() => {
+    if (domain !== "academic") {
+      return domainResources;
+    }
+
+    return (
+      academicAreaGroups.find((group) => group.key === academicAreaKey)?.resources ?? []
+    );
+  }, [academicAreaGroups, academicAreaKey, domain, domainResources]);
+
+  useEffect(() => {
+    if (domain !== "academic") {
+      return;
+    }
+
+    const firstArea = academicAreaGroups[0]?.key ?? "";
+
+    if (
+      !academicAreaKey ||
+      !academicAreaGroups.some((group) => group.key === academicAreaKey)
+    ) {
+      setAcademicAreaKey(firstArea);
+    }
+  }, [academicAreaGroups, academicAreaKey, domain]);
+
+  useEffect(() => {
+    const firstResource = visibleResources[0];
+
+    if (!visibleResources.some((resource) => resource.id === resourceId)) {
+      setResourceId(firstResource?.id ?? "");
+    }
+  }, [resourceId, visibleResources]);
+
+  useEffect(() => {
+    if (!lockedResourceType) {
+      return;
+    }
+
+    setResourceForm((current) =>
+      current.type === lockedResourceType
+        ? current
+        : {
+            ...current,
+            type: lockedResourceType
+          }
+    );
+  }, [lockedResourceType]);
 
   const selectedResource =
-    resourcesQuery.data?.find((resource) => resource.id === resourceId) ??
-    resourcesQuery.data?.[0] ??
+    visibleResources.find((resource) => resource.id === resourceId) ??
+    visibleResources[0] ??
     null;
   const hasReleaseStrategy = (selectedResource?.releaseRules.length ?? 0) > 0;
   const showSchedulingSettings = hasReleaseStrategy || showAdvancedScheduling;
@@ -87,6 +163,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
 
   useEffect(() => {
     if (!selectedResource) {
+      setResourceOperationTargets([]);
       return;
     }
 
@@ -102,6 +179,10 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
   const createResourceMutation = useMutation({
     mutationFn: createResource,
     onSuccess: async (resource) => {
+      if (domain === "academic") {
+        setAcademicAreaKey(extractAcademicAreaKey(resource.code));
+      }
+
       setResourceId(resource.id);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin", "resources"] }),
@@ -311,7 +392,10 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
   }
 
   function handleCreateResource() {
-    createResourceMutation.mutate(resourceForm);
+    createResourceMutation.mutate({
+      ...resourceForm,
+      type: lockedResourceType ?? resourceForm.type
+    });
   }
 
   function handleCreateResourceUnit() {
@@ -384,65 +468,165 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
     });
   }
 
+  const workspaceTitle =
+    domain === "sports"
+      ? localeText(locale, "体育场馆", "Sports Venues")
+      : domain === "academic"
+        ? localeText(locale, "学术空间", "Academic Spaces")
+        : localeText(locale, "资源工作区", "Resource Workspace");
+  const workspaceDescription =
+    domain === "sports"
+      ? localeText(
+          locale,
+          "这里集中维护体育场馆、场地单元、关闭规则、开放策略和预约状态。进入模块后默认就是体育设施上下文，不再混入学术空间。",
+          "Manage sports venues, court units, closures, opening strategies, and reservation status here. This module stays in the sports-facility context and no longer mixes in academic spaces."
+        )
+      : domain === "academic"
+        ? localeText(
+            locale,
+            "这里集中维护学术空间、房间单元、关闭规则、开放策略和预约状态。你可以先按 E1/E2/E3/E4 等区域查看，再管理对应空间。",
+            "Manage academic spaces, room units, closures, opening strategies, and reservation status here. Review spaces by E1/E2/E3/E4-style areas first, then work on the matching rooms."
+          )
+        : localeText(
+            locale,
+            "这里集中处理资源列表、预约开放策略、预约通道关闭和预约状态查看。左侧先选资源，中间看当前状态，右侧执行新增和配置操作。",
+            "This workspace manages the resource list, booking opening strategy, booking closures, and reservation status. Select a resource on the left, review its current status in the center, and configure updates on the right."
+          );
+  const loadingTitle =
+    domain === "sports"
+      ? localeText(locale, "正在载入体育场馆", "Loading sports venues")
+      : domain === "academic"
+        ? localeText(locale, "正在载入学术空间", "Loading academic spaces")
+        : localeText(locale, "正在载入资源工作区", "Loading resource workspace");
+  const loadingDescription =
+    domain === "sports"
+      ? localeText(
+          locale,
+          "页面正在整理当前可维护的体育场馆、开放策略和预约状态。",
+          "The page is loading sports venues, opening strategies, and reservation status."
+        )
+      : domain === "academic"
+        ? localeText(
+            locale,
+            "页面正在整理当前可维护的学术空间、区域分组和预约状态。",
+            "The page is loading academic spaces, area groups, and reservation status."
+          )
+        : localeText(
+            locale,
+            "页面正在整理当前可维护的资源、开放策略和预约状态。",
+            "The page is loading current resources, opening strategies, and reservation status."
+          );
+  const errorTitle =
+    domain === "sports"
+      ? localeText(locale, "体育场馆暂时无法加载", "Sports venues are unavailable")
+      : domain === "academic"
+        ? localeText(locale, "学术空间暂时无法加载", "Academic spaces are unavailable")
+        : localeText(locale, "资源工作区暂时无法加载", "Resource workspace is unavailable");
+  const emptyTitle =
+    domain === "sports"
+      ? localeText(locale, "当前还没有体育场馆", "No sports venues yet")
+      : domain === "academic"
+        ? localeText(locale, "当前还没有学术空间", "No academic spaces yet")
+        : localeText(locale, "当前还没有资源", "No resources yet");
+  const emptyDescription =
+    domain === "sports"
+      ? localeText(
+          locale,
+          "可以先在右侧创建体育场馆，再补具体场地单元和开放策略。",
+          "Create a sports venue on the right first, then add specific courts and opening strategies."
+        )
+      : domain === "academic"
+        ? localeText(
+            locale,
+            "可以先在右侧创建学术空间。命名规范符合 E1/E2/E3/E4 等前缀时，会自动进入对应区域。",
+            "Create an academic space on the right first. Codes that start with E1/E2/E3/E4 and similar prefixes will be grouped into the matching area automatically."
+          )
+        : localeText(locale, "可以先在右侧创建资源。", "Create a resource on the right first.");
+
   return (
     <PageSection
-      title={localeText(locale, "资源工作区", "Resource Workspace")}
-      description={localeText(
-        locale,
-        "这里集中处理资源列表、预约开放策略、预约通道关闭和预约状态查看。左侧先选资源，中间看当前状态，右侧执行新增和配置操作。",
-        "This workspace manages the resource list, booking opening strategy, booking closures, and reservation status. Select a resource on the left, review its current status in the center, and configure updates on the right."
-      )}
+      title={workspaceTitle}
+      description={workspaceDescription}
     >
       {resourcesQuery.isLoading ? (
         <StatePanel
           tone="loading"
-          title={localeText(locale, "正在载入资源工作区", "Loading resource workspace")}
-          description={localeText(
-            locale,
-            "页面正在整理当前可维护的资源、开放策略和预约状态。",
-            "The page is loading current resources, opening strategies, and reservation status."
-          )}
+          title={loadingTitle}
+          description={loadingDescription}
         />
       ) : resourcesQuery.isError ? (
         <StatePanel
           tone="danger"
-          title={localeText(locale, "资源工作区暂时无法加载", "Resource workspace is unavailable")}
+          title={errorTitle}
           description={getErrorMessage(resourcesQuery.error)}
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),340px]">
           <div className="grid gap-4">
-            <ResourcesCatalogPanel
-              locale={locale}
-              resources={resourcesQuery.data ?? []}
-              selectedResourceId={selectedResource?.id ?? null}
-              onSelectResource={setResourceId}
-            />
-            <ResourcesDetailPanel
-              locale={locale}
-              resources={resourcesQuery.data ?? []}
-              selectedResource={selectedResource}
-              resourceOperationTargets={resourceOperationTargets}
-              onToggleResourceOperationTarget={handleToggleResourceOperationTarget}
-              onToggleResourceStatus={handleToggleResourceStatus}
-              onDeleteResource={handleDeleteResource}
-              onDeleteResourceUnit={handleDeleteResourceUnit}
-              onDeleteBookingClosure={handleDeleteBookingClosure}
-              updateResourceStatusMutation={updateResourceStatusMutation}
-              deleteResourceMutation={deleteResourceMutation}
-              deleteResourceUnitMutation={deleteResourceUnitMutation}
-              deleteBookingClosureMutation={deleteBookingClosureMutation}
-              statusWindow={statusWindow}
-              onStatusWindowChange={handleStatusWindowChange}
-              resourceStatusQuery={{
-                data: resourceStatusQuery.data,
-                isLoading: resourceStatusQuery.isLoading,
-                isError: resourceStatusQuery.isError,
-                error: (resourceStatusQuery.error as Error | null) ?? null
-              }}
-              onCancelReservation={handleCancelReservation}
-              cancelReservationMutation={cancelReservationMutation}
-            />
+            {domain === "academic" && academicAreaGroups.length ? (
+              <div className="rounded-[26px] border border-navy/10 bg-white px-5 py-5">
+                <p className="text-xs uppercase tracking-[0.2em] text-moss">
+                  {localeText(locale, "区域索引", "Area Index")}
+                </p>
+                <h3 className="mt-2 text-lg font-semibold text-ink">
+                  {localeText(locale, "先按区域查看学术空间", "Review academic spaces by area first")}
+                </h3>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {academicAreaGroups.map((group) => (
+                    <button
+                      key={group.key}
+                      type="button"
+                      className={`rounded-full border px-4 py-2 text-sm transition ${
+                        academicAreaKey === group.key
+                          ? "border-ember bg-ember text-white"
+                          : "border-navy/10 bg-sand text-ink hover:border-moss"
+                      }`}
+                      onClick={() => setAcademicAreaKey(group.key)}
+                    >
+                      {group.label} · {group.resources.length}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {visibleResources.length ? (
+              <>
+                <ResourcesCatalogPanel
+                  locale={locale}
+                  resources={visibleResources}
+                  selectedResourceId={selectedResource?.id ?? null}
+                  onSelectResource={setResourceId}
+                />
+                <ResourcesDetailPanel
+                  locale={locale}
+                  resources={visibleResources}
+                  selectedResource={selectedResource}
+                  resourceOperationTargets={resourceOperationTargets}
+                  onToggleResourceOperationTarget={handleToggleResourceOperationTarget}
+                  onToggleResourceStatus={handleToggleResourceStatus}
+                  onDeleteResource={handleDeleteResource}
+                  onDeleteResourceUnit={handleDeleteResourceUnit}
+                  onDeleteBookingClosure={handleDeleteBookingClosure}
+                  updateResourceStatusMutation={updateResourceStatusMutation}
+                  deleteResourceMutation={deleteResourceMutation}
+                  deleteResourceUnitMutation={deleteResourceUnitMutation}
+                  deleteBookingClosureMutation={deleteBookingClosureMutation}
+                  statusWindow={statusWindow}
+                  onStatusWindowChange={handleStatusWindowChange}
+                  resourceStatusQuery={{
+                    data: resourceStatusQuery.data,
+                    isLoading: resourceStatusQuery.isLoading,
+                    isError: resourceStatusQuery.isError,
+                    error: (resourceStatusQuery.error as Error | null) ?? null
+                  }}
+                  onCancelReservation={handleCancelReservation}
+                  cancelReservationMutation={cancelReservationMutation}
+                />
+              </>
+            ) : (
+              <EmptyPanel title={emptyTitle} description={emptyDescription} />
+            )}
           </div>
 
           <ResourcesActionsPanel
@@ -456,6 +640,7 @@ export function ResourcesWorkspace({ locale }: { locale: Locale }) {
             setBookingClosureForm={setBookingClosureForm}
             releaseRuleForm={releaseRuleForm}
             setReleaseRuleForm={setReleaseRuleForm}
+            lockedResourceType={lockedResourceType}
             resourceOperationTargetsCount={resourceOperationTargets.length}
             hasReleaseStrategy={hasReleaseStrategy}
             showSchedulingSettings={showSchedulingSettings}
