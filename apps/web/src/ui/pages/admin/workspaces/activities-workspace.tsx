@@ -167,7 +167,7 @@ export function ActivitiesWorkspace({ locale }: { locale: Locale }) {
         "Review activities and maintain their details, ticket types, and publishing status."
       )}
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),360px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr),minmax(28rem,42%)]">
         <div className="grid gap-4">
           {activitiesQuery.isLoading ? (
             <StatePanel
