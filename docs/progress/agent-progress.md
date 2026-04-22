@@ -6,6 +6,22 @@
 
 ### 已完成
 
+- 已完成 `COMP-005`，把业务测试、judge smoke 与 judge-up 基线继续收口：
+  - 新增 `apps/api/test/comp-005-business-regressions.test.ts`
+  - 覆盖 delayed expiration worker、同活动跨票种唯一性、规则启停即时生效
+  - `pnpm --filter api test` 现已达到 `25` 个测试、`7` 个 suite
+- 已把 `smoke-judge` / `smoke-live` 升级为真实业务 smoke：
+  - 学术预约并取消
+  - 体育预约并取消
+  - 学术规则命中
+  - 付费活动票从待支付走到确认
+- 已让 judge 启动路径具备重复执行基线：
+  - `scripts/judge-up.sh` 在 seed 前执行 `prisma migrate reset`
+  - judge compose 已用 `.env.judge.example` 成功展开
+- 已新增 ADR 与验证记录：
+  - `docs/adr/0025-judge-up-resets-db-before-seeding.md`
+  - `docs/verification/2026-04-22/qa-007-comp-005-real-business-testing-and-judge-evidence.md`
+
 - 已完成 `COMP-004`，补齐前端关键主路径的 a11y、安全头与轻量留证：
   - 全局新增 `skip link`、`focus-visible`、`sr-only`
   - `StatePanel` 现在具备 `role` 与 `aria-live`
@@ -114,29 +130,27 @@
 
 ### 当前状态
 
-- `COMP-004` 已完成，前端关键主路径的可达性、安全头与轻量留证已经有真实回归。
-- 当前下一阶段应进入 `COMP-005`，把 judge-up、smoke 与最终验收样例补成统一门槛。
-- `COMP-006` 已完成，活动库存一致性与自愈已经有真实回归。
-- 当前下一阶段应进入 `COMP-003`，把规则引擎升级为 registry，并让资格、额度、处罚进入真实链路。
-- `COMP-002` 已完成，幽灵支付对撞已经有真实回归和补偿日志留痕。
-- 当前下一阶段应进入 `COMP-006`，收口活动库存一致性、Redis 自愈与 `totalQuota`。
-- `COMP-001` 已完成，付费活动票主链路已经可从待支付走到支付确认。
-- 当前进入 `COMP-002` 前，支付基础入口、订单状态展示和 mock 支付样例都已具备。
-- `Guardrail-0` 已经不再只是计划项，首批 `8` 条保护性回归已转为真实自动化门槛。
-- 当前进入后续整改前，学术空间、体育预约和活动抢票的核心正确性已有保护。
-- 下一阶段可以开始 `COMP-006`，补活动库存一致性、`totalQuota` 和 Redis 冷恢复闭环。
+- `COMP-005` 已完成，测试门槛、judge smoke 与 judge-up 基线已收口。
+- 当前主计划中的 `Guardrail-0`、`COMP-001`、`COMP-002`、`COMP-006`、`COMP-003`、`COMP-004`、`COMP-005` 已全部完成。
+- 当前仓库已经具备：
+  - 保护性 Guardrail 回归
+  - 付费活动票待支付与幽灵支付闭环
+  - 活动库存一致性与自愈
+  - 规则 registry 与处罚链路
+  - 前端 a11y / 安全头基线
+  - judge smoke / live smoke / judge-up 幂等基线
 
 ### 下一步建议
 
-1. 开始 `COMP-005`，扩 judge-up、smoke 与业务级验收脚本
-2. 把学术、体育、活动、订单和规则命中都纳入统一回归门槛
-3. 按 `docs/verification/` 输出最终评委复现实例
+1. 在独立演示机上执行一次 `bash scripts/judge-up.sh .env.judge.example` 做最终彩排
+2. 如需答辩演示，优先沿 `qa-007` 里的四条 smoke 业务线准备讲解
+3. 后续只需做缺陷修补，不再需要扩主计划范围
 
 ### 注意事项
 
 - 本轮没有触碰 `docs/user_test/`
 - 为避免测试进程悬挂和多套应用并发拉起，本轮把 `apps/api` 的测试脚本收口为串行 `node:test` 并在结果产出后强制退出
-- 当前本地已完成 `COMP-004` 代码改动，并已通过类型检查、前端构建、轻量审计和完整 API 回归
+- 当前本地已完成全部比赛整改工作包，但本轮没有实际执行整套 `judge-up` 容器拉起，避免再次压重当前环境
 
 ### 已完成
 

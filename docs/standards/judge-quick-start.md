@@ -54,10 +54,10 @@ bash scripts/judge-up.sh
 
 1. 构建 `api` 与 `web` 镜像
 2. 启动 `postgres` 与 `redis`
-3. 执行数据库迁移
+3. 重置 judge 数据库并重新执行迁移
 4. 写入 demo 数据
 5. 启动 `api / worker / web / nginx`
-6. 执行 judge smoke 校验
+6. 执行覆盖学术、体育、活动支付与规则命中的 judge smoke 校验
 
 ### 4. 打开系统
 
@@ -99,3 +99,4 @@ docker compose \
 - 不要求 DNS
 - 不要求 HTTPS
 - 不要求 `campusbook.top` 已解析到当前机器
+- 每次重复执行 `judge-up` 都会先重置数据库，保证演示基线一致

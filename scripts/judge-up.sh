@@ -84,14 +84,14 @@ echo "[judge-up] starting postgres and redis"
 wait_for_postgres
 wait_for_redis
 
-echo "[judge-up] applying prisma migrations"
-"${COMPOSE_CMD[@]}" run --rm api pnpm --filter api prisma:migrate:deploy
+echo "[judge-up] resetting judge database to keep reruns idempotent"
+"${COMPOSE_CMD[@]}" run --rm api pnpm --filter api exec prisma migrate reset --force --skip-generate --skip-seed
 
 echo "[judge-up] seeding demo data"
 "${COMPOSE_CMD[@]}" run --rm api pnpm --filter api seed:demo
 
 echo "[judge-up] starting api worker web nginx"
-"${COMPOSE_CMD[@]}" up -d api worker web nginx
+"${COMPOSE_CMD[@]}" up -d --remove-orphans api worker web nginx
 
 wait_for_http
 
