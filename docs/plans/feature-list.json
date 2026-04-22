@@ -678,5 +678,66 @@
       "自定义首票和进阶设置继续采用折叠展开方式，不重新把活动创建页拉回重表单状态"
     ],
     "passes": true
+  },
+  {
+    "id": "COMP-001",
+    "category": "payment",
+    "priority": "P0",
+    "description": "以红鸟音乐节 5 元普通票为统一样例，唤醒付费活动票的待支付与支付确认主链路",
+    "acceptance": [
+      "管理端可创建“红鸟音乐节”付费活动票种，普通票售价为 5 元，即 priceCents = 500",
+      "用户抢到该付费票后，系统创建的是 PENDING_CONFIRMATION 订单，而不是直接写成 CONFIRMED",
+      "订单创建时会写入 expireAt 和 PaymentRecord(PENDING)，并能通过 mock 支付链路进入确认态",
+      "免费票仍可保持现有直接确认主链路，不被强行改造成待支付订单"
+    ],
+    "passes": false
+  },
+  {
+    "id": "COMP-002",
+    "category": "payment",
+    "priority": "P0",
+    "description": "补齐幽灵支付对撞保护、支付幂等与补偿闭环",
+    "acceptance": [
+      "支付成功回调和超时取消都基于订单 status + version 做 CAS，避免并发脏写",
+      "PaymentRecord 的 transactionNo 唯一且回调幂等，同一笔支付不会重复确认",
+      "存在“最后一秒支付与同时过期取消”的真实验证证据，已取消订单不会被错误改回确认态"
+    ],
+    "passes": false
+  },
+  {
+    "id": "COMP-003",
+    "category": "rules",
+    "priority": "P1",
+    "description": "把规则引擎升级为 handler registry 模式，并让资格、额度与惩罚规则进入真实主链路",
+    "acceptance": [
+      "规则新增不再依赖把判断继续堆进主流程 service 的 if-else，而是通过可注册 handler 接入",
+      "至少支持活动报名资格、爽约扣分、可预约次数或总时长限制中的三类规则",
+      "UserCreditLog 与 UserRuleProfile 进入真实业务链路，并存在自动化验证或等价留证"
+    ],
+    "passes": false
+  },
+  {
+    "id": "COMP-004",
+    "category": "frontend",
+    "priority": "P1",
+    "description": "补齐前端核心主路径的 a11y、性能与安全实现及留证",
+    "acceptance": [
+      "学术空间、体育预约和活动主路径中的关键交互可通过键盘完成，不只依赖鼠标",
+      "关键状态与可用性信息不再只靠颜色表达，并补齐焦点态、错误提示和必要的语义化文本",
+      "至少三个核心页面具备 Lighthouse 或等价性能记录、WCAG 或等价 a11y 留证，以及基础安全头配置"
+    ],
+    "passes": false
+  },
+  {
+    "id": "COMP-005",
+    "category": "quality",
+    "priority": "P1",
+    "description": "补齐比赛核心考点的真实业务测试与评委回归证据",
+    "acceptance": [
+      "pnpm test 不再只是 workspace 级空跑，而是会执行真实业务测试",
+      "自动化回归至少覆盖学术 5 分钟缓冲冲突、体育组合预约失败、活动不超卖与重复报名保护、幽灵支付对撞、规则执行",
+      "judge smoke 或等价验收脚本包含“红鸟音乐节 5 元普通票”从待支付到支付确认的完整样例"
+    ],
+    "passes": false
   }
 ]
