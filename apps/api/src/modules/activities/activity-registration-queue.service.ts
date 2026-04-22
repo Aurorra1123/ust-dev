@@ -4,6 +4,7 @@ import { Queue } from "bullmq";
 import Redis from "ioredis";
 
 import { createBullmqConnection } from "../../infrastructure/redis/bullmq";
+import { closeRedisConnection } from "../../infrastructure/redis/close-redis-connection";
 import {
   ACTIVITY_REGISTRATION_JOB_NAME,
   ACTIVITY_REGISTRATION_QUEUE_NAME,
@@ -47,9 +48,6 @@ export class ActivityRegistrationQueueService implements OnModuleDestroy {
 
   async onModuleDestroy() {
     await this.queue.close();
-
-    if (this.connection.status !== "end") {
-      await this.connection.quit();
-    }
+    await closeRedisConnection(this.connection);
   }
 }

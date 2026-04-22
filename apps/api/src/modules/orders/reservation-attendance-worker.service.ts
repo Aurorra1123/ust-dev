@@ -4,6 +4,7 @@ import { Worker } from "bullmq";
 import Redis from "ioredis";
 
 import { createBullmqConnection } from "../../infrastructure/redis/bullmq";
+import { closeRedisConnection } from "../../infrastructure/redis/close-redis-connection";
 import { OrdersService } from "./orders.service";
 import { ReservationAttendanceQueueService } from "./reservation-attendance-queue.service";
 import {
@@ -76,9 +77,6 @@ export class ReservationAttendanceWorkerService
     if (this.worker) {
       await this.worker.close();
     }
-
-    if (this.connection.status !== "end") {
-      await this.connection.quit();
-    }
+    await closeRedisConnection(this.connection);
   }
 }

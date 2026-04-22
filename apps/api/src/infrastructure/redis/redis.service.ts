@@ -2,6 +2,8 @@ import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import Redis from "ioredis";
 
+import { closeRedisConnection } from "./close-redis-connection";
+
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly logger = new Logger(RedisService.name);
@@ -20,17 +22,21 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async connect() {
+    if (this.client.status === "ready") {
+      return this.client;
+    }
+
     if (this.client.status === "wait") {
       await this.client.connect();
     }
+
+    await waitForReady(this.client);
 
     return this.client;
   }
 
   async onModuleDestroy() {
-    if (this.client.status !== "end") {
-      await this.client.quit();
-    }
+    await closeRedisConnection(this.client);
   }
 
   async checkHealth() {
@@ -49,4 +55,44 @@ export class RedisService implements OnModuleDestroy {
       };
     }
   }
+}
+
+async function waitForReady(client: Redis) {
+  if (client.status === "ready") {
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const cleanup = () => {
+      client.off("ready", handleReady);
+      client.off("error", handleError);
+      client.off("end", handleEnd);
+      client.off("close", handleClose);
+    };
+
+    const handleReady = () => {
+      cleanup();
+      resolve();
+    };
+
+    const handleError = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+
+    const handleEnd = () => {
+      cleanup();
+      reject(new Error("redis-connection-ended-before-ready"));
+    };
+
+    const handleClose = () => {
+      cleanup();
+      reject(new Error("redis-connection-closed-before-ready"));
+    };
+
+    client.once("ready", handleReady);
+    client.once("error", handleError);
+    client.once("end", handleEnd);
+    client.once("close", handleClose);
+  });
 }

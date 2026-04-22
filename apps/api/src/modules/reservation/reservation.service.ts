@@ -37,6 +37,7 @@ import {
 } from "./shared/reservation-policy";
 
 const ACADEMIC_BUFFER_MINUTES = 5;
+const ACADEMIC_BUFFER_BEFORE_MINUTES = 0;
 const SPORTS_SLOT_MINUTES = 60;
 
 @Injectable()
@@ -146,7 +147,7 @@ export class ReservationService {
                 endTime,
                 quantity: 1,
                 slotCount: 1,
-                bufferBeforeMin: ACADEMIC_BUFFER_MINUTES,
+                bufferBeforeMin: ACADEMIC_BUFFER_BEFORE_MINUTES,
                 bufferAfterMin: ACADEMIC_BUFFER_MINUTES
               }
             },
@@ -167,7 +168,7 @@ export class ReservationService {
             resourceUnitId: resourceUnit.id,
             startTime,
             endTime,
-            bufferBeforeMin: ACADEMIC_BUFFER_MINUTES,
+            bufferBeforeMin: ACADEMIC_BUFFER_BEFORE_MINUTES,
             bufferAfterMin: ACADEMIC_BUFFER_MINUTES,
             status: OrderStatus.CONFIRMED
           }
@@ -441,7 +442,13 @@ export class ReservationService {
       );
       return created.response;
     } catch (error) {
-      if (isPrismaUniqueConstraintError(error, "sports_active_slot_unique")) {
+      if (
+        isPrismaUniqueConstraintError(error, [
+          "sports_active_slot_unique",
+          "resourceUnitId",
+          "slotStart"
+        ])
+      ) {
         throw new ConflictException("sports-reservation-conflict");
       }
 
@@ -718,17 +725,30 @@ function normalizeSportsSlots(slotStarts: string[]) {
   }));
 }
 
-function isPrismaUniqueConstraintError(error: unknown, target: string) {
+function isPrismaUniqueConstraintError(
+  error: unknown,
+  targets: string | string[]
+) {
+  const expectedTargets = Array.isArray(targets) ? targets : [targets];
+
+  if (
+    typeof error !== "object" ||
+    error === null ||
+    !("code" in error) ||
+    error.code !== "P2002" ||
+    !("meta" in error) ||
+    typeof error.meta !== "object" ||
+    error.meta === null ||
+    !("target" in error.meta)
+  ) {
+    return false;
+  }
+
+  const metaTarget = (error.meta as { target: unknown }).target;
+
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "P2002" &&
-    "meta" in error &&
-    typeof error.meta === "object" &&
-    error.meta !== null &&
-    "target" in error.meta &&
-    Array.isArray(error.meta.target) &&
-    error.meta.target.includes(target)
+    (Array.isArray(metaTarget) &&
+      expectedTargets.some((target) => metaTarget.includes(target))) ||
+    (typeof metaTarget === "string" && expectedTargets.includes(metaTarget))
   );
 }

@@ -6,6 +6,7 @@ import Redis from "ioredis";
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import { createBullmqConnection } from "../../infrastructure/redis/bullmq";
+import { closeRedisConnection } from "../../infrastructure/redis/close-redis-connection";
 import {
   getReservationAttendanceEvaluateAt,
   getReservationStartTimeFromOrder
@@ -130,9 +131,7 @@ export class ReservationAttendanceQueueService implements OnModuleDestroy {
 
   async onModuleDestroy() {
     await this.queue.close();
-    if (this.connection.status !== "end") {
-      await this.connection.quit();
-    }
+    await closeRedisConnection(this.connection);
   }
 }
 

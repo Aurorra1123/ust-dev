@@ -6,6 +6,48 @@
 
 ### 已完成
 
+- 已完成 `Guardrail-0`，为比赛整改前的现有强项补齐首批保护性 API 集成测试：
+  - `API-001`
+  - `API-002`
+  - `API-004`
+  - `API-007`
+  - `API-008`
+  - `API-009`
+  - `API-010`
+  - `API-011`
+- 已把 `pnpm test` 从 workspace 级空跑改成真实后端业务测试入口：
+  - `apps/api/test/guardrail-0.test.ts`
+  - `apps/api/test/integration-harness.ts`
+- 已同步更新 CI，为集成测试提供 `postgres` 与 `redis` service：
+  - `.github/workflows/ci.yml`
+- 已修复本轮在 Guardrail 回归中暴露出的基础问题：
+  - 学术预约 `11:05` 精确边界误判冲突
+  - 体育 slot 并发冲突未稳定映射为 `409`
+  - 活动抢票首次并发时的 Redis 首连竞争导致 `500`
+  - BullMQ / Redis 连接关闭阶段的脏退出
+- 已补验证记录：
+  - `docs/verification/2026-04-22/qa-001-guardrail-0-api-regressions.md`
+
+### 当前状态
+
+- `Guardrail-0` 已经不再只是计划项，首批 `8` 条保护性回归已转为真实自动化门槛。
+- 当前进入后续整改前，学术空间、体育预约和活动抢票的核心正确性已有保护。
+- 下一阶段可以开始 `COMP-001`，将付费活动票从“直接确认”改成真实 `PENDING_CONFIRMATION` 主链路。
+
+### 下一步建议
+
+1. 开始 `COMP-001`，从活动抢票异步建单入口改造付费票待支付主链路
+2. 在订单创建时写入 `expireAt` 与 `PaymentRecord(PENDING)`
+3. 衔接 mock 支付发起、查询与回调入口，为 `COMP-002` 的幽灵支付闭环做准备
+
+### 注意事项
+
+- 本轮没有触碰 `docs/user_test/`
+- 为避免测试进程悬挂，本轮把 `apps/api` 的测试脚本收口为 `node:test` 并在结果产出后强制退出
+- 当前本地仍保留测试相关代码改动，尚未开始 `COMP-001`
+
+### 已完成
+
 - 已根据方案对齐 review 再次补齐主计划中的三个剩余缺口：
   - 为 `COMP-005` 增加前置 `Guardrail-0`，先保护当前已命中的学术缓冲、体育 slot/组合和活动唯一性
   - 把 `COMP-005` 从“核心样例测试”扩大为“真实交付门槛”，补入 `judge-up` 幂等、worker / delayed job / 库存恢复失效发现、smoke 覆盖学术 / 体育 / 规则命中

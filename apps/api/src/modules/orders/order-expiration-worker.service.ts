@@ -4,6 +4,7 @@ import { Worker } from "bullmq";
 import Redis from "ioredis";
 
 import { createBullmqConnection } from "../../infrastructure/redis/bullmq";
+import { closeRedisConnection } from "../../infrastructure/redis/close-redis-connection";
 import { OrdersService } from "./orders.service";
 import { OrderExpirationQueueService } from "./order-expiration-queue.service";
 import {
@@ -77,9 +78,6 @@ export class OrderExpirationWorkerService implements OnModuleInit, OnModuleDestr
     if (this.worker) {
       await this.worker.close();
     }
-
-    if (this.connection.status !== "end") {
-      await this.connection.quit();
-    }
+    await closeRedisConnection(this.connection);
   }
 }
