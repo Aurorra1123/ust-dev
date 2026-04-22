@@ -6,6 +6,16 @@
 
 ### 已完成
 
+- 已完成非支付方向的边界演示与答辩材料补充：
+  - `docs/verification/2026-04-22/qa-009-non-payment-boundary-demo-checklist.md`
+  - `docs/architecture/rules-engine-answer-sheet-2026-04-22.md`
+  - `docs/verification/2026-04-22/qa-010-frontend-quality-evidence.md`
+- 已补充前端质量留证：
+  - 运行 `node scripts/comp-004-audit.mjs`
+  - 审计结果为 `status: ok`
+  - 已把源码审计结果与本轮分包结果整理进 `QA-010`
+- 已更新架构文档索引：
+  - `docs/architecture/README.md`
 - 已完成一轮非支付前端提分收口：
   - `apps/web/src/ui/pages/service-requests-page.tsx`
   - 工单标题、位置、问题说明已补齐显式 `label`

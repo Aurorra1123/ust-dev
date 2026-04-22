@@ -12,6 +12,7 @@
 - `admin-form-simplification-plan-2026-04-22.md`：管理员端资源、规则与活动表单的收口方案
 - `demo-data-curation-plan-2026-04-22.md`：正式演示环境的数据整备方案
 - `competition-demo-video-script-2026-04-22.md`：基于当前真实实现状态整理的比赛演示视频闭环脚本方案
+- `rules-engine-answer-sheet-2026-04-22.md`：规则引擎答辩口径、限制与扩展路径说明
 - `domain-model-baseline.md`：当前正式领域模型入口
 - `admin-resource-reservation-boundary-refactor.md`：后台、前端 API 与资源预约后端边界拆分蓝图
 - `technical-solution-v1.md`：归档版首版技术方案
@@ -32,12 +33,13 @@
 6. `admin-form-simplification-plan-2026-04-22.md`
 7. `demo-data-curation-plan-2026-04-22.md`
 8. `competition-demo-video-script-2026-04-22.md`
-9. `domain-model-baseline.md`
-10. `technical-solution-v2.md`
-11. `architecture-diagrams.md`
-12. `current-implementation-audit-2026-04-21.md`
-13. `code-quality-review-and-refactor-baseline-2026-04-21.md`
-14. `architecture-and-product-report-2026-04-21.md`
-15. `admin-resource-reservation-boundary-refactor.md`
-16. `development-environment-audit-2026-04-16.md`
-17. `technical-solution-v1.md`
+9. `rules-engine-answer-sheet-2026-04-22.md`
+10. `domain-model-baseline.md`
+11. `technical-solution-v2.md`
+12. `architecture-diagrams.md`
+13. `current-implementation-audit-2026-04-21.md`
+14. `code-quality-review-and-refactor-baseline-2026-04-21.md`
+15. `architecture-and-product-report-2026-04-21.md`
+16. `admin-resource-reservation-boundary-refactor.md`
+17. `development-environment-audit-2026-04-16.md`
+18. `technical-solution-v1.md`
