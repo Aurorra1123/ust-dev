@@ -6,6 +6,9 @@
 
 ### 已完成
 
+- 已微调 demo 架构图文案：
+  - `docs/demo/core-architecture-diagram.md`
+  - 已删除“本文只展示当前仓库已经实现的运行时架构，不展开开发过程。”这句说明，保持评审材料更直接
 - 已将 demo 版长篇产品说明文档收口到稳定文件名：
   - 原 `docs/demo/competition-architecture-and-product-report-2026-04-22.md`
   - 现已重命名为 `docs/demo/product-architecture.md`
