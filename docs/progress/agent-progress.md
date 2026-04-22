@@ -6,6 +6,10 @@
 
 ### 已完成
 
+- 已将 demo 版长篇产品说明文档收口到稳定文件名：
+  - 原 `docs/demo/competition-architecture-and-product-report-2026-04-22.md`
+  - 现已重命名为 `docs/demo/product-architecture.md`
+  - 已移除上一轮新增的同名短版说明文档，避免 `docs/demo/` 内出现两份含义重叠的产品说明
 - 已补齐评审版结构化文档到 `docs/demo/`：
   - `core-architecture-diagram.md`
   - `business-flow-diagram.md`
