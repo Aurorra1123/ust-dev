@@ -29,7 +29,7 @@ import { OrderExpirationQueueService } from "../orders/order-expiration-queue.se
 import { RulesService } from "../rules/rules.service";
 import { ActivityInventoryCacheService } from "./activity-inventory-cache.service";
 import {
-  ACTIVITY_REGISTRATION_PENDING_TTL_MS,
+  DEFAULT_ACTIVITY_REGISTRATION_PENDING_TTL_MS,
   buildActivityRegistrationJobId,
   type ActivityRegistrationJobPayload
 } from "./activity-registration.constants";
@@ -74,12 +74,15 @@ export class ActivityRegistrationService {
       userId: user.id
     };
     const jobId = buildActivityRegistrationJobId(jobPayload);
+    const pendingTtlMs =
+      this.configService.get<number>("ACTIVITY_REGISTRATION_PENDING_TTL_MS") ??
+      DEFAULT_ACTIVITY_REGISTRATION_PENDING_TTL_MS;
 
     let reserveResult =
       await this.activityInventoryCacheService.reserveTicketForRequest({
         ...jobPayload,
         jobId,
-        ttlMs: ACTIVITY_REGISTRATION_PENDING_TTL_MS
+        ttlMs: pendingTtlMs
       });
 
     if (reserveResult === "missing_stock") {
@@ -93,7 +96,7 @@ export class ActivityRegistrationService {
         await this.activityInventoryCacheService.reserveTicketForRequest({
           ...jobPayload,
           jobId,
-          ttlMs: ACTIVITY_REGISTRATION_PENDING_TTL_MS
+          ttlMs: pendingTtlMs
         });
     }
 

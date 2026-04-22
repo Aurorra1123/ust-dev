@@ -32,6 +32,10 @@ class EnvironmentVariables {
   @IsNumber()
   ORDER_PENDING_EXPIRE_SECONDS!: number;
 
+  @IsOptional()
+  @IsNumber()
+  ACTIVITY_REGISTRATION_PENDING_TTL_MS?: number;
+
   @IsString()
   @IsNotEmpty()
   DEMO_USER_EMAIL!: string;

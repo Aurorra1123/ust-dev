@@ -29,6 +29,10 @@ export function ServiceRequestsPage() {
     location: "",
     description: ""
   });
+  const titleInputId = "service-request-title";
+  const locationInputId = "service-request-location";
+  const descriptionInputId = "service-request-description";
+  const descriptionHelpId = "service-request-description-help";
 
   const createMutation = useMutation({
     mutationFn: createServiceRequest,
@@ -65,39 +69,59 @@ export function ServiceRequestsPage() {
           <h3 className="text-lg font-semibold text-ink">
             {localeText(locale, "提交新工单", "Submit a Request")}
           </h3>
-          <input
-            className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-            value={form.title}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                title: event.target.value
-              }))
-            }
-            placeholder={localeText(locale, "问题标题", "Issue title")}
-          />
-          <input
-            className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-            value={form.location}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                location: event.target.value
-              }))
-            }
-            placeholder={localeText(locale, "发生位置", "Location")}
-          />
-          <textarea
-            className="min-h-[140px] rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
-            value={form.description}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                description: event.target.value
-              }))
-            }
-            placeholder={localeText(locale, "问题说明", "Description")}
-          />
+          <label htmlFor={titleInputId} className="grid gap-2 text-sm text-ink/75">
+            {localeText(locale, "问题标题", "Issue title")}
+            <input
+              id={titleInputId}
+              className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
+              value={form.title}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  title: event.target.value
+                }))
+              }
+              required
+            />
+          </label>
+          <label htmlFor={locationInputId} className="grid gap-2 text-sm text-ink/75">
+            {localeText(locale, "发生位置", "Location")}
+            <input
+              id={locationInputId}
+              className="rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
+              value={form.location}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  location: event.target.value
+                }))
+              }
+              required
+            />
+          </label>
+          <label htmlFor={descriptionInputId} className="grid gap-2 text-sm text-ink/75">
+            {localeText(locale, "问题说明", "Description")}
+            <textarea
+              id={descriptionInputId}
+              className="min-h-[140px] rounded-2xl border border-white/70 bg-white px-4 py-3 text-sm outline-none transition focus:border-moss"
+              value={form.description}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  description: event.target.value
+                }))
+              }
+              aria-describedby={descriptionHelpId}
+              required
+            />
+          </label>
+          <p id={descriptionHelpId} className="text-xs leading-6 text-slate">
+            {localeText(
+              locale,
+              "请尽量写清问题现象、受影响位置和是否需要紧急处理。",
+              "Describe the issue, the affected location, and whether urgent handling is needed."
+            )}
+          </p>
           {createMutation.isError ? (
             <StatePanel
               tone="danger"

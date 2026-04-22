@@ -6,6 +6,21 @@
 
 ### 已完成
 
+- 已完成一轮非支付前端提分收口：
+  - `apps/web/src/ui/pages/service-requests-page.tsx`
+  - 工单标题、位置、问题说明已补齐显式 `label`
+  - 问题说明已补 `aria-describedby`
+  - 三个字段已补 `required`
+- 已完成最小路由懒加载收口：
+  - `apps/web/src/routes.tsx`
+  - `spaces / sports / activities / orders / orders/:orderId / service-requests / admin`
+  - 已新增统一页面加载态组件 `apps/web/src/ui/route-loading-state.tsx`
+- 已完成本轮轻量验证：
+  - `pnpm --filter web typecheck`
+  - `pnpm --filter web build`
+  - `pnpm --filter api typecheck`
+- 已新增验证记录：
+  - `docs/verification/2026-04-22/qa-008-non-payment-frontend-score-boost.md`
 - 已对活动管理页右侧栏执行一轮最小宽度修复：
   - `apps/web/src/ui/pages/admin/workspaces/activities-workspace.tsx`
   - 右侧栏从固定 `360px` 调整为 `minmax(28rem, 42%)`

@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim
+FROM node:20-bookworm-slim AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -11,11 +11,24 @@ RUN corepack enable
 
 WORKDIR /workspace
 
+FROM base AS deps
+
 COPY . .
 
 RUN pnpm install --no-frozen-lockfile
+
+FROM deps AS builder
+
 RUN pnpm --filter api prisma:generate
 RUN pnpm --filter api build
+
+FROM base AS runner
+
+COPY --from=deps /workspace/package.json /workspace/pnpm-lock.yaml /workspace/pnpm-workspace.yaml /workspace/
+COPY --from=deps /workspace/apps /workspace/apps
+COPY --from=deps /workspace/packages /workspace/packages
+COPY --from=deps /workspace/node_modules /workspace/node_modules
+COPY --from=builder /workspace/apps/api/dist /workspace/apps/api/dist
 
 EXPOSE 3000
 
