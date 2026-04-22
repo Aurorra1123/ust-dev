@@ -259,6 +259,104 @@ export function buildRebookPath(order: OrderDetailResponse) {
   return "/";
 }
 
+export function paymentStatusLabel(
+  status: OrderDetailResponse["paymentRecords"][number]["payStatus"] | undefined,
+  locale: "zh-CN" | "en"
+) {
+  switch (status) {
+    case "paid":
+      return localeText(locale, "已支付", "Paid");
+    case "failed":
+      return localeText(locale, "支付失败", "Failed");
+    case "refunded":
+      return localeText(locale, "已退款", "Refunded");
+    case "pending":
+      return localeText(locale, "待支付", "Pending");
+    default:
+      return localeText(locale, "未发起", "Not Started");
+  }
+}
+
+export function getRemainingPaymentTime(expireAt?: string | null) {
+  if (!expireAt) {
+    return null;
+  }
+
+  const remainingMs = new Date(expireAt).getTime() - Date.now();
+
+  if (remainingMs <= 0) {
+    return "0m";
+  }
+
+  const totalMinutes = Math.ceil(remainingMs / (60 * 1000));
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes}m`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}m`;
+}
+
+export function getLatestPayment(order: OrderDetailResponse | null) {
+  if (!order?.paymentRecords.length) {
+    return null;
+  }
+
+  return order.paymentRecords[order.paymentRecords.length - 1] ?? null;
+}
+
+export function shouldShowPaymentPanel(order: OrderDetailResponse) {
+  return order.totalAmountCents > 0;
+}
+
+export function getOrderInfoCards(order: OrderDetailResponse, locale: Locale) {
+  const latestPayment = getLatestPayment(order);
+
+  return [
+    {
+      label: localeText(locale, "预约类别", "Category"),
+      value: bizTypeLabel(order, locale)
+    },
+    {
+      label: localeText(locale, "地点", "Location"),
+      value: orderLocationLabel(order, locale)
+    },
+    {
+      label: localeText(locale, "时间", "Time"),
+      value: orderTimeLabel(order, locale)
+    },
+    {
+      label: localeText(locale, "下单时间", "Created At"),
+      value: formatDateTime(order.createdAt)
+    },
+    {
+      label: localeText(locale, "金额", "Amount"),
+      value: formatAmount(order.totalAmountCents, locale)
+    },
+    {
+      label: localeText(locale, "订单号", "Order No."),
+      value: order.orderNo
+    },
+    {
+      label: localeText(locale, "预约人", "Reporter"),
+      value: order.userEmail
+    },
+    {
+      label: localeText(locale, "签到窗口", "Check-in Window"),
+      value:
+        order.checkInOpenAt && order.checkInCloseAt
+          ? `${formatDateTime(order.checkInOpenAt)} - ${formatDateTime(order.checkInCloseAt)}`
+          : localeText(locale, "无", "None")
+    },
+    {
+      label: localeText(locale, "支付状态", "Payment Status"),
+      value: paymentStatusLabel(latestPayment?.payStatus, locale)
+    }
+  ];
+}
+
 export function formatAmount(totalAmountCents: number, locale: Locale) {
   if (totalAmountCents === 0) {
     return localeText(locale, "免费", "Free");

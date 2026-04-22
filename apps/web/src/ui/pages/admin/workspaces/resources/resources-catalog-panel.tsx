@@ -22,6 +22,11 @@ type MutationStateLike = {
   isSuccess: boolean;
 };
 
+type ResourceModeOption = {
+  value: ResourceType;
+  label: string;
+};
+
 export function ResourcesCatalogPanel({
   locale,
   resources,
@@ -133,389 +138,48 @@ export function ResourcesCatalogPanel({
         />
       ) : null}
 
-      {resources.map((resource) => {
-        const isEditingResource = editingResourceId === resource.id;
-        const isCreatingUnit = creatingUnitResourceId === resource.id;
-        const unitModeOptions =
-          resource.type === "sports_facility"
-            ? [
-                {
-                  value: "discrete_slot" as const,
-                  label: availabilityModeLabel("discrete_slot", locale)
-                }
-              ]
-            : [
-                {
-                  value: "continuous" as const,
-                  label: availabilityModeLabel("continuous", locale)
-                }
-              ];
-
-        return (
-          <article
-            key={resource.id}
-            className="rounded-[26px] border border-ink/10 bg-white px-5 py-5"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-moss">
-                  {resourceTypeLabel(resource.type, locale)}
-                </p>
-                <h3 className="mt-2 text-2xl font-semibold text-ink">{resource.name}</h3>
-                <p className="mt-2 text-sm text-ink/70">
-                  {resource.code} ·{" "}
-                  {resource.location ||
-                    localeText(locale, "未填写位置", "No location")}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusPill tone={resource.status === "active" ? "success" : "danger"}>
-                  {resource.status === "active"
-                    ? localeText(locale, "启用中", "Active")
-                    : localeText(locale, "已停用", "Inactive")}
-                </StatusPill>
-                {resource.units.length === 0 ? (
-                  <StatusPill tone="danger">
-                    {localeText(locale, "未配置单元", "No Units")}
-                  </StatusPill>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="rounded-full border border-moss/20 px-4 py-2 text-sm text-moss transition hover:bg-moss/10"
-                onClick={() =>
-                  isEditingResource
-                    ? onCancelEditResource(resource.id)
-                    : onStartEditResource(resource.id)
-                }
-              >
-                {isEditingResource
-                  ? localeText(locale, "取消编辑", "Cancel Edit")
-                  : localeText(locale, "编辑", "Edit")}
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-ember/20 px-4 py-2 text-sm text-ember transition hover:bg-ember/10 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => onToggleResourceStatus(resource.id)}
-                disabled={updateResourceStatusMutation.isPending}
-              >
-                {resource.status === "active"
-                  ? localeText(locale, "停用", "Deactivate")
-                  : localeText(locale, "启用", "Activate")}
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-danger/20 px-4 py-2 text-sm text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => onDeleteResource(resource.id)}
-                disabled={deleteResourceMutation.isPending}
-              >
-                {localeText(locale, "删除", "Delete")}
-              </button>
-            </div>
-
-            {isEditingResource ? (
-              <form
-                className="mt-5 rounded-[24px] border border-ember/18 bg-ember/5 px-4 py-4"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  onSaveResource();
-                }}
-              >
-                <div className="grid gap-4">
-                  <ResourceTypeField
-                    locale={locale}
-                    value={resourceEditForm.type}
-                    options={createModeOptions}
-                    locked={Boolean(lockedResourceType)}
-                    onChange={(value) =>
-                      setResourceEditForm((current) => ({
-                        ...current,
-                        type: value
-                      }))
-                    }
-                  />
-                  <ResourceFields
-                    locale={locale}
-                    form={resourceEditForm}
-                    setForm={setResourceEditForm}
-                  />
-                </div>
-                <MutationState
-                  mutation={updateResourceMutation}
-                  pending={localeText(locale, "正在保存资源修改。", "Saving resource changes.")}
-                  success={localeText(locale, "资源信息已更新。", "Resource information updated.")}
-                  formatError={(error) => formatResourceMutationError(error, locale)}
-                />
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="submit"
-                    className="rounded-full bg-navy px-5 py-3 text-sm font-medium text-white transition hover:bg-navy/90 disabled:cursor-not-allowed disabled:bg-navy/50"
-                    disabled={!isEditResourceValid || updateResourceMutation.isPending}
-                  >
-                    {updateResourceMutation.isPending
-                      ? localeText(locale, "保存中", "Saving")
-                      : localeText(locale, "保存资源修改", "Save Resource Changes")}
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full border border-ink/10 px-5 py-3 text-sm text-ink transition hover:border-moss hover:text-moss"
-                    onClick={() => onCancelEditResource(resource.id)}
-                  >
-                    {localeText(locale, "取消", "Cancel")}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <>
-                <p className="mt-5 text-sm leading-7 text-slate">
-                  {resource.description ||
-                    localeText(
-                      locale,
-                      "当前资源暂无补充描述。",
-                      "No additional description for this resource yet."
-                    )}
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <InlineInfoCard
-                    label={localeText(locale, "资源编码", "Resource Code")}
-                    value={resource.code}
-                  />
-                  <InlineInfoCard
-                    label={localeText(locale, "当前位置", "Location")}
-                    value={
-                      resource.location || localeText(locale, "未填写", "Not set")
-                    }
-                  />
-                  <InlineInfoCard
-                    label={localeText(locale, "资源单元", "Units")}
-                    value={localeText(
-                      locale,
-                      `${resource.units.length} 个`,
-                      `${resource.units.length}`
-                    )}
-                  />
-                </div>
-              </>
-            )}
-
-            {statusFeedbackResourceId === resource.id ? (
-              <MutationState
-                mutation={updateResourceStatusMutation}
-                pending={localeText(locale, "正在更新资源状态。", "Updating resource status.")}
-                success={localeText(locale, "资源状态已更新。", "Resource status updated.")}
-                formatError={(error) => formatResourceMutationError(error, locale)}
-              />
-            ) : null}
-            {deleteFeedbackResourceId === resource.id ? (
-              <MutationState
-                mutation={deleteResourceMutation}
-                pending={localeText(locale, "正在删除资源。", "Deleting resource.")}
-                success={localeText(locale, "资源已删除。", "Resource deleted.")}
-                formatError={(error) => formatResourceMutationError(error, locale)}
-              />
-            ) : null}
-
-            <div className="mt-6 border-t border-ink/10 pt-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h4 className="text-lg font-semibold text-ink">
-                    {localeText(locale, "资源单元", "Resource Units")}
-                  </h4>
-                  <p className="mt-2 text-sm leading-7 text-slate">
-                    {localeText(
-                      locale,
-                      "在这里查看、编辑和补充该资源的预约单元。",
-                      "Review, edit, and add the bookable units for this resource here."
-                    )}
-                  </p>
-                </div>
-                <StatusPill tone={resource.units.length === 0 ? "danger" : "brand"}>
-                  {resource.units.length === 0
-                    ? localeText(locale, "未配置单元", "No Units")
-                    : localeText(
-                        locale,
-                        `${resource.units.length} 个单元`,
-                        `${resource.units.length} units`
-                      )}
-                </StatusPill>
-              </div>
-
-              <div className="mt-4 grid gap-3">
-                {resource.units.length === 0 ? (
-                  <EmptyPanel
-                    title={localeText(
-                      locale,
-                      "该资源还没有可预约单元",
-                      "This resource has no bookable units yet"
-                    )}
-                    description={localeText(
-                      locale,
-                      "请先补齐资源单元，再决定是否继续保持资源启用。",
-                      "Add at least one unit before deciding whether the resource should stay active."
-                    )}
-                  />
-                ) : null}
-
-                {resource.units.map((unit) => {
-                  const isEditingUnit =
-                    editingUnitTarget?.resourceId === resource.id &&
-                    editingUnitTarget?.unitId === unit.id;
-
-                  return isEditingUnit ? (
-                    <form
-                      key={unit.id}
-                      className="rounded-[24px] border border-ember/18 bg-ember/5 px-4 py-4"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        onSaveResourceUnit();
-                      }}
-                    >
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <ResourceUnitFields
-                          locale={locale}
-                          form={resourceUnitEditForm}
-                          setForm={setResourceUnitEditForm}
-                          availabilityOptions={unitModeOptions}
-                        />
-                      </div>
-                      <MutationState
-                        mutation={updateResourceUnitMutation}
-                        pending={localeText(locale, "正在保存资源单元修改。", "Saving unit changes.")}
-                        success={localeText(locale, "资源单元信息已更新。", "Resource unit updated.")}
-                        formatError={(error) => formatResourceMutationError(error, locale)}
-                      />
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        <button
-                          type="submit"
-                          className="rounded-full bg-navy px-5 py-3 text-sm font-medium text-white transition hover:bg-navy/90 disabled:cursor-not-allowed disabled:bg-navy/50"
-                          disabled={!isEditResourceUnitValid || updateResourceUnitMutation.isPending}
-                        >
-                          {updateResourceUnitMutation.isPending
-                            ? localeText(locale, "保存中", "Saving")
-                            : localeText(locale, "保存单元修改", "Save Unit Changes")}
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-full border border-ink/10 px-5 py-3 text-sm text-ink transition hover:border-moss hover:text-moss"
-                          onClick={() => onCancelEditResourceUnit(resource.id, unit.id)}
-                        >
-                          {localeText(locale, "取消", "Cancel")}
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <div
-                      key={unit.id}
-                      className="rounded-[24px] border border-ink/10 bg-sand px-4 py-4"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium text-ink">{unit.name}</p>
-                          <p className="mt-1 text-xs uppercase tracking-[0.2em] text-ink/45">
-                            {unit.code}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            className="rounded-full border border-moss/20 px-3 py-1 text-xs text-moss transition hover:bg-moss/10"
-                            onClick={() => onStartEditResourceUnit(resource.id, unit.id)}
-                          >
-                            {localeText(locale, "编辑", "Edit")}
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-full border border-danger/20 px-3 py-1 text-xs text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
-                            onClick={() => onDeleteResourceUnit(resource.id, unit.id)}
-                            disabled={deleteResourceUnitMutation.isPending}
-                          >
-                            {localeText(locale, "删除", "Delete")}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <StatusPill tone="brand">{unit.unitType}</StatusPill>
-                        <StatusPill tone="neutral">
-                          {availabilityModeLabel(unit.availabilityMode, locale)}
-                        </StatusPill>
-                        <StatusPill tone="success">
-                          {localeText(locale, `容量 ${unit.capacity ?? 1}`, `Capacity ${unit.capacity ?? 1}`)}
-                        </StatusPill>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {isCreatingUnit ? (
-                  <form
-                    className="rounded-[24px] border border-dashed border-moss/25 bg-white px-4 py-4"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      onCreateResourceUnit();
-                    }}
-                  >
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <ResourceUnitFields
-                        locale={locale}
-                        form={resourceUnitCreateForm}
-                        setForm={setResourceUnitCreateForm}
-                        availabilityOptions={unitModeOptions}
-                      />
-                    </div>
-                    <MutationState
-                      mutation={createResourceUnitMutation}
-                      pending={localeText(locale, "正在创建资源单元。", "Creating resource unit.")}
-                      success={localeText(locale, "资源单元已创建。", "Resource unit created.")}
-                      formatError={(error) => formatResourceMutationError(error, locale)}
-                    />
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <button
-                        type="submit"
-                        className="rounded-full bg-moss px-5 py-3 text-sm font-medium text-white transition hover:bg-moss/90 disabled:cursor-not-allowed disabled:bg-moss/50"
-                        disabled={!isCreateResourceUnitValid || createResourceUnitMutation.isPending}
-                      >
-                        {createResourceUnitMutation.isPending
-                          ? localeText(locale, "创建中", "Creating")
-                          : localeText(locale, "创建资源单元", "Create Resource Unit")}
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-full border border-ink/10 px-5 py-3 text-sm text-ink transition hover:border-moss hover:text-moss"
-                        onClick={() => onCancelCreateResourceUnit(resource.id)}
-                      >
-                        {localeText(locale, "取消", "Cancel")}
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <DashedActionCard
-                    title={localeText(locale, "新增资源单元", "Add Resource Unit")}
-                    description={localeText(
-                      locale,
-                      "在当前资源卡片内直接补齐房间、场地或其他预约单元。",
-                      "Add rooms, courts, or other bookable units directly inside the current resource card."
-                    )}
-                    buttonLabel={localeText(locale, "新增资源单元", "Add Resource Unit")}
-                    onClick={() => onStartCreateResourceUnit(resource.id)}
-                  />
-                )}
-              </div>
-
-              {deleteUnitFeedbackResourceId === resource.id ? (
-                <MutationState
-                  mutation={deleteResourceUnitMutation}
-                  pending={localeText(locale, "正在删除资源单元。", "Deleting resource unit.")}
-                  success={localeText(locale, "资源单元已删除。", "Resource unit deleted.")}
-                  formatError={(error) => formatResourceMutationError(error, locale)}
-                />
-              ) : null}
-            </div>
-          </article>
-        );
-      })}
+      {resources.map((resource) => (
+        <ResourceCatalogCard
+          key={resource.id}
+          locale={locale}
+          resource={resource}
+          lockedResourceType={lockedResourceType}
+          createModeOptions={createModeOptions}
+          isEditingResource={editingResourceId === resource.id}
+          isCreatingUnit={creatingUnitResourceId === resource.id}
+          editingUnitTarget={editingUnitTarget}
+          resourceEditForm={resourceEditForm}
+          setResourceEditForm={setResourceEditForm}
+          resourceUnitCreateForm={resourceUnitCreateForm}
+          setResourceUnitCreateForm={setResourceUnitCreateForm}
+          resourceUnitEditForm={resourceUnitEditForm}
+          setResourceUnitEditForm={setResourceUnitEditForm}
+          updateResourceMutation={updateResourceMutation}
+          createResourceUnitMutation={createResourceUnitMutation}
+          updateResourceUnitMutation={updateResourceUnitMutation}
+          updateResourceStatusMutation={updateResourceStatusMutation}
+          deleteResourceMutation={deleteResourceMutation}
+          deleteResourceUnitMutation={deleteResourceUnitMutation}
+          statusFeedbackResourceId={statusFeedbackResourceId}
+          deleteFeedbackResourceId={deleteFeedbackResourceId}
+          deleteUnitFeedbackResourceId={deleteUnitFeedbackResourceId}
+          isEditResourceValid={isEditResourceValid}
+          isCreateResourceUnitValid={isCreateResourceUnitValid}
+          isEditResourceUnitValid={isEditResourceUnitValid}
+          onStartEditResource={onStartEditResource}
+          onCancelEditResource={onCancelEditResource}
+          onSaveResource={onSaveResource}
+          onStartCreateResourceUnit={onStartCreateResourceUnit}
+          onCancelCreateResourceUnit={onCancelCreateResourceUnit}
+          onCreateResourceUnit={onCreateResourceUnit}
+          onStartEditResourceUnit={onStartEditResourceUnit}
+          onCancelEditResourceUnit={onCancelEditResourceUnit}
+          onSaveResourceUnit={onSaveResourceUnit}
+          onToggleResourceStatus={onToggleResourceStatus}
+          onDeleteResource={onDeleteResource}
+          onDeleteResourceUnit={onDeleteResourceUnit}
+        />
+      ))}
 
       {isCreatingResource ? (
         <form
@@ -581,6 +245,558 @@ export function ResourcesCatalogPanel({
           onClick={onStartCreateResource}
         />
       )}
+    </div>
+  );
+}
+
+function ResourceCatalogCard({
+  locale,
+  resource,
+  lockedResourceType,
+  createModeOptions,
+  isEditingResource,
+  isCreatingUnit,
+  editingUnitTarget,
+  resourceEditForm,
+  setResourceEditForm,
+  resourceUnitCreateForm,
+  setResourceUnitCreateForm,
+  resourceUnitEditForm,
+  setResourceUnitEditForm,
+  updateResourceMutation,
+  createResourceUnitMutation,
+  updateResourceUnitMutation,
+  updateResourceStatusMutation,
+  deleteResourceMutation,
+  deleteResourceUnitMutation,
+  statusFeedbackResourceId,
+  deleteFeedbackResourceId,
+  deleteUnitFeedbackResourceId,
+  isEditResourceValid,
+  isCreateResourceUnitValid,
+  isEditResourceUnitValid,
+  onStartEditResource,
+  onCancelEditResource,
+  onSaveResource,
+  onStartCreateResourceUnit,
+  onCancelCreateResourceUnit,
+  onCreateResourceUnit,
+  onStartEditResourceUnit,
+  onCancelEditResourceUnit,
+  onSaveResourceUnit,
+  onToggleResourceStatus,
+  onDeleteResource,
+  onDeleteResourceUnit
+}: {
+  locale: Locale;
+  resource: AdminResourceDetailResponse;
+  lockedResourceType: ResourceType | null;
+  createModeOptions: ResourceModeOption[];
+  isEditingResource: boolean;
+  isCreatingUnit: boolean;
+  editingUnitTarget: { resourceId: string; unitId: string } | null;
+  resourceEditForm: ResourceFormState;
+  setResourceEditForm: Dispatch<SetStateAction<ResourceFormState>>;
+  resourceUnitCreateForm: ResourceUnitFormState;
+  setResourceUnitCreateForm: Dispatch<SetStateAction<ResourceUnitFormState>>;
+  resourceUnitEditForm: ResourceUnitFormState;
+  setResourceUnitEditForm: Dispatch<SetStateAction<ResourceUnitFormState>>;
+  updateResourceMutation: MutationStateLike;
+  createResourceUnitMutation: MutationStateLike;
+  updateResourceUnitMutation: MutationStateLike;
+  updateResourceStatusMutation: MutationStateLike;
+  deleteResourceMutation: MutationStateLike;
+  deleteResourceUnitMutation: MutationStateLike;
+  statusFeedbackResourceId: string;
+  deleteFeedbackResourceId: string;
+  deleteUnitFeedbackResourceId: string;
+  isEditResourceValid: boolean;
+  isCreateResourceUnitValid: boolean;
+  isEditResourceUnitValid: boolean;
+  onStartEditResource: (resourceId: string) => void;
+  onCancelEditResource: (resourceId: string) => void;
+  onSaveResource: () => void;
+  onStartCreateResourceUnit: (resourceId: string) => void;
+  onCancelCreateResourceUnit: (resourceId: string) => void;
+  onCreateResourceUnit: () => void;
+  onStartEditResourceUnit: (resourceId: string, unitId: string) => void;
+  onCancelEditResourceUnit: (resourceId: string, unitId: string) => void;
+  onSaveResourceUnit: () => void;
+  onToggleResourceStatus: (resourceId: string) => void;
+  onDeleteResource: (resourceId: string) => void;
+  onDeleteResourceUnit: (resourceId: string, unitId: string) => void;
+}) {
+  const unitModeOptions =
+    resource.type === "sports_facility"
+      ? [
+          {
+            value: "discrete_slot" as const,
+            label: availabilityModeLabel("discrete_slot", locale)
+          }
+        ]
+      : [
+          {
+            value: "continuous" as const,
+            label: availabilityModeLabel("continuous", locale)
+          }
+        ];
+
+  return (
+    <article className="rounded-[26px] border border-ink/10 bg-white px-5 py-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-moss">
+            {resourceTypeLabel(resource.type, locale)}
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-ink">{resource.name}</h3>
+          <p className="mt-2 text-sm text-ink/70">
+            {resource.code} · {resource.location || localeText(locale, "未填写位置", "No location")}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <StatusPill tone={resource.status === "active" ? "success" : "danger"}>
+            {resource.status === "active"
+              ? localeText(locale, "启用中", "Active")
+              : localeText(locale, "已停用", "Inactive")}
+          </StatusPill>
+          {resource.units.length === 0 ? (
+            <StatusPill tone="danger">{localeText(locale, "未配置单元", "No Units")}</StatusPill>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="rounded-full border border-moss/20 px-4 py-2 text-sm text-moss transition hover:bg-moss/10"
+          onClick={() =>
+            isEditingResource
+              ? onCancelEditResource(resource.id)
+              : onStartEditResource(resource.id)
+          }
+        >
+          {isEditingResource
+            ? localeText(locale, "取消编辑", "Cancel Edit")
+            : localeText(locale, "编辑", "Edit")}
+        </button>
+        <button
+          type="button"
+          className="rounded-full border border-ember/20 px-4 py-2 text-sm text-ember transition hover:bg-ember/10 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => onToggleResourceStatus(resource.id)}
+          disabled={updateResourceStatusMutation.isPending}
+        >
+          {resource.status === "active"
+            ? localeText(locale, "停用", "Deactivate")
+            : localeText(locale, "启用", "Activate")}
+        </button>
+        <button
+          type="button"
+          className="rounded-full border border-danger/20 px-4 py-2 text-sm text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() => onDeleteResource(resource.id)}
+          disabled={deleteResourceMutation.isPending}
+        >
+          {localeText(locale, "删除", "Delete")}
+        </button>
+      </div>
+
+      {isEditingResource ? (
+        <form
+          className="mt-5 rounded-[24px] border border-ember/18 bg-ember/5 px-4 py-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSaveResource();
+          }}
+        >
+          <div className="grid gap-4">
+            <ResourceTypeField
+              locale={locale}
+              value={resourceEditForm.type}
+              options={createModeOptions}
+              locked={Boolean(lockedResourceType)}
+              onChange={(value) =>
+                setResourceEditForm((current) => ({
+                  ...current,
+                  type: value
+                }))
+              }
+            />
+            <ResourceFields locale={locale} form={resourceEditForm} setForm={setResourceEditForm} />
+          </div>
+          <MutationState
+            mutation={updateResourceMutation}
+            pending={localeText(locale, "正在保存资源修改。", "Saving resource changes.")}
+            success={localeText(locale, "资源信息已更新。", "Resource information updated.")}
+            formatError={(error) => formatResourceMutationError(error, locale)}
+          />
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="submit"
+              className="rounded-full bg-navy px-5 py-3 text-sm font-medium text-white transition hover:bg-navy/90 disabled:cursor-not-allowed disabled:bg-navy/50"
+              disabled={!isEditResourceValid || updateResourceMutation.isPending}
+            >
+              {updateResourceMutation.isPending
+                ? localeText(locale, "保存中", "Saving")
+                : localeText(locale, "保存资源修改", "Save Resource Changes")}
+            </button>
+            <button
+              type="button"
+              className="rounded-full border border-ink/10 px-5 py-3 text-sm text-ink transition hover:border-moss hover:text-moss"
+              onClick={() => onCancelEditResource(resource.id)}
+            >
+              {localeText(locale, "取消", "Cancel")}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <p className="mt-5 text-sm leading-7 text-slate">
+            {resource.description ||
+              localeText(locale, "当前资源暂无补充描述。", "No additional description for this resource yet.")}
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <InlineInfoCard label={localeText(locale, "资源编码", "Resource Code")} value={resource.code} />
+            <InlineInfoCard
+              label={localeText(locale, "当前位置", "Location")}
+              value={resource.location || localeText(locale, "未填写", "Not set")}
+            />
+            <InlineInfoCard
+              label={localeText(locale, "资源单元", "Units")}
+              value={localeText(locale, `${resource.units.length} 个`, `${resource.units.length}`)}
+            />
+          </div>
+        </>
+      )}
+
+      {statusFeedbackResourceId === resource.id ? (
+        <MutationState
+          mutation={updateResourceStatusMutation}
+          pending={localeText(locale, "正在更新资源状态。", "Updating resource status.")}
+          success={localeText(locale, "资源状态已更新。", "Resource status updated.")}
+          formatError={(error) => formatResourceMutationError(error, locale)}
+        />
+      ) : null}
+      {deleteFeedbackResourceId === resource.id ? (
+        <MutationState
+          mutation={deleteResourceMutation}
+          pending={localeText(locale, "正在删除资源。", "Deleting resource.")}
+          success={localeText(locale, "资源已删除。", "Resource deleted.")}
+          formatError={(error) => formatResourceMutationError(error, locale)}
+        />
+      ) : null}
+
+      <ResourceUnitsSection
+        locale={locale}
+        resource={resource}
+        unitModeOptions={unitModeOptions}
+        editingUnitTarget={editingUnitTarget}
+        resourceUnitCreateForm={resourceUnitCreateForm}
+        setResourceUnitCreateForm={setResourceUnitCreateForm}
+        resourceUnitEditForm={resourceUnitEditForm}
+        setResourceUnitEditForm={setResourceUnitEditForm}
+        createResourceUnitMutation={createResourceUnitMutation}
+        updateResourceUnitMutation={updateResourceUnitMutation}
+        deleteResourceUnitMutation={deleteResourceUnitMutation}
+        deleteUnitFeedbackResourceId={deleteUnitFeedbackResourceId}
+        isCreatingUnit={isCreatingUnit}
+        isCreateResourceUnitValid={isCreateResourceUnitValid}
+        isEditResourceUnitValid={isEditResourceUnitValid}
+        onStartCreateResourceUnit={onStartCreateResourceUnit}
+        onCancelCreateResourceUnit={onCancelCreateResourceUnit}
+        onCreateResourceUnit={onCreateResourceUnit}
+        onStartEditResourceUnit={onStartEditResourceUnit}
+        onCancelEditResourceUnit={onCancelEditResourceUnit}
+        onSaveResourceUnit={onSaveResourceUnit}
+        onDeleteResourceUnit={onDeleteResourceUnit}
+      />
+    </article>
+  );
+}
+
+function ResourceUnitsSection({
+  locale,
+  resource,
+  unitModeOptions,
+  editingUnitTarget,
+  resourceUnitCreateForm,
+  setResourceUnitCreateForm,
+  resourceUnitEditForm,
+  setResourceUnitEditForm,
+  createResourceUnitMutation,
+  updateResourceUnitMutation,
+  deleteResourceUnitMutation,
+  deleteUnitFeedbackResourceId,
+  isCreatingUnit,
+  isCreateResourceUnitValid,
+  isEditResourceUnitValid,
+  onStartCreateResourceUnit,
+  onCancelCreateResourceUnit,
+  onCreateResourceUnit,
+  onStartEditResourceUnit,
+  onCancelEditResourceUnit,
+  onSaveResourceUnit,
+  onDeleteResourceUnit
+}: {
+  locale: Locale;
+  resource: AdminResourceDetailResponse;
+  unitModeOptions: Array<{
+    value: "continuous" | "discrete_slot";
+    label: string;
+  }>;
+  editingUnitTarget: { resourceId: string; unitId: string } | null;
+  resourceUnitCreateForm: ResourceUnitFormState;
+  setResourceUnitCreateForm: Dispatch<SetStateAction<ResourceUnitFormState>>;
+  resourceUnitEditForm: ResourceUnitFormState;
+  setResourceUnitEditForm: Dispatch<SetStateAction<ResourceUnitFormState>>;
+  createResourceUnitMutation: MutationStateLike;
+  updateResourceUnitMutation: MutationStateLike;
+  deleteResourceUnitMutation: MutationStateLike;
+  deleteUnitFeedbackResourceId: string;
+  isCreatingUnit: boolean;
+  isCreateResourceUnitValid: boolean;
+  isEditResourceUnitValid: boolean;
+  onStartCreateResourceUnit: (resourceId: string) => void;
+  onCancelCreateResourceUnit: (resourceId: string) => void;
+  onCreateResourceUnit: () => void;
+  onStartEditResourceUnit: (resourceId: string, unitId: string) => void;
+  onCancelEditResourceUnit: (resourceId: string, unitId: string) => void;
+  onSaveResourceUnit: () => void;
+  onDeleteResourceUnit: (resourceId: string, unitId: string) => void;
+}) {
+  return (
+    <div className="mt-6 border-t border-ink/10 pt-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h4 className="text-lg font-semibold text-ink">
+            {localeText(locale, "资源单元", "Resource Units")}
+          </h4>
+          <p className="mt-2 text-sm leading-7 text-slate">
+            {localeText(
+              locale,
+              "在这里查看、编辑和补充该资源的预约单元。",
+              "Review, edit, and add the bookable units for this resource here."
+            )}
+          </p>
+        </div>
+        <StatusPill tone={resource.units.length === 0 ? "danger" : "brand"}>
+          {resource.units.length === 0
+            ? localeText(locale, "未配置单元", "No Units")
+            : localeText(locale, `${resource.units.length} 个单元`, `${resource.units.length} units`)}
+        </StatusPill>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        {resource.units.length === 0 ? (
+          <EmptyPanel
+            title={localeText(locale, "该资源还没有可预约单元", "This resource has no bookable units yet")}
+            description={localeText(
+              locale,
+              "请先补齐资源单元，再决定是否继续保持资源启用。",
+              "Add at least one unit before deciding whether the resource should stay active."
+            )}
+          />
+        ) : null}
+
+        {resource.units.map((unit) => (
+          <ResourceUnitCard
+            key={unit.id}
+            locale={locale}
+            resourceId={resource.id}
+            unit={unit}
+            unitModeOptions={unitModeOptions}
+            isEditing={
+              editingUnitTarget?.resourceId === resource.id &&
+              editingUnitTarget?.unitId === unit.id
+            }
+            resourceUnitEditForm={resourceUnitEditForm}
+            setResourceUnitEditForm={setResourceUnitEditForm}
+            updateResourceUnitMutation={updateResourceUnitMutation}
+            deleteResourceUnitMutation={deleteResourceUnitMutation}
+            isEditResourceUnitValid={isEditResourceUnitValid}
+            onStartEditResourceUnit={onStartEditResourceUnit}
+            onCancelEditResourceUnit={onCancelEditResourceUnit}
+            onSaveResourceUnit={onSaveResourceUnit}
+            onDeleteResourceUnit={onDeleteResourceUnit}
+          />
+        ))}
+
+        {isCreatingUnit ? (
+          <form
+            className="rounded-[24px] border border-dashed border-moss/25 bg-white px-4 py-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onCreateResourceUnit();
+            }}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <ResourceUnitFields
+                locale={locale}
+                form={resourceUnitCreateForm}
+                setForm={setResourceUnitCreateForm}
+                availabilityOptions={unitModeOptions}
+              />
+            </div>
+            <MutationState
+              mutation={createResourceUnitMutation}
+              pending={localeText(locale, "正在创建资源单元。", "Creating resource unit.")}
+              success={localeText(locale, "资源单元已创建。", "Resource unit created.")}
+              formatError={(error) => formatResourceMutationError(error, locale)}
+            />
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="submit"
+                className="rounded-full bg-moss px-5 py-3 text-sm font-medium text-white transition hover:bg-moss/90 disabled:cursor-not-allowed disabled:bg-moss/50"
+                disabled={!isCreateResourceUnitValid || createResourceUnitMutation.isPending}
+              >
+                {createResourceUnitMutation.isPending
+                  ? localeText(locale, "创建中", "Creating")
+                  : localeText(locale, "创建资源单元", "Create Resource Unit")}
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-ink/10 px-5 py-3 text-sm text-ink transition hover:border-moss hover:text-moss"
+                onClick={() => onCancelCreateResourceUnit(resource.id)}
+              >
+                {localeText(locale, "取消", "Cancel")}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <DashedActionCard
+            title={localeText(locale, "新增资源单元", "Add Resource Unit")}
+            description={localeText(
+              locale,
+              "在当前资源卡片内直接补齐房间、场地或其他预约单元。",
+              "Add rooms, courts, or other bookable units directly inside the current resource card."
+            )}
+            buttonLabel={localeText(locale, "新增资源单元", "Add Resource Unit")}
+            onClick={() => onStartCreateResourceUnit(resource.id)}
+          />
+        )}
+      </div>
+
+      {deleteUnitFeedbackResourceId === resource.id ? (
+        <MutationState
+          mutation={deleteResourceUnitMutation}
+          pending={localeText(locale, "正在删除资源单元。", "Deleting resource unit.")}
+          success={localeText(locale, "资源单元已删除。", "Resource unit deleted.")}
+          formatError={(error) => formatResourceMutationError(error, locale)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function ResourceUnitCard({
+  locale,
+  resourceId,
+  unit,
+  unitModeOptions,
+  isEditing,
+  resourceUnitEditForm,
+  setResourceUnitEditForm,
+  updateResourceUnitMutation,
+  deleteResourceUnitMutation,
+  isEditResourceUnitValid,
+  onStartEditResourceUnit,
+  onCancelEditResourceUnit,
+  onSaveResourceUnit,
+  onDeleteResourceUnit
+}: {
+  locale: Locale;
+  resourceId: string;
+  unit: AdminResourceDetailResponse["units"][number];
+  unitModeOptions: Array<{
+    value: "continuous" | "discrete_slot";
+    label: string;
+  }>;
+  isEditing: boolean;
+  resourceUnitEditForm: ResourceUnitFormState;
+  setResourceUnitEditForm: Dispatch<SetStateAction<ResourceUnitFormState>>;
+  updateResourceUnitMutation: MutationStateLike;
+  deleteResourceUnitMutation: MutationStateLike;
+  isEditResourceUnitValid: boolean;
+  onStartEditResourceUnit: (resourceId: string, unitId: string) => void;
+  onCancelEditResourceUnit: (resourceId: string, unitId: string) => void;
+  onSaveResourceUnit: () => void;
+  onDeleteResourceUnit: (resourceId: string, unitId: string) => void;
+}) {
+  if (isEditing) {
+    return (
+      <form
+        className="rounded-[24px] border border-ember/18 bg-ember/5 px-4 py-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSaveResourceUnit();
+        }}
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <ResourceUnitFields
+            locale={locale}
+            form={resourceUnitEditForm}
+            setForm={setResourceUnitEditForm}
+            availabilityOptions={unitModeOptions}
+          />
+        </div>
+        <MutationState
+          mutation={updateResourceUnitMutation}
+          pending={localeText(locale, "正在保存资源单元修改。", "Saving unit changes.")}
+          success={localeText(locale, "资源单元信息已更新。", "Resource unit updated.")}
+          formatError={(error) => formatResourceMutationError(error, locale)}
+        />
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="submit"
+            className="rounded-full bg-navy px-5 py-3 text-sm font-medium text-white transition hover:bg-navy/90 disabled:cursor-not-allowed disabled:bg-navy/50"
+            disabled={!isEditResourceUnitValid || updateResourceUnitMutation.isPending}
+          >
+            {updateResourceUnitMutation.isPending
+              ? localeText(locale, "保存中", "Saving")
+              : localeText(locale, "保存单元修改", "Save Unit Changes")}
+          </button>
+          <button
+            type="button"
+            className="rounded-full border border-ink/10 px-5 py-3 text-sm text-ink transition hover:border-moss hover:text-moss"
+            onClick={() => onCancelEditResourceUnit(resourceId, unit.id)}
+          >
+            {localeText(locale, "取消", "Cancel")}
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="rounded-[24px] border border-ink/10 bg-sand px-4 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-medium text-ink">{unit.name}</p>
+          <p className="mt-1 text-xs uppercase tracking-[0.2em] text-ink/45">{unit.code}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded-full border border-moss/20 px-3 py-1 text-xs text-moss transition hover:bg-moss/10"
+            onClick={() => onStartEditResourceUnit(resourceId, unit.id)}
+          >
+            {localeText(locale, "编辑", "Edit")}
+          </button>
+          <button
+            type="button"
+            className="rounded-full border border-danger/20 px-3 py-1 text-xs text-danger transition hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => onDeleteResourceUnit(resourceId, unit.id)}
+            disabled={deleteResourceUnitMutation.isPending}
+          >
+            {localeText(locale, "删除", "Delete")}
+          </button>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <StatusPill tone="brand">{unit.unitType}</StatusPill>
+        <StatusPill tone="neutral">{availabilityModeLabel(unit.availabilityMode, locale)}</StatusPill>
+        <StatusPill tone="success">
+          {localeText(locale, `容量 ${unit.capacity ?? 1}`, `Capacity ${unit.capacity ?? 1}`)}
+        </StatusPill>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,24 @@
 
 ### 已完成
 
+- 已完成圈复杂度治理第一批前端拆分并通过校验：
+  - 留证文档：`docs/verification/2026-04-22/qa-014-cyclomatic-batch-1-frontend-refactor.md`
+  - 已拆分 `OrderDetailPage / ActivitiesPage / ActivitiesWorkspace / ResourcesWorkspace / ResourcesCatalogPanel / RulesEditorPanel`
+  - 已新增订单详情子组件、活动页子组件、活动管理 helpers/子组件、资源工作台 selectors/mutations/actions
+  - 已执行并通过：
+    - `pnpm --filter web lint`
+    - `pnpm --filter web typecheck`
+    - `pnpm --filter web build`
+- 已继续微调 `docs/demo/product-architecture.md` 的句式表达：
+  - 已集中收口高频“不是 / 而是”对立句式，改为更直接的陈述句
+  - 已同步恢复文档尾部的“当前完成情况与后续优化 / 总结”章节，避免文案调整时误删尾部内容
+- 已正式记录一轮圈复杂度治理计划：
+  - `docs/plans/cyclomatic-complexity-reduction-plan-2026-04-22.md`
+  - 本轮按三批推进：
+    - 前端高复杂度组件拆分
+    - 预约面板拆分
+    - 后端服务函数拆分
+  - 目标是清理前端 `>20` 热点并收口后端核心服务函数复杂度
 - 已复核并收口 `docs/demo/product-architecture.md` 的评审写作：
   - 新增“配套图索引”，统一挂接：
     - `core-architecture-diagram.md`

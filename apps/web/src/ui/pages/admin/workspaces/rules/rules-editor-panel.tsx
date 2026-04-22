@@ -12,9 +12,9 @@ import { resourceTypeLabel, ruleTypeLabel } from "../../admin-helpers";
 import { MutationState } from "../../components/mutation-state";
 import {
   formatRuleMutationError,
-  roleLabel,
   type RuleEditorState
 } from "./rules-workspace-helpers";
+import { RuleTypeFields } from "./rule-type-fields";
 
 type MutationStateLike = {
   isPending: boolean;
@@ -128,121 +128,7 @@ export function RulesEditorPanel({
             </option>
           </select>
 
-          {editor.ruleType === "max_duration_minutes" ? (
-            <input
-              type="number"
-              min={1}
-              className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-              value={editor.maxDurationMinutes}
-              onChange={(event) =>
-                setEditor((current) => ({
-                  ...current,
-                  maxDurationMinutes: Number(event.target.value)
-                }))
-              }
-              placeholder={localeText(
-                locale,
-                "最长预约时长（分钟）",
-                "Maximum duration (minutes)"
-              )}
-            />
-          ) : null}
-
-          {editor.ruleType === "min_credit_score" ? (
-            <input
-              type="number"
-              min={0}
-              className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-              value={editor.minCreditScore}
-              onChange={(event) =>
-                setEditor((current) => ({
-                  ...current,
-                  minCreditScore: Number(event.target.value)
-                }))
-              }
-              placeholder={localeText(locale, "最低信用分", "Minimum credit score")}
-            />
-          ) : null}
-
-          {editor.ruleType === "allowed_user_roles" ? (
-            <div className="grid gap-2">
-              {(["student", "admin"] as const).map((role) => {
-                const checked = editor.allowedRoles.includes(role);
-
-                return (
-                  <label
-                    key={role}
-                    className="flex items-center gap-3 rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm text-ink"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(event) =>
-                        setEditor((current) => ({
-                          ...current,
-                          allowedRoles: event.target.checked
-                            ? Array.from(new Set([...current.allowedRoles, role]))
-                            : current.allowedRoles.filter((item) => item !== role)
-                        }))
-                      }
-                    />
-                    <span>{roleLabel(role, locale)}</span>
-                  </label>
-                );
-              })}
-            </div>
-          ) : null}
-
-          {editor.ruleType === "max_active_reservations_per_category" ? (
-            <input
-              type="number"
-              min={1}
-              className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-              value={editor.maxActiveReservations}
-              onChange={(event) =>
-                setEditor((current) => ({
-                  ...current,
-                  maxActiveReservations: Number(event.target.value)
-                }))
-              }
-              placeholder={localeText(
-                locale,
-                "最多可持有的有效预约数",
-                "Maximum active reservations"
-              )}
-            />
-          ) : null}
-
-          {editor.ruleType === "no_show_credit_penalty" ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              <input
-                type="number"
-                min={1}
-                className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                value={editor.noShowScoreDelta}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    noShowScoreDelta: Number(event.target.value)
-                  }))
-                }
-                placeholder={localeText(locale, "扣减信用分", "Credit score deduction")}
-              />
-              <input
-                type="number"
-                min={0}
-                className="rounded-2xl border border-ink/10 bg-sand px-4 py-3 text-sm outline-none transition focus:border-moss"
-                value={editor.noShowBanDays}
-                onChange={(event) =>
-                  setEditor((current) => ({
-                    ...current,
-                    noShowBanDays: Number(event.target.value)
-                  }))
-                }
-                placeholder={localeText(locale, "禁用天数", "Ban days")}
-              />
-            </div>
-          ) : null}
+          <RuleTypeFields locale={locale} editor={editor} setEditor={setEditor} />
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
