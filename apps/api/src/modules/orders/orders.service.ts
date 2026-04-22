@@ -2,13 +2,16 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
-  NotFoundException
+  NotFoundException,
+  forwardRef
 } from "@nestjs/common";
 import {
   OrderBizType as PrismaOrderBizType,
   OrderStatus,
+  PaymentStatus as PrismaPaymentStatus,
   Prisma
 } from "@prisma/client";
 import type { AuthUser, OrderDetailResponse } from "@campusbook/shared-types";
@@ -65,6 +68,11 @@ const orderDetailInclude = {
       createdAt: "asc"
     }
   },
+  paymentRecords: {
+    orderBy: {
+      createdAt: "asc"
+    }
+  },
   reservationParticipants: {
     include: {
       user: {
@@ -89,6 +97,7 @@ export class OrdersService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly orderExpirationQueueService: OrderExpirationQueueService,
+    @Inject(forwardRef(() => ActivityInventoryCacheService))
     private readonly activityInventoryCacheService: ActivityInventoryCacheService,
     private readonly reservationAttendanceQueueService: ReservationAttendanceQueueService
   ) {}
@@ -632,6 +641,16 @@ function toOrderDetail(order: OrderWithRelations): OrderDetailResponse {
       reason: log.reason,
       createdAt: log.createdAt.toISOString()
     })),
+    paymentRecords: order.paymentRecords.map((record) => ({
+      id: record.id,
+      orderId: record.orderId,
+      payStatus: mapPrismaPaymentStatus(record.payStatus),
+      transactionNo: record.transactionNo,
+      amountCents: record.amountCents,
+      paidAt: record.paidAt?.toISOString() ?? null,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString()
+    })),
     reservationParticipants: order.reservationParticipants.map((participant) => ({
       userId: participant.userId,
       userEmail: participant.user.email,
@@ -696,4 +715,19 @@ function mapPrismaBizType(
   return bizType === PrismaOrderBizType.ACTIVITY_REGISTRATION
     ? "activity_registration"
     : "resource_reservation";
+}
+
+function mapPrismaPaymentStatus(
+  status: PrismaPaymentStatus
+): OrderDetailResponse["paymentRecords"][number]["payStatus"] {
+  switch (status) {
+    case PrismaPaymentStatus.PENDING:
+      return "pending";
+    case PrismaPaymentStatus.PAID:
+      return "paid";
+    case PrismaPaymentStatus.FAILED:
+      return "failed";
+    case PrismaPaymentStatus.REFUNDED:
+      return "refunded";
+  }
 }

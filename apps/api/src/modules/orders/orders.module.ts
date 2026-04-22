@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 
 import { ActivitiesModule } from "../activities/activities.module";
 import { AuthModule } from "../auth/auth.module";
@@ -8,7 +8,7 @@ import { OrdersService } from "./orders.service";
 import { ReservationAttendanceQueueService } from "./reservation-attendance-queue.service";
 
 @Module({
-  imports: [AuthModule, ActivitiesModule],
+  imports: [AuthModule, forwardRef(() => ActivitiesModule)],
   controllers: [OrdersController],
   providers: [OrdersService, OrderExpirationQueueService, ReservationAttendanceQueueService],
   exports: [OrderExpirationQueueService, ReservationAttendanceQueueService, OrdersService]

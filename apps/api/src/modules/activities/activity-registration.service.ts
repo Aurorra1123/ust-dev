@@ -1,11 +1,14 @@
 import {
   ConflictException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
   ServiceUnavailableException,
-  UnauthorizedException
+  UnauthorizedException,
+  forwardRef
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   ActivityStatus,
   ActivityTicketStatus,
@@ -22,6 +25,7 @@ import type {
 
 import { PrismaService } from "../../infrastructure/prisma/prisma.service";
 import type { AuthenticatedUser } from "../auth/auth.types";
+import { OrderExpirationQueueService } from "../orders/order-expiration-queue.service";
 import { ActivityInventoryCacheService } from "./activity-inventory-cache.service";
 import {
   ACTIVITY_REGISTRATION_PENDING_TTL_MS,
@@ -35,9 +39,12 @@ export class ActivityRegistrationService {
   private readonly logger = new Logger(ActivityRegistrationService.name);
 
   constructor(
+    private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
     private readonly activityInventoryCacheService: ActivityInventoryCacheService,
-    private readonly activityRegistrationQueueService: ActivityRegistrationQueueService
+    private readonly activityRegistrationQueueService: ActivityRegistrationQueueService,
+    @Inject(forwardRef(() => OrderExpirationQueueService))
+    private readonly orderExpirationQueueService: OrderExpirationQueueService
   ) {}
 
   async queueRegistration(
@@ -220,6 +227,7 @@ export class ActivityRegistrationService {
 
     try {
       const created = await this.prismaService.$transaction(async (tx) => {
+        const now = new Date();
         const ticket = await tx.activityTicket.findFirst({
           where: {
             id: payload.ticketId,
@@ -229,10 +237,10 @@ export class ActivityRegistrationService {
               id: payload.activityId,
               status: ActivityStatus.PUBLISHED,
               saleStartTime: {
-                lte: new Date()
+                lte: now
               },
               saleEndTime: {
-                gte: new Date()
+                gte: now
               }
             }
           }
@@ -256,12 +264,24 @@ export class ActivityRegistrationService {
           throw new ConflictException("activity-sold-out");
         }
 
+        const requiresPayment = ticket.priceCents > 0;
+        const initialStatus = requiresPayment
+          ? OrderStatus.PENDING_CONFIRMATION
+          : OrderStatus.CONFIRMED;
+        const expireAt = requiresPayment
+          ? buildPendingExpirationAt(
+              now,
+              this.configService.getOrThrow<number>("ORDER_PENDING_EXPIRE_SECONDS")
+            )
+          : null;
+
         const order = await tx.order.create({
           data: {
             userId: payload.userId,
             activityId: payload.activityId,
             bizType: OrderBizType.ACTIVITY_REGISTRATION,
-            status: OrderStatus.CONFIRMED,
+            status: initialStatus,
+            expireAt,
             totalAmountCents: ticket.priceCents,
             items: {
               create: {
@@ -271,10 +291,21 @@ export class ActivityRegistrationService {
                 unitPriceCents: ticket.priceCents
               }
             },
+            paymentRecords:
+              requiresPayment
+                ? {
+                    create: {
+                      payStatus: "PENDING",
+                      amountCents: ticket.priceCents
+                    }
+                  }
+                : undefined,
             statusLogs: {
               create: {
-                toStatus: OrderStatus.CONFIRMED,
-                reason: "activity-registration-confirmed"
+                toStatus: initialStatus,
+                reason: requiresPayment
+                  ? "activity-registration-awaiting-payment"
+                  : "activity-registration-confirmed"
               }
             }
           }
@@ -286,15 +317,23 @@ export class ActivityRegistrationService {
             activityId: payload.activityId,
             activityTicketId: payload.ticketId,
             userId: payload.userId,
-            status: OrderStatus.CONFIRMED
+            status: initialStatus
           }
         });
 
         return {
           registration,
-          order
+          order,
+          expireAt
         };
       });
+
+      if (created.expireAt) {
+        await this.orderExpirationQueueService.scheduleExpiration(
+          created.order.id,
+          created.expireAt
+        );
+      }
 
       await this.activityInventoryCacheService.markRequestCompleted(
         payload.activityId,
@@ -308,7 +347,7 @@ export class ActivityRegistrationService {
         orderId: created.registration.orderId,
         orderNo: created.order.orderNo,
         jobId: null,
-        status: "confirmed",
+        status: mapPrismaOrderStatus(created.registration.status),
         reason: null
       } satisfies ActivityRegistrationStatusResponse;
     } catch (error) {
@@ -438,6 +477,10 @@ export class ActivityRegistrationService {
       throw new ConflictException("activity-already-registered");
     }
   }
+}
+
+function buildPendingExpirationAt(now: Date, expireSeconds: number) {
+  return new Date(now.getTime() + expireSeconds * 1000);
 }
 
 function isDuplicateActiveRegistrationError(error: unknown) {

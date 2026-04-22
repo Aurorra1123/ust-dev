@@ -6,6 +6,23 @@
 
 ### 已完成
 
+- 已完成 `COMP-001`，把付费活动票从“创建即确认”改为真实待支付主链路：
+  - `priceCents > 0` 的活动票现在创建 `PENDING_CONFIRMATION` 订单
+  - 下单时会写入 `expireAt` 与 `PaymentRecord(PENDING)`
+  - 订单会登记到过期队列，等待后续 `COMP-002` 接入并发对撞闭环
+- 已新增 mock 支付最小闭环：
+  - `GET /payments/orders/:orderId`
+  - `POST /payments/orders/:orderId/mock`
+  - `POST /payments/mock/callback`
+- 已扩展订单详情返回与前端订单详情页：
+  - 返回 `paymentRecords`
+  - 展示支付状态、金额、交易号与待支付截止时间
+  - 在待支付状态下可执行 mock 支付
+- 已新增 `COMP-001` 自动化验证：
+  - `apps/api/test/comp-001-paid-activity-payment.test.ts`
+- 已补验证记录：
+  - `docs/verification/2026-04-22/qa-002-comp-001-paid-activity-payment.md`
+
 - 已完成 `Guardrail-0`，为比赛整改前的现有强项补齐首批保护性 API 集成测试：
   - `API-001`
   - `API-002`
@@ -30,21 +47,23 @@
 
 ### 当前状态
 
+- `COMP-001` 已完成，付费活动票主链路已经可从待支付走到支付确认。
+- 当前进入 `COMP-002` 前，支付基础入口、订单状态展示和 mock 支付样例都已具备。
 - `Guardrail-0` 已经不再只是计划项，首批 `8` 条保护性回归已转为真实自动化门槛。
 - 当前进入后续整改前，学术空间、体育预约和活动抢票的核心正确性已有保护。
-- 下一阶段可以开始 `COMP-001`，将付费活动票从“直接确认”改成真实 `PENDING_CONFIRMATION` 主链路。
+- 下一阶段可以开始 `COMP-002`，补支付回调/过期取消 CAS、幂等与补偿闭环。
 
 ### 下一步建议
 
-1. 开始 `COMP-001`，从活动抢票异步建单入口改造付费票待支付主链路
-2. 在订单创建时写入 `expireAt` 与 `PaymentRecord(PENDING)`
-3. 衔接 mock 支付发起、查询与回调入口，为 `COMP-002` 的幽灵支付闭环做准备
+1. 开始 `COMP-002`，把支付回调与超时取消统一收口到 `status + version` CAS
+2. 让 `transactionNo` 唯一且回调幂等，避免重复确认
+3. 为迟到支付补上补偿记录与系统级验证证据
 
 ### 注意事项
 
 - 本轮没有触碰 `docs/user_test/`
 - 为避免测试进程悬挂，本轮把 `apps/api` 的测试脚本收口为 `node:test` 并在结果产出后强制退出
-- 当前本地仍保留测试相关代码改动，尚未开始 `COMP-001`
+- 当前本地已完成 `COMP-001` 代码改动，但尚未开始 `COMP-002`
 
 ### 已完成
 

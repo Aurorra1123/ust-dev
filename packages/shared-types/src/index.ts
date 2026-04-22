@@ -152,6 +152,17 @@ export interface AppOrder {
   totalAmountCents: number;
 }
 
+export interface PaymentRecordDetail {
+  id: string;
+  orderId: string;
+  payStatus: PaymentStatus;
+  transactionNo: string | null;
+  amountCents: number;
+  paidAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface OrderStatusLogEntry {
   id: string;
   fromStatus: OrderStatus | null;
@@ -225,9 +236,23 @@ export interface OrderDetailResponse extends AppOrder {
   items: OrderItemDetail[];
   statusLogs: OrderStatusLogEntry[];
   reservationParticipants: ReservationParticipantDetail[];
+  paymentRecords: PaymentRecordDetail[];
   academicReservation: AcademicReservationDetail | null;
   sportsReservationSlots: SportsReservationSlotDetail[];
   activityRegistration: ActivityRegistrationDetail | null;
+}
+
+export interface MockPaymentStartResponse {
+  orderId: string;
+  orderNo: string;
+  transactionNo: string;
+  payStatus: PaymentStatus;
+  amountCents: number;
+  paidAt: string | null;
+}
+
+export interface MockPaymentCallbackRequest {
+  transactionNo: string;
 }
 
 export interface AcademicReservationRequest {

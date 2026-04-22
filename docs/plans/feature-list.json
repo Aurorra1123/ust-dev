@@ -690,7 +690,7 @@
       "订单创建时会写入 expireAt 和 PaymentRecord(PENDING)，并能通过 mock 支付链路进入确认态",
       "免费票仍可保持现有直接确认主链路，不被强行改造成待支付订单"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "COMP-002",

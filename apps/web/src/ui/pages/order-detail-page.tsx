@@ -1,10 +1,13 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { OrderDetailResponse } from "@campusbook/shared-types";
 
 import {
   cancelOrder,
   checkInReservation,
-  fetchOrderDetail
+  confirmMockPayment,
+  fetchOrderDetail,
+  startMockPayment
 } from "../../lib/api/order-api";
 import { getErrorMessage } from "../../lib/http/errors";
 import { formatDateTime } from "../../lib/date";
@@ -20,6 +23,7 @@ import {
   canCancel,
   canCheckIn,
   describeOrder,
+  formatAmount,
   getOrderProgressState,
   orderLocationLabel,
   orderProgressLabel,
@@ -58,7 +62,25 @@ export function OrderDetailPage() {
     }
   });
 
+  const mockPaymentMutation = useMutation({
+    mutationFn: async (currentOrderId: string) => {
+      const payment = await startMockPayment(currentOrderId);
+      return confirmMockPayment({
+        transactionNo: payment.transactionNo
+      });
+    },
+    onSuccess: async (result) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["orders"] }),
+        queryClient.invalidateQueries({ queryKey: ["orders", "detail", result.id] })
+      ]);
+    }
+  });
+
   const order = orderQuery.data ?? null;
+  const latestPayment =
+    order?.paymentRecords.length ? order.paymentRecords[order.paymentRecords.length - 1] : null;
+  const remainingPaymentTime = order ? getRemainingPaymentTime(order.expireAt) : null;
 
   return (
     <PageSection
@@ -140,6 +162,20 @@ export function OrderDetailPage() {
                       : localeText(locale, "取消预约", "Cancel Order")}
                   </button>
                 ) : null}
+                {order.status === "pending_confirmation" &&
+                order.totalAmountCents > 0 &&
+                latestPayment?.payStatus === "pending" ? (
+                  <button
+                    type="button"
+                    className="rounded-full bg-ember px-4 py-2 text-sm text-white transition hover:bg-ember/90 disabled:cursor-not-allowed disabled:bg-ember/50"
+                    onClick={() => mockPaymentMutation.mutate(order.id)}
+                    disabled={mockPaymentMutation.isPending}
+                  >
+                    {mockPaymentMutation.isPending
+                      ? localeText(locale, "支付中", "Paying")
+                      : localeText(locale, "模拟支付", "Mock Pay")}
+                  </button>
+                ) : null}
                 <Link
                   to={buildRebookPath(order)}
                   className="rounded-full border border-navy/10 px-4 py-2 text-sm text-ink transition hover:border-moss"
@@ -167,6 +203,10 @@ export function OrderDetailPage() {
               label={localeText(locale, "下单时间", "Created At")}
               value={formatDateTime(order.createdAt)}
             />
+            <InfoCard
+              label={localeText(locale, "金额", "Amount")}
+              value={formatAmount(order.totalAmountCents, locale)}
+            />
             <InfoCard label={localeText(locale, "订单号", "Order No.")} value={order.orderNo} />
             <InfoCard label={localeText(locale, "预约人", "Reporter")} value={order.userEmail} />
             <InfoCard
@@ -177,16 +217,59 @@ export function OrderDetailPage() {
                   : localeText(locale, "无", "None")
               }
             />
+            <InfoCard
+              label={localeText(locale, "支付状态", "Payment Status")}
+              value={paymentStatusLabel(latestPayment?.payStatus, locale)}
+            />
           </div>
 
-          {cancelMutation.isError || checkInMutation.isError ? (
+          {order.totalAmountCents > 0 ? (
+            <div className="rounded-[24px] border border-ink/10 bg-sand px-5 py-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-ink">
+                    {localeText(locale, "支付信息", "Payment")}
+                  </h3>
+                  <p className="mt-2 text-sm text-slate">
+                    {localeText(
+                      locale,
+                      `当前状态：${paymentStatusLabel(latestPayment?.payStatus, locale)}`,
+                      `Current status: ${paymentStatusLabel(latestPayment?.payStatus, locale)}`
+                    )}
+                  </p>
+                  {order.expireAt ? (
+                    <p className="mt-2 text-sm text-slate">
+                      {localeText(
+                        locale,
+                        `待支付截止：${formatDateTime(order.expireAt)}${remainingPaymentTime ? `（剩余 ${remainingPaymentTime}）` : ""}`,
+                        `Pay before ${formatDateTime(order.expireAt)}${remainingPaymentTime ? ` (${remainingPaymentTime} left)` : ""}`
+                      )}
+                    </p>
+                  ) : null}
+                  {latestPayment?.transactionNo ? (
+                    <p className="mt-2 text-sm text-slate">
+                      {localeText(
+                        locale,
+                        `交易号：${latestPayment.transactionNo}`,
+                        `Transaction No.: ${latestPayment.transactionNo}`
+                      )}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {cancelMutation.isError || checkInMutation.isError || mockPaymentMutation.isError ? (
             <StatePanel
               tone="danger"
               title={localeText(locale, "操作未完成", "Action failed")}
               description={
                 cancelMutation.isError
                   ? getErrorMessage(cancelMutation.error)
-                  : getErrorMessage(checkInMutation.error)
+                  : checkInMutation.isError
+                    ? getErrorMessage(checkInMutation.error)
+                    : getErrorMessage(mockPaymentMutation.error)
               }
             />
           ) : null}
@@ -194,6 +277,46 @@ export function OrderDetailPage() {
       ) : null}
     </PageSection>
   );
+}
+
+function paymentStatusLabel(
+  status: OrderDetailResponse["paymentRecords"][number]["payStatus"] | undefined,
+  locale: "zh-CN" | "en"
+) {
+  switch (status) {
+    case "paid":
+      return localeText(locale, "已支付", "Paid");
+    case "failed":
+      return localeText(locale, "支付失败", "Failed");
+    case "refunded":
+      return localeText(locale, "已退款", "Refunded");
+    case "pending":
+      return localeText(locale, "待支付", "Pending");
+    default:
+      return localeText(locale, "未发起", "Not Started");
+  }
+}
+
+function getRemainingPaymentTime(expireAt?: string | null) {
+  if (!expireAt) {
+    return null;
+  }
+
+  const remainingMs = new Date(expireAt).getTime() - Date.now();
+
+  if (remainingMs <= 0) {
+    return "0m";
+  }
+
+  const totalMinutes = Math.ceil(remainingMs / (60 * 1000));
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes}m`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours}h ${minutes}m`;
 }
 
 function InfoCard({ label, value }: { label: string; value: string }) {
