@@ -140,21 +140,6 @@ pnpm dev:web
 
 ## AST 圈复杂度记录
 
-基于 `2026-04-22` 的一轮 AST 扫描，本仓库已完成一次面向高复杂度页面、预约面板和后端核心服务函数的复杂度治理。
-
-本轮计划内已完成收口的热点包括：
-
-- `ResourcesWorkspace`
-- `OrderDetailPage`
-- `ActivitiesWorkspace`
-- `ActivitiesPage`
-- `RulesEditorPanel`
-- `SpacesBookingPanel`
-- `SportsBookingPanel`
-- `ReservationService.createSportsReservation`
-- `OrdersService.transitionOrder`
-- `normalizeActivityTimeline`
-
 ### 平均指标
 
 | 口径 | 数值 |
@@ -183,16 +168,3 @@ pnpm dev:web
 16-20   10 █
 21+      5 █
 ```
-
-说明：
-
-- 当前绝大多数函数仍落在 `1-5` 的低复杂度区间。
-- 当前真正需要继续治理的，主要是 `21+` 的少数热点和 `16-20` 的边缘函数。
-
-当前剩余 `>20` 热点：
-
-1. `RulesWorkspace` `38`
-2. `SpacesPage` `28`
-3. `SportsPage` `27`
-4. `NotificationsWorkspace` `24`
-5. `toOrderDetail` `21`
