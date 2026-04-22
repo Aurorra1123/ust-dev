@@ -4,7 +4,11 @@ import {
   Injectable,
   NotFoundException
 } from "@nestjs/common";
-import { PaymentStatus, Prisma } from "@prisma/client";
+import {
+  PaymentCompensationType,
+  PaymentStatus,
+  Prisma
+} from "@prisma/client";
 import type {
   MockPaymentStartResponse,
   OrderDetailResponse,
@@ -96,14 +100,7 @@ export class PaymentsService {
     transactionNo: string,
     actor: AuthenticatedUser
   ): Promise<OrderDetailResponse> {
-    const paymentRecord = await this.prismaService.paymentRecord.findUnique({
-      where: {
-        transactionNo
-      },
-      include: {
-        order: true
-      }
-    });
+    const paymentRecord = await this.getPaymentRecordWithOrder(transactionNo);
 
     if (!paymentRecord) {
       throw new NotFoundException("payment-record-not-found");
@@ -116,22 +113,44 @@ export class PaymentsService {
     }
 
     if (paymentRecord.order.status !== "PENDING_CONFIRMATION") {
+      await this.recordLateCallbackCompensation(
+        paymentRecord,
+        "order-is-not-awaiting-payment"
+      );
       throw new ConflictException("order-is-not-awaiting-payment");
     }
 
-    await this.prismaService.paymentRecord.updateMany({
-      where: {
-        id: paymentRecord.id,
-        payStatus: PaymentStatus.PENDING
-      },
-      data: {
-        payStatus: PaymentStatus.PAID,
-        paidAt: new Date()
+    try {
+      return await this.ordersService.confirmOrderAfterPayment(
+        paymentRecord.orderId,
+        paymentRecord.id,
+        "mock-payment-paid"
+      );
+    } catch (error) {
+      if (!(error instanceof ConflictException)) {
+        throw error;
       }
-    });
 
-    await this.ordersService.confirmOrder(paymentRecord.orderId, "mock-payment-paid");
-    return this.ordersService.getOrder(paymentRecord.orderId, actor);
+      const latest = await this.getPaymentRecordWithOrder(transactionNo);
+
+      if (!latest) {
+        throw error;
+      }
+
+      if (latest.payStatus === PaymentStatus.PAID) {
+        return this.ordersService.getOrder(latest.orderId, actor);
+      }
+
+      if (latest.order.status !== "PENDING_CONFIRMATION") {
+        await this.recordLateCallbackCompensation(
+          latest,
+          "order-is-not-awaiting-payment"
+        );
+        throw new ConflictException("order-is-not-awaiting-payment");
+      }
+
+      throw error;
+    }
   }
 
   private async ensurePayableOrder(orderId: string, actor: AuthenticatedUser) {
@@ -172,6 +191,55 @@ export class PaymentsService {
     }
 
     throw new ForbiddenException("forbidden-order-access");
+  }
+
+  private getPaymentRecordWithOrder(transactionNo: string) {
+    return this.prismaService.paymentRecord.findUnique({
+      where: {
+        transactionNo
+      },
+      include: {
+        order: true
+      }
+    });
+  }
+
+  private async recordLateCallbackCompensation(
+    paymentRecord: NonNullable<Awaited<ReturnType<PaymentsService["getPaymentRecordWithOrder"]>>>,
+    reason: string
+  ) {
+    await this.prismaService.paymentCompensationLog.upsert({
+      where: {
+        transactionNo_type: {
+          transactionNo: paymentRecord.transactionNo ?? buildMockTransactionNo(paymentRecord.order.orderNo),
+          type: PaymentCompensationType.LATE_CALLBACK_REJECTED
+        }
+      },
+      update: {
+        reason,
+        orderStatus: paymentRecord.order.status,
+        paymentStatus: paymentRecord.payStatus,
+        details: {
+          orderId: paymentRecord.orderId,
+          paymentRecordId: paymentRecord.id
+        }
+      },
+      create: {
+        orderId: paymentRecord.orderId,
+        paymentRecordId: paymentRecord.id,
+        transactionNo:
+          paymentRecord.transactionNo ??
+          buildMockTransactionNo(paymentRecord.order.orderNo),
+        type: PaymentCompensationType.LATE_CALLBACK_REJECTED,
+        reason,
+        orderStatus: paymentRecord.order.status,
+        paymentStatus: paymentRecord.payStatus,
+        details: {
+          orderId: paymentRecord.orderId,
+          paymentRecordId: paymentRecord.id
+        }
+      }
+    });
   }
 }
 

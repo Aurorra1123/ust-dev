@@ -66,6 +66,7 @@ export interface IntegrationHarness {
     activityId: string;
     ticketId: string;
   }>;
+  runExpirePendingOrders(): Promise<TestResponse>;
   waitForActivityQueueIdle(timeoutMs?: number): Promise<void>;
 }
 
@@ -73,6 +74,7 @@ interface RequestOptions {
   method?: string;
   accessToken?: string;
   body?: unknown;
+  headers?: Record<string, string>;
 }
 
 export async function createIntegrationHarness(): Promise<IntegrationHarness> {
@@ -144,6 +146,7 @@ export async function createIntegrationHarness(): Promise<IntegrationHarness> {
     const response = await fetch(`${baseUrl}${path}`, {
       method: options.method ?? "GET",
       headers: {
+        ...(options.headers ?? {}),
         ...(options.accessToken
           ? {
               Authorization: `Bearer ${options.accessToken}`
@@ -264,6 +267,13 @@ export async function createIntegrationHarness(): Promise<IntegrationHarness> {
     loginDemoAdmin: () => login(TEST_DEMO_ADMIN_EMAIL, TEST_DEMO_ADMIN_PASSWORD),
     createStudentUsers,
     createPublishedActivityWithTicket,
+    runExpirePendingOrders: () =>
+      request("/orders/jobs/expire-pending", {
+        method: "POST",
+        headers: {
+          "x-internal-job-token": TEST_INTERNAL_JOB_TOKEN
+        }
+      }),
     waitForActivityQueueIdle,
     async close() {
       await waitForActivityQueueIdle().catch(() => undefined);

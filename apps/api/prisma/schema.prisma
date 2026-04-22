@@ -79,6 +79,10 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PaymentCompensationType {
+  LATE_CALLBACK_REJECTED
+}
+
 enum RuleStatus {
   ACTIVE
   INACTIVE
@@ -283,6 +287,7 @@ model Order {
   activity               Activity?               @relation(fields: [activityId], references: [id], onDelete: SetNull)
   items                  OrderItem[]
   paymentRecords         PaymentRecord[]
+  paymentCompensationLogs PaymentCompensationLog[]
   reservationParticipants ReservationParticipant[]
   statusLogs             OrderStatusLog[]
   createdAt              DateTime                @default(now())
@@ -422,10 +427,30 @@ model PaymentRecord {
   amountCents   Int           @default(0)
   paidAt        DateTime?
   order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  compensationLogs PaymentCompensationLog[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   @@index([orderId, payStatus])
+}
+
+model PaymentCompensationLog {
+  id             String                  @id @default(cuid())
+  orderId        String
+  paymentRecordId String
+  transactionNo  String
+  type           PaymentCompensationType
+  reason         String
+  orderStatus    OrderStatus
+  paymentStatus  PaymentStatus
+  details        Json?
+  order          Order                   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  paymentRecord  PaymentRecord           @relation(fields: [paymentRecordId], references: [id], onDelete: Cascade)
+  createdAt      DateTime                @default(now())
+
+  @@unique([transactionNo, type])
+  @@index([orderId, createdAt])
+  @@index([paymentRecordId, createdAt])
 }
 
 model OrderStatusLog {

@@ -702,7 +702,7 @@
       "PaymentRecord 的 transactionNo 唯一且回调幂等，同一笔支付不会重复确认",
       "存在“最后一秒支付与同时过期取消”的真实验证证据，已取消订单不会被错误改回确认态"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "COMP-003",

@@ -153,6 +153,35 @@ export class OrdersService {
     });
   }
 
+  confirmOrderAfterPayment(
+    orderId: string,
+    paymentRecordId: string,
+    reason?: string
+  ) {
+    return this.transitionOrder(orderId, {
+      nextStatus: OrderStatus.CONFIRMED,
+      allowedFrom: [OrderStatus.PENDING_CONFIRMATION],
+      reason: reason ?? "payment-confirmed",
+      transactionWork: async (tx, order) => {
+        const paymentUpdate = await tx.paymentRecord.updateMany({
+          where: {
+            id: paymentRecordId,
+            orderId: order.id,
+            payStatus: PrismaPaymentStatus.PENDING
+          },
+          data: {
+            payStatus: PrismaPaymentStatus.PAID,
+            paidAt: new Date()
+          }
+        });
+
+        if (paymentUpdate.count !== 1) {
+          throw new ConflictException("payment-confirmation-conflict");
+        }
+      }
+    });
+  }
+
   cancelOrder(orderId: string, actor: AuthUser, reason?: string) {
     return this.transitionOrder(orderId, {
       actor,
@@ -231,7 +260,8 @@ export class OrdersService {
     } catch (error) {
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
       ) {
         return null;
       }
@@ -248,6 +278,12 @@ export class OrdersService {
       nextStatus: OrderStatus;
       allowedFrom: OrderStatus[];
       reason: string;
+      transactionWork?: (
+        tx: Prisma.TransactionClient,
+        order: NonNullable<
+          Awaited<ReturnType<PrismaService["order"]["findUnique"]>>
+        >
+      ) => Promise<void>;
     }
   ) {
     const order = await this.prismaService.order.findUnique({
@@ -286,6 +322,8 @@ export class OrdersService {
         },
         data: {
           status: params.nextStatus,
+          expireAt:
+            params.nextStatus === OrderStatus.PENDING_CONFIRMATION ? order.expireAt : null,
           version: {
             increment: 1
           }
@@ -350,6 +388,26 @@ export class OrdersService {
             status: params.nextStatus
           }
         });
+      }
+
+      if (
+        params.nextStatus === OrderStatus.CANCELLED &&
+        order.status === OrderStatus.PENDING_CONFIRMATION &&
+        order.totalAmountCents > 0
+      ) {
+        await tx.paymentRecord.updateMany({
+          where: {
+            orderId: order.id,
+            payStatus: PrismaPaymentStatus.PENDING
+          },
+          data: {
+            payStatus: PrismaPaymentStatus.FAILED
+          }
+        });
+      }
+
+      if (params.transactionWork) {
+        await params.transactionWork(tx, order);
       }
 
       const latestOrder = await tx.order.findUnique({

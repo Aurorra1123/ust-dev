@@ -6,6 +6,20 @@
 
 ### 已完成
 
+- 已完成 `COMP-002`，把支付回调、超时取消、幂等和补偿闭环收口到同一条状态机：
+  - 支付确认改为通过订单 `status + version` CAS 进入 `CONFIRMED`
+  - 过期取消与支付确认发生竞争时，只会有一个最终状态迁移成功
+  - 重复 callback 已实现幂等，不会重复确认同一订单
+- 已新增支付补偿留痕：
+  - 新增 `PaymentCompensationLog`
+  - 迟到 callback 会记录 `LATE_CALLBACK_REJECTED`
+  - 已通过 `ADR 0021` 冻结“拒绝确认 + 补偿留痕”的处理策略
+- 已补齐 `COMP-002` 自动化验证：
+  - `apps/api/test/comp-002-ghost-payment-race.test.ts`
+  - `docs/verification/2026-04-22/qa-003-comp-002-ghost-payment-race.md`
+- 已把 `apps/api` 测试运行方式收口为串行执行，避免多套测试应用并发拉起压环境
+  - `node --test --test-concurrency=1`
+
 - 已完成 `COMP-001`，把付费活动票从“创建即确认”改为真实待支付主链路：
   - `priceCents > 0` 的活动票现在创建 `PENDING_CONFIRMATION` 订单
   - 下单时会写入 `expireAt` 与 `PaymentRecord(PENDING)`
@@ -47,23 +61,25 @@
 
 ### 当前状态
 
+- `COMP-002` 已完成，幽灵支付对撞已经有真实回归和补偿日志留痕。
+- 当前下一阶段应进入 `COMP-006`，收口活动库存一致性、Redis 自愈与 `totalQuota`。
 - `COMP-001` 已完成，付费活动票主链路已经可从待支付走到支付确认。
 - 当前进入 `COMP-002` 前，支付基础入口、订单状态展示和 mock 支付样例都已具备。
 - `Guardrail-0` 已经不再只是计划项，首批 `8` 条保护性回归已转为真实自动化门槛。
 - 当前进入后续整改前，学术空间、体育预约和活动抢票的核心正确性已有保护。
-- 下一阶段可以开始 `COMP-002`，补支付回调/过期取消 CAS、幂等与补偿闭环。
+- 下一阶段可以开始 `COMP-006`，补活动库存一致性、`totalQuota` 和 Redis 冷恢复闭环。
 
 ### 下一步建议
 
-1. 开始 `COMP-002`，把支付回调与超时取消统一收口到 `status + version` CAS
-2. 让 `transactionNo` 唯一且回调幂等，避免重复确认
-3. 为迟到支付补上补偿记录与系统级验证证据
+1. 开始 `COMP-006`，在活动创建与更新时强校验 `totalQuota == sum(ticket.stock)`
+2. 收口 Redis pending 占位、归属校验、冷恢复与异常回查
+3. 为库存恢复、Redis key 丢失和 worker 中断场景补自动化验证证据
 
 ### 注意事项
 
 - 本轮没有触碰 `docs/user_test/`
-- 为避免测试进程悬挂，本轮把 `apps/api` 的测试脚本收口为 `node:test` 并在结果产出后强制退出
-- 当前本地已完成 `COMP-001` 代码改动，但尚未开始 `COMP-002`
+- 为避免测试进程悬挂和多套应用并发拉起，本轮把 `apps/api` 的测试脚本收口为串行 `node:test` 并在结果产出后强制退出
+- 当前本地已完成 `COMP-002` 代码改动，但尚未开始 `COMP-006`
 
 ### 已完成
 

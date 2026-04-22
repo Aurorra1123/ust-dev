@@ -11,7 +11,7 @@
     "start:worker:dev": "ts-node --project tsconfig.json --transpile-only src/worker.ts",
     "lint": "eslint src test --ext .ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
-    "test": "node --require ts-node/register/transpile-only --test --test-force-exit test/*.test.ts",
+    "test": "node --require ts-node/register/transpile-only --test --test-concurrency=1 --test-force-exit test/*.test.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
