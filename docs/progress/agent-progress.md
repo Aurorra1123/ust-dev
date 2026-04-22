@@ -6,6 +6,14 @@
 
 ### 已完成
 
+- 已复核并收口 `docs/demo/product-architecture.md` 的评审写作：
+  - 新增“配套图索引”，统一挂接：
+    - `core-architecture-diagram.md`
+    - `business-flow-diagram.md`
+    - `database-er-diagram.md`
+  - 已在“核心业务设计 / 架构设计 / 数据与领域建模 / 订单状态流转”等正文位置加入对应图引用
+  - 已删去与独立图文档重复的内嵌架构图和状态图，避免一份长文里重复出现两套图
+  - 已顺手收口开头和总结处的重复表述，使文风更接近评审稿
 - 已继续收口 demo 文档开头说明语句：
   - `docs/demo/business-flow-diagram.md`
   - `docs/demo/database-er-diagram.md`
